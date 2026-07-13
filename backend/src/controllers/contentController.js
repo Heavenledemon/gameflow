@@ -7,11 +7,64 @@ import Game from '../models/Game.js'
 import PostComment from '../models/PostComment.js'
 import PostEngagement from '../models/PostEngagement.js'
 import Project from '../models/Project.js'
+import Upload from '../models/Upload.js'
+import ProjectFile from '../models/ProjectFile.js'
+import { publishProjectEngagement } from '../realtime/eventPublisher.js'
 import { seedAssets, seedGames } from '../data/seedData.js'
 import asyncHandler from '../middlewares/asyncHandler.js'
 
 const UPLOADS_ROOT = path.join(process.cwd(), 'uploads', 'projects')
 const PUBLIC_UPLOADS_PREFIX = '/api/uploads/projects'
+const MAX_UPLOAD_BYTES = 150 * 1024 * 1024
+const MAX_PROJECT_BYTES = 500 * 1024 * 1024
+const MAX_PROJECT_FILES = 100
+const MAX_PATH_BYTES = 512
+const MAX_NAME_BYTES = 255
+const SAFE_TEXT_EXTENSIONS = new Set(['.html', '.htm', '.js', '.mjs', '.css', '.json', '.txt', '.svg'])
+const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif'])
+const GAME_BINARY_EXTENSIONS = new Set(['.wasm', '.br', '.gz', '.unityweb'])
+
+function hasMagicBytes(buffer, extension) {
+  if (extension === '.png') return buffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
+  if (extension === '.jpg' || extension === '.jpeg') return buffer.subarray(0, 3).equals(Buffer.from([255, 216, 255]))
+  if (extension === '.gif') return buffer.subarray(0, 6).toString('ascii').match(/^GIF8[79]a$/) !== null
+  if (extension === '.webp') return buffer.subarray(0, 4).toString('ascii') === 'RIFF' && buffer.subarray(8, 12).toString('ascii') === 'WEBP'
+  if (extension === '.glb') return buffer.subarray(0, 4).toString('ascii') === 'glTF'
+  if (extension === '.wasm') return buffer.subarray(0, 4).equals(Buffer.from([0, 97, 115, 109]))
+  return true
+}
+
+function validateUploadMetadata(project, fileName, relativePath, buffer) {
+  if (Buffer.byteLength(fileName, 'utf8') > MAX_NAME_BYTES || Buffer.byteLength(relativePath, 'utf8') > MAX_PATH_BYTES) {
+    throw createError(400, 'The uploaded filename or path is too long.')
+  }
+
+  if (/\0|[\u0000-\u001f\u007f]/.test(fileName) || /\0|[\u0000-\u001f\u007f]/.test(relativePath)) {
+    throw createError(400, 'Uploaded filenames and paths contain invalid characters.')
+  }
+
+  const normalizedPath = safeRelativePath(relativePath, fileName)
+  const extension = path.posix.extname(normalizedPath).toLowerCase()
+  const allowed = project.type === 'game'
+    ? SAFE_TEXT_EXTENSIONS.has(extension) || GAME_BINARY_EXTENSIONS.has(extension) || IMAGE_EXTENSIONS.has(extension)
+    : project.type === '3d'
+      ? extension === '.glb' || extension === '.gltf' || IMAGE_EXTENSIONS.has(extension) || extension === '.bin'
+      : IMAGE_EXTENSIONS.has(extension)
+
+  if (!allowed || extension === '.zip' || extension === '.rar' || extension === '.7z' || extension === '.exe') {
+    throw createError(400, `Unsupported upload type: ${extension || 'unknown'}.`)
+  }
+
+  if (buffer.length > MAX_UPLOAD_BYTES) {
+    throw createError(413, 'The uploaded file exceeds the 150 MB limit.')
+  }
+
+  if (!hasMagicBytes(buffer, extension)) {
+    throw createError(400, 'The uploaded file signature does not match its extension.')
+  }
+
+  return normalizedPath
+}
 
 function includeDrafts(request) {
   return request.query.includeDrafts === 'true'
@@ -156,7 +209,7 @@ function resolveProjectRelativePath(basePath, referencePath) {
 }
 
 async function validatePlayableGameBundle(project) {
-  const uploadedFiles = Array.isArray(project.uploadedFiles) ? project.uploadedFiles : []
+  const uploadedFiles = await ProjectFile.find({ projectId: project._id, status: 'ready' }).lean()
   const indexFile = uploadedFiles.find((file) => file.relativePath.toLowerCase().endsWith('index.html'))
 
   if (!indexFile) {
@@ -284,7 +337,7 @@ function formatProjectComment(comment, replies = []) {
   }
 }
 
-function buildProjectPayload(project, engagement = {}) {
+function buildProjectPayload(project, engagement = {}, projectFiles = []) {
   return {
     contentType: 'project',
     contentId: String(project._id),
@@ -308,7 +361,7 @@ function buildProjectPayload(project, engagement = {}) {
     gameUrl: project.gameUrl,
     modelUrl: project.modelUrl,
     imageUrl: project.imageUrl,
-    uploadedFiles: project.uploadedFiles,
+    uploadedFiles: projectFiles.length > 0 ? projectFiles : (project.uploadedFiles ?? []),
     engagement,
     createdAt: project.createdAt,
     updatedAt: project.updatedAt,
@@ -428,7 +481,7 @@ async function computeProjectEngagementMap(projectIds = [], viewerId = '') {
 }
 
 async function buildProjectCommentsTree(postId) {
-  const comments = await PostComment.find({ postId }).sort({ createdAt: 1 }).lean()
+  const comments = await PostComment.find({ postId }).sort({ createdAt: -1 }).limit(200).lean()
   const byParent = new Map()
 
   for (const comment of comments) {
@@ -523,6 +576,12 @@ async function loadEngagementTarget(contentType, contentId) {
   }
 
   return target
+}
+
+function ensureProjectEngagementAccess(project, userId) {
+  if (project.visibility === 'private' && String(project.ownerId) !== String(userId)) {
+    throw createError(403, 'You cannot interact with a private project.')
+  }
 }
 
 function ensureEngagement(target) {
@@ -676,7 +735,6 @@ export const getProjectById = asyncHandler(async (request, response) => {
     includeComments: true,
     sharesCount: project?.engagement?.sharesCount || 0,
   })
-
   response.json({ project: buildProjectPayload(project, engagement) })
 })
 
@@ -736,7 +794,6 @@ export const createProject = asyncHandler(async (request, response) => {
     gameUrl: '',
     modelUrl: '',
     imageUrl: '',
-    uploadedFiles: [],
     displayOrder: existingOwnerProjects + 1,
   })
 
@@ -754,6 +811,7 @@ export const uploadProjectFile = asyncHandler(async (request, response) => {
   const fileName = String(request.headers['x-file-name'] || '').trim()
   const relativePath = String(request.headers['x-relative-path'] || '').trim()
   const mimeType = String(request.headers['x-mime-type'] || '').trim()
+  const idempotencyKey = String(request.headers['idempotency-key'] || '').trim()
   const buffer = request.body
 
   if (!Buffer.isBuffer(buffer) || buffer.length === 0) {
@@ -762,6 +820,14 @@ export const uploadProjectFile = asyncHandler(async (request, response) => {
 
   if (!fileName || !relativePath) {
     throw createError(400, 'Uploaded files require a file name and relative path.')
+  }
+
+  if (!idempotencyKey || idempotencyKey.length > 128) {
+    throw createError(400, 'A valid Idempotency-Key header is required.')
+  }
+
+  if (!mongoose.isValidObjectId(projectId)) {
+    throw createError(400, 'Invalid project ID.')
   }
 
   const project = await Project.findById(projectId)
@@ -774,20 +840,84 @@ export const uploadProjectFile = asyncHandler(async (request, response) => {
     throw createError(403, 'You cannot modify this project.')
   }
 
-  const savedFile = await writeProjectFile(project.slug, { name: fileName, relativePath, mimeType }, buffer)
+  const priorUpload = await Upload.findOne({ idempotencyKey, ownerId: request.user._id }).lean()
+  if (priorUpload) {
+    response.status(200).json({ message: 'Upload already processed.', uploadId: priorUpload.uploadId, status: priorUpload.status })
+    return
+  }
 
-  const existingFiles = Array.isArray(project.uploadedFiles) ? project.uploadedFiles : []
-  const nextFiles = [
-    ...existingFiles.filter((file) => file.relativePath !== savedFile.relativePath),
-    savedFile,
-  ].sort((a, b) => a.relativePath.localeCompare(b.relativePath))
+  const normalizedPath = validateUploadMetadata(project, fileName, relativePath, buffer)
+  const uploadId = crypto.randomUUID()
+  const checksum = crypto.createHash('sha256').update(buffer).digest('hex')
+  const existingFiles = await ProjectFile.find({ projectId: project._id, status: 'ready' }).lean()
+  const existingBytes = existingFiles.reduce((total, file) => total + Number(file.size || 0), 0)
+  const duplicateFile = existingFiles.find((file) => file.relativePath === normalizedPath)
 
-  project.uploadedFiles = nextFiles
+  if (duplicateFile) {
+    throw createError(409, 'A file with this relative path already exists. Remove it before uploading a replacement.')
+  }
 
-  const mainFile = pickMainFile(project.uploadedFiles, project.type)
+  if (existingFiles.length >= MAX_PROJECT_FILES) {
+    throw createError(413, `A project cannot contain more than ${MAX_PROJECT_FILES} files.`)
+  }
+  if (existingBytes + buffer.length > MAX_PROJECT_BYTES) {
+    throw createError(413, 'The project storage quota has been exceeded.')
+  }
+
+  let savedFile
+  try {
+    savedFile = await writeProjectFile(project.slug, { name: path.posix.basename(normalizedPath), relativePath: normalizedPath, mimeType }, buffer)
+  } catch (error) {
+    throw error
+  }
+
+  let projectFile
+  try {
+    projectFile = await ProjectFile.create({
+    projectId: project._id,
+    ownerId: project.ownerId,
+    name: savedFile.name,
+    relativePath: savedFile.relativePath,
+    url: savedFile.url,
+    storageKey: `${project.slug}/${normalizedPath}`,
+    mimeType: savedFile.mimeType,
+    size: savedFile.size,
+    checksum,
+    version: 1,
+    status: 'ready',
+    })
+  } catch (error) {
+    await fs.rm(getProjectFilePath(project.slug, normalizedPath), { force: true }).catch(() => {})
+    throw error
+  }
+
+  let uploadRecord
+  try {
+    uploadRecord = await Upload.create({
+      uploadId,
+      idempotencyKey,
+      ownerId: request.user._id,
+      projectId: project._id,
+      storageKey: `${project.slug}/${normalizedPath}`,
+      relativePath: normalizedPath,
+      detectedType: path.posix.extname(normalizedPath).toLowerCase(),
+      mimeType,
+      size: buffer.length,
+      checksum,
+      status: 'ready',
+    })
+  } catch (error) {
+    await fs.rm(getProjectFilePath(project.slug, normalizedPath), { force: true }).catch(() => {})
+    await ProjectFile.deleteOne({ _id: projectFile._id }).catch(() => {})
+    throw error
+  }
+
+  const nextFiles = [...existingFiles, projectFile.toObject()].sort((a, b) => a.relativePath.localeCompare(b.relativePath))
+
+  const mainFile = pickMainFile(nextFiles, project.type)
   if (mainFile) {
-    const coverFile = project.uploadedFiles.find((file) => file.relativePath.toLowerCase().startsWith('cover/'))
-      ?? project.uploadedFiles.find((file) => ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif'].some((ext) => file.relativePath.toLowerCase().endsWith(ext)))
+    const coverFile = nextFiles.find((file) => file.relativePath.toLowerCase().startsWith('cover/'))
+      ?? nextFiles.find((file) => ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif'].some((ext) => file.relativePath.toLowerCase().endsWith(ext)))
       ?? null
 
     project.previewUrl = coverFile?.url ?? mainFile.url
@@ -796,10 +926,25 @@ export const uploadProjectFile = asyncHandler(async (request, response) => {
     project.imageUrl = project.type === '2d' ? mainFile.url : ''
   }
 
-  await project.save()
+  try {
+    await project.save()
+  } catch (error) {
+    // The file is not referenced by the database if metadata persistence fails.
+    // Remove it so retries cannot accumulate orphaned local files.
+    try {
+      await fs.rm(getProjectFilePath(project.slug, savedFile.relativePath), { force: true })
+      await Upload.updateOne({ _id: uploadRecord._id }, { $set: { status: 'deleted', error: 'Project metadata persistence failed.' } })
+      await ProjectFile.deleteOne({ _id: projectFile._id })
+    } catch (cleanupError) {
+      console.error('Failed to clean up an unreferenced upload:', cleanupError)
+    }
+    throw error
+  }
 
   response.status(201).json({
     message: 'File uploaded successfully.',
+    uploadId: uploadRecord.uploadId,
+    status: uploadRecord.status,
     file: savedFile,
   })
 })
@@ -816,11 +961,13 @@ export const publishProject = asyncHandler(async (request, response) => {
     throw createError(403, 'You cannot publish this project.')
   }
 
-  if (!Array.isArray(project.uploadedFiles) || project.uploadedFiles.length === 0) {
+  const uploadedFiles = await ProjectFile.find({ projectId: project._id, status: 'ready' }).lean()
+
+  if (uploadedFiles.length === 0) {
     throw createError(400, 'Please upload at least one file before publishing.')
   }
 
-  const mainFile = pickMainFile(project.uploadedFiles, project.type)
+  const mainFile = pickMainFile(uploadedFiles, project.type)
 
   if (!mainFile) {
     throw createError(
@@ -837,8 +984,8 @@ export const publishProject = asyncHandler(async (request, response) => {
     await validatePlayableGameBundle(project)
   }
 
-  const coverFile = project.uploadedFiles.find((file) => file.relativePath.toLowerCase().startsWith('cover/'))
-    ?? project.uploadedFiles.find((file) => ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif'].some((ext) => file.relativePath.toLowerCase().endsWith(ext)))
+  const coverFile = uploadedFiles.find((file) => file.relativePath.toLowerCase().startsWith('cover/'))
+    ?? uploadedFiles.find((file) => ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif'].some((ext) => file.relativePath.toLowerCase().endsWith(ext)))
     ?? null
 
   project.previewUrl = coverFile?.url ?? mainFile.url
@@ -854,6 +1001,7 @@ export const publishProject = asyncHandler(async (request, response) => {
     project: buildProjectPayload(
       project,
       normalizeProjectEngagementSummary({ sharesCount: Number(project?.engagement?.sharesCount || 0) }),
+      uploadedFiles,
     ),
   })
 })
@@ -896,10 +1044,11 @@ export const updateProject = asyncHandler(async (request, response) => {
     project.type = type
   }
 
-  const mainFile = pickMainFile(project.uploadedFiles, project.type)
+  const uploadedFiles = await ProjectFile.find({ projectId: project._id, status: 'ready' }).lean()
+  const mainFile = pickMainFile(uploadedFiles, project.type)
   if (mainFile) {
-    const coverFile = project.uploadedFiles.find((file) => file.relativePath.toLowerCase().startsWith('cover/'))
-      ?? project.uploadedFiles.find((file) => ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif'].some((ext) => file.relativePath.toLowerCase().endsWith(ext)))
+    const coverFile = uploadedFiles.find((file) => file.relativePath.toLowerCase().startsWith('cover/'))
+      ?? uploadedFiles.find((file) => ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif'].some((ext) => file.relativePath.toLowerCase().endsWith(ext)))
       ?? null
 
     project.previewUrl = coverFile?.url ?? mainFile.url
@@ -915,6 +1064,7 @@ export const updateProject = asyncHandler(async (request, response) => {
     project: buildProjectPayload(
       project,
       normalizeProjectEngagementSummary({ sharesCount: Number(project?.engagement?.sharesCount || 0) }),
+      uploadedFiles,
     ),
   })
 })
@@ -923,11 +1073,11 @@ export const getPostEngagement = asyncHandler(async (request, response) => {
   const { postId } = request.params
   const viewerId = getViewerId(request)
   const project = await loadEngagementTarget('project', postId)
+  ensureProjectEngagementAccess(project, request.user._id)
   const engagement = await getProjectEngagementPayload(project._id, viewerId, {
     includeComments: true,
     sharesCount: project?.engagement?.sharesCount || 0,
   })
-
   response.json({
     postId: String(project._id),
     engagement,
@@ -938,6 +1088,7 @@ export const togglePostLike = asyncHandler(async (request, response) => {
   const { postId } = request.params
   const viewerId = getViewerId(request)
   const project = await loadEngagementTarget('project', postId)
+  ensureProjectEngagementAccess(project, request.user._id)
 
   const record = await PostEngagement.findOneAndUpdate(
     {
@@ -963,6 +1114,7 @@ export const togglePostLike = asyncHandler(async (request, response) => {
     includeComments: false,
     sharesCount: project?.engagement?.sharesCount || 0,
   })
+  await publishProjectEngagement(project._id, engagement)
 
   response.json({
     message: record.liked ? 'Post liked.' : 'Post unliked.',
@@ -975,6 +1127,7 @@ export const togglePostSave = asyncHandler(async (request, response) => {
   const { postId } = request.params
   const viewerId = getViewerId(request)
   const project = await loadEngagementTarget('project', postId)
+  ensureProjectEngagementAccess(project, request.user._id)
 
   const record = await PostEngagement.findOneAndUpdate(
     {
@@ -1012,26 +1165,37 @@ export const createPostComment = asyncHandler(async (request, response) => {
   const { postId } = request.params
   const viewerId = getViewerId(request)
   const text = String(request.body?.text || request.body?.commentText || '').trim()
+  const idempotencyKey = String(request.headers['idempotency-key'] || '').trim()
 
   if (!text) {
     throw createError(400, 'Comment text is required.')
   }
 
+  if (!idempotencyKey || idempotencyKey.length > 128) {
+    throw createError(400, 'A valid Idempotency-Key header is required.')
+  }
+
   const project = await loadEngagementTarget('project', postId)
 
-  await PostComment.create({
+  const comment = await PostComment.findOneAndUpdate(
+    { userId: request.user._id, idempotencyKey },
+    { $setOnInsert: {
     postId: project._id,
     userId: request.user._id,
     username: request.user.username,
     name: request.user.name,
     avatar: safeAvatarUrl(request.user.avatar),
     text,
-  })
+    idempotencyKey,
+    } },
+    { upsert: true, new: true, setDefaultsOnInsert: true },
+  )
 
   const engagement = await getProjectEngagementPayload(project._id, viewerId, {
     includeComments: true,
     sharesCount: project?.engagement?.sharesCount || 0,
   })
+  await publishProjectEngagement(project._id, engagement)
 
   response.status(201).json({
     message: 'Comment added successfully.',
@@ -1055,7 +1219,15 @@ export const createCommentReply = asyncHandler(async (request, response) => {
     throw createError(404, 'Comment not found.')
   }
 
-  await PostComment.create({
+  const project = await Project.findById(parentComment.postId).lean()
+  if (!project) throw createError(404, 'Project not found.')
+  ensureProjectEngagementAccess(project, request.user._id)
+  const idempotencyKey = String(request.headers['idempotency-key'] || '').trim()
+  if (!idempotencyKey || idempotencyKey.length > 128) throw createError(400, 'A valid Idempotency-Key header is required.')
+
+  await PostComment.findOneAndUpdate(
+    { userId: request.user._id, idempotencyKey },
+    { $setOnInsert: {
     postId: parentComment.postId,
     userId: request.user._id,
     parentCommentId: parentComment._id,
@@ -1063,13 +1235,16 @@ export const createCommentReply = asyncHandler(async (request, response) => {
     name: request.user.name,
     avatar: safeAvatarUrl(request.user.avatar),
     text,
-  })
+    idempotencyKey,
+    } },
+    { upsert: true, new: true, setDefaultsOnInsert: true },
+  )
 
-  const project = await Project.findById(parentComment.postId).lean()
   const engagement = await getProjectEngagementPayload(parentComment.postId, viewerId, {
     includeComments: true,
     sharesCount: project?.engagement?.sharesCount || 0,
   })
+  await publishProjectEngagement(parentComment.postId, engagement)
 
   response.status(201).json({
     message: 'Reply added successfully.',
@@ -1173,6 +1348,10 @@ export const updateContentEngagement = asyncHandler(async (request, response) =>
         )
       : buildContentPayload(contentType, target.toObject(), viewerId)
 
+  if (contentType === 'project') {
+    await publishProjectEngagement(target._id, content.engagement)
+  }
+
   response.json({
     message: 'Engagement updated successfully.',
     content,
@@ -1201,6 +1380,8 @@ export const deleteProject = asyncHandler(async (request, response) => {
   }
 
   await Promise.all([
+    ProjectFile.deleteMany({ projectId: projectId }),
+    Upload.updateMany({ projectId: projectId }, { $set: { status: 'deleted' } }),
     PostEngagement.deleteMany({ postId: projectId }),
     PostComment.deleteMany({ postId: projectId }),
   ])

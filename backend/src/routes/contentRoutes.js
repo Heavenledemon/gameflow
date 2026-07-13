@@ -40,7 +40,7 @@ router.post('/content/:contentType/:contentId/engagement', protect, updateConten
 router.put(
   '/projects/:projectId/files',
   protect,
-  express.raw({ type: 'application/octet-stream', limit: '250mb' }),
+  express.raw({ type: 'application/octet-stream', limit: '150mb' }),
   uploadProjectFile,
 )
 router.post('/projects/:projectId/publish', protect, publishProject)

@@ -124,10 +124,6 @@ const projectSchema = new mongoose.Schema(
       default: '',
       trim: true,
     },
-    uploadedFiles: {
-      type: [uploadedFileSchema],
-      default: [],
-    },
     engagement: {
       type: engagementSchema,
       default: () => ({}),

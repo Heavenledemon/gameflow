@@ -4,7 +4,9 @@ export function notFound(request, _response, next) {
   next(error)
 }
 
-export function errorHandler(error, _request, response, _next) {
+import { logger } from '../utils/logger.js'
+
+export function errorHandler(error, request, response, _next) {
   const statusCode = error.statusCode || 500
   const message =
     statusCode === 500
@@ -12,7 +14,7 @@ export function errorHandler(error, _request, response, _next) {
       : error.message
 
   if (statusCode === 500) {
-    console.error(error)
+    logger.error('request_error', { requestId: request.requestId, error: error.message, stack: error.stack })
   }
 
   response.status(statusCode).json({ message })

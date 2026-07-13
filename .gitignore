@@ -40,6 +40,10 @@ backend/.env.development.local
 backend/.env.test.local
 backend/.env.production.local
 backend/*.local
+backend/uploads/
+uploads/
+*.log
+backend/runtime/
 
 
 # =========================================================================
@@ -71,3 +75,10 @@ gameflow/.env.development.local
 gameflow/.env.test.local
 gameflow/.env.production.local
 gameflow/*.local
+
+implementation-priority-prompt.md 
+OPERATIONS.md
+STAGING-VERIFICATION.md
+system.md
+
+

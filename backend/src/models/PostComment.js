@@ -42,6 +42,7 @@ const postCommentSchema = new mongoose.Schema(
       trim: true,
       maxlength: 500,
     },
+    idempotencyKey: { type: String, default: null },
   },
   {
     timestamps: true,
@@ -51,6 +52,7 @@ const postCommentSchema = new mongoose.Schema(
 
 postCommentSchema.index({ postId: 1, createdAt: -1 })
 postCommentSchema.index({ postId: 1, parentCommentId: 1, createdAt: 1 })
+postCommentSchema.index({ userId: 1, idempotencyKey: 1 }, { unique: true, partialFilterExpression: { idempotencyKey: { $type: 'string' } } })
 
 const PostComment = mongoose.model('PostComment', postCommentSchema)
 

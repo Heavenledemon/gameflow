@@ -5,9 +5,12 @@ import authRoutes from './routes/authRoutes.js'
 import env from './config/env.js'
 import contentRoutes from './routes/contentRoutes.js'
 import { errorHandler, notFound } from './middlewares/errorMiddleware.js'
+import { getMetrics, observabilityMiddleware } from './middlewares/observabilityMiddleware.js'
+import { protect } from './middlewares/authMiddleware.js'
 
 const app = express()
 const uploadsRoot = path.join(process.cwd(), 'uploads')
+app.use(observabilityMiddleware)
 
 function getUncompressedAssetPath(filePath) {
   const normalizedPath = String(filePath || '').replace(/\\/g, '/').toLowerCase()
@@ -65,8 +68,10 @@ app.use(
     origin: env.clientOrigin,
   }),
 )
-// Profile images and project bundles are uploaded as base64 JSON payloads.
-app.use(express.json({ limit: '150mb' }))
+// Keep JSON bounded; binary project uploads use the dedicated raw route.
+app.use(express.json({ limit: '2mb' }))
+
+app.get('/api/metrics', protect, (_request, response) => response.json(getMetrics()))
 
 app.use(
   '/api/uploads',

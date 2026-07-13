@@ -1,0 +1,40 @@
+name: Backend quality gates
+
+on:
+  push:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-quality.yml'
+  pull_request:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-quality.yml'
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+      - run: npm audit --audit-level=high
+      - name: Reject committed runtime artifacts and likely secrets
+        shell: bash
+        run: |
+          if git ls-files | grep -E '(^|/)(backend_log|frontend_log|uploads/|\.env$|\.log$)'; then
+            echo 'Runtime artifacts or environment files are tracked.'
+            exit 1
+          fi
+          if git grep -n -E 'AKIA[0-9A-Z]{16}|-----BEGIN (RSA |EC )?PRIVATE KEY-----' -- ':!package-lock.json'; then
+            echo 'Potential secret detected.'
+            exit 1
+          fi
