@@ -76,9 +76,11 @@ gameflow/.env.test.local
 gameflow/.env.production.local
 gameflow/*.local
 
-implementation-priority-prompt.md 
-OPERATIONS.md
+implementation-priority-prompt.md
 STAGING-VERIFICATION.md
 system.md
+OPERATIONS.md
+frontend-polish-and-component-plan.md
+frontend-polish-implementation-prompt.md
 
-
+*.md

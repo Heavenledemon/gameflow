@@ -1,0 +1,65 @@
+:root {
+  /* Semantic GameFlow palette */
+  --gf-bg: #f4f5fa;
+  --gf-surface: #ffffff;
+  --gf-surface-raised: #ffffff;
+  --gf-surface-dark: #151525;
+  --gf-surface-immersive: #0d0b18;
+  --gf-text: #1a1a2e;
+  --gf-text-muted: #6b6b80;
+  --gf-text-subtle: #9a9ab0;
+  --gf-border: #e8e8f0;
+  --gf-brand: #ff7e7e;
+  --gf-brand-end: #ff9a6e;
+  --gf-success: #16a879;
+  --gf-warning: #ffb347;
+  --gf-danger: #d94b62;
+  --gf-focus: #4c9ffe;
+  --gf-accent: #00d4ff;
+
+  --gf-space-1: 4px;
+  --gf-space-2: 8px;
+  --gf-space-3: 12px;
+  --gf-space-4: 16px;
+  --gf-space-5: 24px;
+  --gf-space-6: 32px;
+  --gf-space-7: 48px;
+
+  --gf-text-display: 2.25rem;
+  --gf-text-title: 1.5rem;
+  --gf-text-body: 1rem;
+  --gf-text-label: .875rem;
+  --gf-text-caption: .75rem;
+  --gf-leading-tight: 1.2;
+  --gf-leading-normal: 1.5;
+
+  --gf-radius-sm: 10px;
+  --gf-radius-md: 16px;
+  --gf-radius-lg: 24px;
+  --gf-radius-pill: 999px;
+  --gf-shadow-card: 0 2px 8px rgb(0 0 0 / 6%);
+  --gf-shadow-floating: 0 4px 16px rgb(0 0 0 / 10%);
+  --gf-shadow-modal: 0 16px 48px rgb(0 0 0 / 20%);
+  --gf-motion-fast: 150ms ease;
+  --gf-motion-standard: 220ms ease;
+  --gf-motion-sheet: 280ms cubic-bezier(.22, 1, .36, 1);
+}
+
+[data-theme='dark'] {
+  --gf-bg: #11101c;
+  --gf-surface: #1b1a2a;
+  --gf-surface-raised: #252438;
+  --gf-text: #f7f6ff;
+  --gf-text-muted: #c0bfd0;
+  --gf-text-subtle: #9290a8;
+  --gf-border: #38364d;
+}
+
+[data-theme='immersive'] {
+  --gf-bg: var(--gf-surface-immersive);
+  --gf-surface: rgb(20 16 34 / 88%);
+  --gf-surface-raised: rgb(34 27 54 / 92%);
+  --gf-text: #ffffff;
+  --gf-text-muted: #d0cce0;
+  --gf-border: rgb(255 255 255 / 18%);
+}

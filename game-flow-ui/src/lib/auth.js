@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api'
+import { request } from './api'
 
 const TOKEN_STORAGE_KEY = 'cv_auth_token'
 const USER_STORAGE_KEY = 'cv_auth_user'
@@ -40,26 +40,6 @@ export function clearStoredSession() {
   localStorage.removeItem(TOKEN_STORAGE_KEY)
   localStorage.removeItem(USER_STORAGE_KEY)
   localStorage.removeItem(GUEST_STORAGE_KEY)
-}
-
-async function request(path, options = {}) {
-  const { headers: extraHeaders, ...restOptions } = options
-
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(extraHeaders ?? {}),
-    },
-    ...restOptions,
-  })
-
-  const data = await response.json().catch(() => ({}))
-
-  if (!response.ok) {
-    throw new Error(data?.message || 'Request failed.')
-  }
-
-  return data
 }
 
 export async function signUp(input) {

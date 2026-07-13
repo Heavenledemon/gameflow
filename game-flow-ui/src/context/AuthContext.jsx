@@ -11,6 +11,7 @@ import {
   signUp as signUpRequest,
   updateProfile as updateProfileRequest,
 } from '../lib/auth';
+import { AUTH_EXPIRED_EVENT } from '../lib/api';
 
 const AuthContext = createContext(null);
 
@@ -84,6 +85,18 @@ export const AuthProvider = ({ children }) => {
       isMounted = false;
     };
   }, [refreshCurrentUser]);
+
+  useEffect(() => {
+    const handleExpired = () => {
+      clearStoredSession();
+      setUser(null);
+      setToken('');
+      setIsAuthenticated(false);
+      setIsGuest(false);
+    };
+    window.addEventListener(AUTH_EXPIRED_EVENT, handleExpired);
+    return () => window.removeEventListener(AUTH_EXPIRED_EVENT, handleExpired);
+  }, []);
 
   const loginGuest = () => {
     persistGuestSession();

@@ -1,0 +1,5 @@
+export function Skeleton({ className = '' }) { return <span aria-hidden="true" className={`gf-skeleton ${className}`} /> }
+export function LoadingState({ label = 'Loading' }) { return <div className="gf-feedback" role="status"><span className="gf-spinner" />{label}</div> }
+export function EmptyState({ title = 'Nothing here yet', description, action }) { return <div className="gf-feedback"><h2>{title}</h2>{description ? <p>{description}</p> : null}{action}</div> }
+export function ErrorState({ title = 'Something went wrong', description, onRetry }) { return <div className="gf-feedback gf-feedback--error"><h2>{title}</h2>{description ? <p>{description}</p> : null}{onRetry ? <button className="gf-button gf-button--secondary" onClick={onRetry}>Try again</button> : null}</div> }
+export function ToastViewport({ toasts = [], onDismiss }) { return <div className="gf-toast-viewport" aria-live="polite">{toasts.map((toast) => <div className={`gf-toast gf-toast--${toast.type || 'info'}`} key={toast.id}><span>{toast.message}</span><button aria-label="Dismiss notification" onClick={() => onDismiss?.(toast.id)}>×</button></div>)}</div> }

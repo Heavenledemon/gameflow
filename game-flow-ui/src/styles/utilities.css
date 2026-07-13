@@ -1,0 +1,19 @@
+.gf-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.gf-scroll-x { overflow-x: auto; scrollbar-width: none; }
+.gf-scroll-x::-webkit-scrollbar { display: none; }
+.gf-stack { display: flex; flex-direction: column; gap: var(--gf-space-4); }
+.gf-row { display: flex; align-items: center; gap: var(--gf-space-3); }
+.gf-touch-target { min-width: 44px; min-height: 44px; }
+.gf-surface { background: var(--gf-surface); color: var(--gf-text); }
+.gf-card { background: var(--gf-surface-raised); border: 1px solid var(--gf-border); box-shadow: var(--gf-shadow-card); border-radius: var(--gf-radius-md); }
