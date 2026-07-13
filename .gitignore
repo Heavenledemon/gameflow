@@ -5,6 +5,16 @@
 # Logs
 logs
 *.log
+backend_log/
+frontend_log/
+backend_log.txt
+frontend_log.txt
+**/backend_log/
+**/frontend_log/
+**/backend_log.txt
+**/frontend_log.txt
+**/.env
+**/.env.*
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
