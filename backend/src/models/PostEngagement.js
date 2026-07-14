@@ -5,9 +5,10 @@ const postEngagementSchema = new mongoose.Schema(
     postId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Project',
-      required: true,
       index: true,
     },
+    contentType: { type: String, enum: ['game', 'asset', 'project'], required: true, index: true },
+    contentId: { type: String, required: true, index: true },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -29,9 +30,9 @@ const postEngagementSchema = new mongoose.Schema(
   },
 )
 
-postEngagementSchema.index({ postId: 1, userId: 1 }, { unique: true })
-postEngagementSchema.index({ postId: 1, liked: 1 })
-postEngagementSchema.index({ postId: 1, saved: 1 })
+postEngagementSchema.index({ contentType: 1, contentId: 1, userId: 1 }, { unique: true })
+postEngagementSchema.index({ contentType: 1, contentId: 1, liked: 1 })
+postEngagementSchema.index({ contentType: 1, contentId: 1, saved: 1 })
 
 const PostEngagement = mongoose.model('PostEngagement', postEngagementSchema)
 

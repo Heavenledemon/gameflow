@@ -3,11 +3,15 @@ import Project from '../models/Project.js'
 import User from '../models/User.js'
 import env from '../config/env.js'
 import { verifyToken } from '../utils/generateToken.js'
-import { attachEventPublisher } from './eventPublisher.js'
+import { REALTIME_STREAM, attachEventPublisher } from './eventPublisher.js'
 import { createAdapter } from '@socket.io/redis-adapter'
 import { createClient } from 'redis'
+import { recordSocketMetric } from '../middlewares/observabilityMiddleware.js'
 
 let redisClients = []
+let streamConsumer = null
+let streamConsumerRunning = false
+const consumedEventIds = new Set()
 
 function getToken(socket) {
   const authToken = socket.handshake.auth?.token
@@ -31,7 +35,7 @@ export function attachSocketServer(httpServer) {
     Promise.all([pubClient.connect(), subClient.connect()]).then(() => io.adapter(createAdapter(pubClient, subClient))).catch((error) => console.error('Redis adapter unavailable:', error))
   }
 
-  const eventRate = new Map()
+  if (env.redisUrl) startRealtimeStreamConsumer(io).catch((error) => console.error('Realtime stream consumer unavailable:', error))
 
   io.use(async (socket, next) => {
     try {
@@ -47,15 +51,17 @@ export function attachSocketServer(httpServer) {
   })
 
   io.on('connection', (socket) => {
+    recordSocketMetric(1)
+    socket.once('disconnect', () => recordSocketMetric(-1))
     socket.emit('realtime.ready', { resyncRequired: true, reason: 'connection' })
     socket.on('join_project', async (payload, acknowledge) => {
       const done = typeof acknowledge === 'function' ? acknowledge : () => {}
       const projectId = typeof payload?.projectId === 'string' ? payload.projectId.trim() : ''
       const now = Date.now()
-      const rate = eventRate.get(String(socket.user._id)) || { startedAt: now, count: 0 }
+      const rate = socket.data.joinRate || { startedAt: now, count: 0 }
       if (now - rate.startedAt > 60000) { rate.startedAt = now; rate.count = 0 }
       rate.count += 1
-      eventRate.set(String(socket.user._id), rate)
+      socket.data.joinRate = rate
       if (rate.count > 30) return done({ ok: false, error: 'Too many room requests.' })
       if (!projectId || projectId.length > 100) return done({ ok: false, error: 'Invalid project ID.' })
       const project = await Project.findOne({ $or: [{ _id: projectId }, { slug: projectId.toLowerCase() }] }).select('ownerId visibility isPublished').lean().catch(() => null)
@@ -80,7 +86,39 @@ export function attachSocketServer(httpServer) {
     io,
     close: async () => {
       await Promise.all(redisClients.map((client) => client.quit().catch(() => {})))
+      if (streamConsumer?.isOpen) await streamConsumer.quit().catch(() => {})
+      streamConsumer = null
       await new Promise((resolve) => io.close(resolve))
     },
   }
+}
+
+async function startRealtimeStreamConsumer(io) {
+  streamConsumer = createClient({ url: env.redisUrl })
+  await streamConsumer.connect()
+  const group = 'gameflow-gateways'
+  const consumer = `gateway:${process.pid}`
+  await streamConsumer.xGroupCreate(REALTIME_STREAM, group, '$', { MKSTREAM: true }).catch((error) => {
+    if (!String(error?.message).includes('BUSYGROUP')) throw error
+  })
+  if (streamConsumerRunning) return
+  streamConsumerRunning = true
+  while (streamConsumer?.isOpen) {
+    const batches = await streamConsumer.xReadGroup(group, consumer, [{ key: REALTIME_STREAM, id: '>' }], { COUNT: 50, BLOCK: 1000 }).catch(() => null)
+    for (const batch of batches || []) {
+      for (const message of batch.messages || []) {
+        const eventId = message.message.eventId
+        if (eventId && !consumedEventIds.has(eventId)) {
+          consumedEventIds.add(eventId)
+          if (consumedEventIds.size > 10000) consumedEventIds.delete(consumedEventIds.values().next().value)
+          try {
+            const event = JSON.parse(message.message.event)
+            io.to(`project:${event.aggregateId}`).emit(event.eventType, event)
+          } catch { /* malformed events are acknowledged and audited by the producer */ }
+        }
+        await streamConsumer.xAck(REALTIME_STREAM, group, message.id)
+      }
+    }
+  }
+  streamConsumerRunning = false
 }

@@ -19,6 +19,8 @@ const uploadSchema = new mongoose.Schema(
       index: true,
     },
     error: { type: String, default: '' },
+    provider: { type: String, enum: ['local', 's3'], default: 'local' },
+    etag: { type: String, default: '' },
     expiresAt: { type: Date, default: null, index: true },
   },
   { timestamps: true, versionKey: false },

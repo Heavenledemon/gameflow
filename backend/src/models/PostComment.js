@@ -5,9 +5,10 @@ const postCommentSchema = new mongoose.Schema(
     postId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Project',
-      required: true,
       index: true,
     },
+    contentType: { type: String, enum: ['game', 'asset', 'project'], required: true, index: true },
+    contentId: { type: String, required: true, index: true },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -50,8 +51,7 @@ const postCommentSchema = new mongoose.Schema(
   },
 )
 
-postCommentSchema.index({ postId: 1, createdAt: -1 })
-postCommentSchema.index({ postId: 1, parentCommentId: 1, createdAt: 1 })
+postCommentSchema.index({ contentType: 1, contentId: 1, parentCommentId: 1, createdAt: -1, _id: -1 })
 postCommentSchema.index({ userId: 1, idempotencyKey: 1 }, { unique: true, partialFilterExpression: { idempotencyKey: { $type: 'string' } } })
 
 const PostComment = mongoose.model('PostComment', postCommentSchema)

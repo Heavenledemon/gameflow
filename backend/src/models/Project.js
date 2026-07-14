@@ -104,6 +104,11 @@ const projectSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    publishedAt: {
+      type: Date,
+      default: null,
+      index: true,
+    },
     previewUrl: {
       type: String,
       default: '',

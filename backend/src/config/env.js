@@ -10,6 +10,14 @@ const env = {
   seedOnStart: String(process.env.SEED_ON_START ?? 'true').toLowerCase() === 'true',
   authTokenSecret: process.env.AUTH_TOKEN_SECRET ?? 'gameflow-dev-auth-secret',
   redisUrl: process.env.REDIS_URL ?? '',
+  requestTimeoutMs: Number(process.env.REQUEST_TIMEOUT_MS ?? 15000),
+  objectStorageEnabled: String(process.env.OBJECT_STORAGE_ENABLED ?? 'false').toLowerCase() === 'true',
+  s3Endpoint: process.env.S3_ENDPOINT ?? '',
+  s3Region: process.env.S3_REGION ?? 'us-east-1',
+  s3Bucket: process.env.S3_BUCKET ?? '',
+  s3AccessKeyId: process.env.S3_ACCESS_KEY_ID ?? '',
+  s3SecretAccessKey: process.env.S3_SECRET_ACCESS_KEY ?? '',
+  s3PublicBaseUrl: process.env.S3_PUBLIC_BASE_URL ?? '',
 }
 
 export default env

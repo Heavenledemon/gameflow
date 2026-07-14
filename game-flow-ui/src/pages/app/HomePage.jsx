@@ -8,12 +8,13 @@ import logoImg from '../../assets/logo.jpg'
 import {
   createCommentReply,
   createPostComment,
-  fetchContent,
+  fetchPostComments,
   fetchPostEngagement,
   togglePostLike,
   togglePostSave,
   updateContentEngagement,
 } from '../../lib/content'
+import { useReelFeed } from '../../hooks/useReelFeed'
 import {
   PlusIcon,
   HeartIcon,
@@ -27,13 +28,6 @@ import './HomePage.css'
 
 const DEFAULT_AVATAR =
   'https://image.qwenlm.ai/public_source/581c980c-93ea-4473-a881-d706c334af84/19f781f2a-1e76-4c62-8f73-55c5248d45ab.png'
-
-const LIVE_CREATOR_POOL = [
-  { creatorName: 'studio_alpha', discipline: 'Game Developer' },
-  { creatorName: 'mesh_room', discipline: '3D Asset Artist' },
-  { creatorName: 'render_forge', discipline: 'Technical Artist' },
-  { creatorName: 'arcade_lab', discipline: 'Game Studio' },
-]
 
 function buildEngagement(counts = {}) {
   return {
@@ -173,10 +167,6 @@ const DEMO_REELS = [
   },
 ]
 
-function pickCreator(index) {
-  return LIVE_CREATOR_POOL[index % LIVE_CREATOR_POOL.length]
-}
-
 function formatCount(value) {
   if (value >= 1000) {
     return `${(value / 1000).toFixed(1)}k`
@@ -199,108 +189,47 @@ function getEngagement(item) {
   }
 }
 
-function mapGameToReel(game, index) {
-  const creator = pickCreator(index)
-  const engagement = getEngagement(game)
-
+function mapFeedItemToReel(item) {
+  const media = item.media ?? {}
+  const creator = item.creator ?? {}
+  const kind = media.kind === '2d' ? 'image' : media.kind === 'asset' ? '3d' : media.kind
   return {
-    id: game.id ?? `game:${game.slug ?? index}`,
-    contentType: game.contentType ?? 'game',
-    contentId: game.contentId ?? game.slug ?? String(index),
-    creatorName: creator.creatorName,
-    discipline: creator.discipline,
-    avatar: DEFAULT_AVATAR,
-    type: 'game',
-    gameUrl: game.gameUrl,
-    loadingScreenUrl: game.loadingScreenUrl,
-    mode: game.mode ?? 'landscape',
-    thumbnailMode: game.mode ?? 'landscape',
-    engagement,
-    projectTitle: game.title ?? 'Untitled game',
-    description: game.description ?? '',
-    software: ['Unity', 'WebGL'],
-    tags: ['#game', '#webgl', game.mode === 'portrait' ? '#mobile' : '#desktop'],
-    sourceLabel: 'Live from backend',
+    id: item.feedId,
+    feedKey: item.feedId,
+    contentType: item.type,
+    contentId: item.feedId?.split(':')[1] ?? item.feedId,
+    projectId: item.type === 'project' ? item.feedId?.split(':')[1] : null,
+    creatorName: creator.username || creator.name || 'creativeverse',
+    discipline: kind === 'game' ? 'Game Developer' : kind === '3d' ? '3D Artist' : 'Creator',
+    avatar: creator.avatarUrl || DEFAULT_AVATAR,
+    type: kind,
+    gameUrl: media.manifestUrl,
+    modelUrl: media.modelUrl,
+    image: media.imageUrl || media.posterUrl,
+    loadingScreenUrl: media.posterUrl,
+    mode: item.mode ?? 'landscape',
+    thumbnailMode: item.mode ?? 'landscape',
+    background: media.background || '#101820',
+    engagement: getEngagement(item),
+    projectTitle: item.title ?? 'Untitled project',
+    description: item.description ?? '',
+    software: Array.isArray(item.software) ? item.software : [],
+    tags: Array.isArray(item.tags) ? item.tags : [],
+    sourceLabel: 'Live feed',
   }
-}
-
-function mapAssetToReel(asset, index) {
-  const creator = pickCreator(index + 1)
-  const engagement = getEngagement(asset)
-
-  return {
-    id: asset.id ?? `asset:${asset.slug ?? index}`,
-    contentType: asset.contentType ?? 'asset',
-    contentId: asset.contentId ?? asset.slug ?? String(index),
-    creatorName: creator.creatorName,
-    discipline: creator.discipline,
-    avatar: DEFAULT_AVATAR,
-    type: '3d',
-    modelUrl: asset.modelUrl,
-    mode: asset.mode ?? 'landscape',
-    background: asset.background ?? '#101820',
-    engagement,
-    projectTitle: asset.title ?? 'Untitled asset',
-    description: asset.description ?? '',
-    software: ['Blender', 'Three.js'],
-    tags: ['#3d', '#glb', asset.mode === 'portrait' ? '#mobile' : '#desktop'],
-    sourceLabel: 'Live from backend',
-  }
-}
-
-function mapProjectToReel(project, index) {
-  const creatorName = project.ownerUsername || project.ownerName || `creator_${index + 1}`
-  const discipline =
-    project.type === 'game'
-      ? 'Game Developer'
-      : project.type === '3d'
-        ? '3D Artist'
-        : '2D Artist'
-  const engagement = getEngagement(project)
-
-  return {
-    id: project.id ?? `project:${project.contentId ?? index}`,
-    contentType: project.contentType ?? 'project',
-    contentId: project.contentId ?? project.id ?? String(index),
-    projectId: project.contentId ?? project.id,
-    creatorName,
-    discipline,
-    avatar: project.ownerAvatar || DEFAULT_AVATAR,
-    type: project.type === '2d' ? 'image' : project.type,
-    gameUrl: project.gameUrl,
-    modelUrl: project.modelUrl,
-    image: project.imageUrl,
-    loadingScreenUrl: project.previewUrl,
-    mode: project.mode ?? 'landscape',
-    thumbnailMode: project.mode ?? 'landscape',
-    background: '#101820',
-    engagement,
-    projectTitle: project.title ?? 'Untitled project',
-    description: project.description ?? '',
-    software: Array.isArray(project.software) ? project.software : [],
-    tags: Array.isArray(project.tags) ? project.tags : [],
-    sourceLabel: 'Uploaded project',
-  }
-}
-
-function normalizeBackendContent(data) {
-  const games = Array.isArray(data?.games) ? data.games : []
-  const assets = Array.isArray(data?.assets) ? data.assets : []
-  const projects = Array.isArray(data?.projects) ? data.projects : []
-
-  return [...games.map(mapGameToReel), ...assets.map(mapAssetToReel), ...projects.map(mapProjectToReel)]
 }
 
 const initialFeedState = {
   status: 'loading',
   error: '',
   sourceLabel: 'Connecting to backend',
-  items: DEMO_REELS,
+  items: [],
 }
 
 function HomePage() {
   const navigate = useNavigate()
   const { isGuest, user, token } = useAuth()
+  const { items: feedItems, status: feedStatus, error: feedError, loadNext, retry } = useReelFeed(token)
   const [feedState, setFeedState] = useState(initialFeedState)
   const [activeIdx, setActiveIdx] = useState(0)
   const [expandedProj, setExpandedProj] = useState(null)
@@ -308,6 +237,8 @@ function HomePage() {
   const [commentText, setCommentText] = useState('')
   const [isSubmittingComment, setIsSubmittingComment] = useState(false)
   const feedContainerRef = useRef(null)
+  const reelNodesRef = useRef(new Map())
+  const observerRef = useRef(null)
   const localIdRef = useRef(0)
 
   const nextLocalId = () => {
@@ -315,76 +246,43 @@ function HomePage() {
     return `local-${localIdRef.current}`
   }
 
-  const loadContent = useCallback(async (signal) => {
-    try {
-      const data = await fetchContent(token, { signal })
-      const backendItems = normalizeBackendContent(data)
-
-      const items = backendItems.length ? backendItems : DEMO_REELS.map((item) => ({
-        ...item,
-        engagement: getEngagement(item),
-      }))
-
-      setFeedState({
-        status: 'ready',
-        error: '',
-        sourceLabel: 'Live backend content',
-        items,
-      })
-      setActiveIdx(0)
-      setExpandedProj(null)
-      setCommentTarget(null)
-    } catch (error) {
-      if (error?.name === 'AbortError') {
-        return
-      }
-
-      setFeedState({
-        status: 'fallback',
-        error: 'Unable to reach the backend. Showing local demo content for now.',
-        sourceLabel: 'Local demo content',
-        items: DEMO_REELS,
-      })
-      setActiveIdx(0)
-      setExpandedProj(null)
-      setCommentTarget(null)
-    }
-  }, [token])
-
   useEffect(() => {
-    const controller = new AbortController()
-    Promise.resolve().then(() => loadContent(controller.signal))
-
-    const handleProjectPublished = () => {
-      loadContent()
-    }
-
-    window.addEventListener('projectPublished', handleProjectPublished)
-
-    return () => {
-      controller.abort()
-      window.removeEventListener('projectPublished', handleProjectPublished)
-    }
-  }, [loadContent])
-
-  const handleScroll = () => {
-    if (!feedContainerRef.current) {
+    if (feedItems.length) {
+      // This state is the mutable engagement layer over the paged feed source.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setFeedState({ status: 'ready', error: '', sourceLabel: 'Live feed', items: feedItems.map(mapFeedItemToReel) })
       return
     }
-
-    const scrollPos = feedContainerRef.current.scrollTop
-    const cardHeight = feedContainerRef.current.clientHeight
-    const nextIdx = Math.round(scrollPos / cardHeight)
-
-    if (
-      nextIdx !== activeIdx &&
-      nextIdx >= 0 &&
-      nextIdx < feedState.items.length
-    ) {
-      setActiveIdx(nextIdx)
-      setExpandedProj(null)
+    if (feedStatus === 'ready') {
+      setFeedState({ status: 'ready', error: '', sourceLabel: 'Live feed', items: [] })
+      return
     }
-  }
+    if (feedStatus === 'error') {
+      setFeedState({ status: 'fallback', error: feedError || 'Unable to reach the backend. Showing local demo content for now.', sourceLabel: 'Local demo content', items: DEMO_REELS })
+    }
+  }, [feedError, feedItems, feedStatus])
+
+  useEffect(() => {
+    const root = feedContainerRef.current
+    if (!root || !('IntersectionObserver' in window)) return undefined
+    observerRef.current = new IntersectionObserver((entries) => {
+      const visible = entries.filter((entry) => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
+      const next = Number(visible?.target.dataset.reelIndex)
+      if (Number.isInteger(next)) setActiveIdx(next)
+    }, { root, threshold: [0.6, 0.8] })
+    reelNodesRef.current.forEach((node) => observerRef.current.observe(node))
+    return () => observerRef.current?.disconnect()
+  }, [feedState.items.length])
+
+  useEffect(() => {
+    if (activeIdx >= feedState.items.length - 4 && feedStatus === 'ready') loadNext()
+  }, [activeIdx, feedState.items.length, feedStatus, loadNext])
+
+  const setReelNode = useCallback((index, node) => {
+    const previous = reelNodesRef.current.get(index)
+    if (previous) observerRef.current?.unobserve(previous)
+    if (node) { reelNodesRef.current.set(index, node); observerRef.current?.observe(node) } else reelNodesRef.current.delete(index)
+  }, [])
 
   const updateItemInState = (targetId, updater) => {
     setFeedState((prev) => ({
@@ -637,12 +535,13 @@ function HomePage() {
     }
 
     if (reel.contentType === 'project') {
-      fetchPostEngagement(token, reel.contentId)
-        .then((result) => {
-          syncProjectEngagement(reel.contentId, result.engagement)
+      Promise.all([fetchPostEngagement(token, reel.contentId), fetchPostComments(token, reel.contentId)])
+        .then(([result, commentsResult]) => {
+          const engagement = { ...result.engagement, comments: commentsResult.items ?? [] }
+          syncProjectEngagement(reel.contentId, engagement)
           setCommentTarget({
             ...reel,
-            engagement: result.engagement,
+            engagement,
           })
           setCommentText('')
         })
@@ -869,13 +768,18 @@ function HomePage() {
             fontWeight: 600,
             backdropFilter: 'blur(12px)',
           }}
+          onClick={feedStatus === 'error' ? retry : undefined}
         >
           {feedState.error || 'Connecting to the backend...'}
         </div>
       ) : null}
 
-      <div ref={feedContainerRef} onScroll={handleScroll} className="reels-container">
+      <div ref={feedContainerRef} className="reels-container">
         {feedState.items.map((reel, index) => {
+          const isMounted = Math.abs(index - safeActiveIdx) <= 2
+          if (!isMounted) {
+            return <div key={reel.id} className="reel-card reel-card--spacer" aria-hidden="true" />
+          }
           const engagement = getCounts(reel)
           const isLiked = engagement.viewerHasLiked
           const isSaved = engagement.viewerHasSaved
@@ -885,7 +789,7 @@ function HomePage() {
           const displayCreatorName = isCurrentUserReel ? user.username : reel.creatorName;
 
           return (
-            <div key={reel.id} className="reel-card">
+            <div key={reel.id} ref={(node) => setReelNode(index, node)} data-reel-index={index} className="reel-card">
               {reel.type === 'game' ? (
                 <div
                   onDoubleClick={() => handleMediaDoubleClick(reel)}
@@ -926,6 +830,7 @@ function HomePage() {
                     mode={reel.mode ?? 'portrait'}
                     background={reel.background}
                     textures={reel.textures}
+                    isActive={index === safeActiveIdx}
                   />
                 </div>
               ) : reel.video ? (
@@ -936,6 +841,7 @@ function HomePage() {
                   muted
                   loop
                   playsInline
+                  preload={index === safeActiveIdx ? 'auto' : 'metadata'}
                   className="reel-media"
                 />
               ) : (

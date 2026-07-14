@@ -1,5 +1,7 @@
 import { authHeaders, request } from './api'
+import { flags } from './flags'
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api'
+const mutationHeaders = (token) => ({ Authorization: `Bearer ${token}`, 'Idempotency-Key': crypto.randomUUID() })
 
 export async function fetchContent(token = '', options = {}) {
   return request('/content', {
@@ -8,6 +10,15 @@ export async function fetchContent(token = '', options = {}) {
       ...(options.headers ?? {}),
       ...authHeaders(token),
     },
+  })
+}
+
+export async function fetchFeed(token = '', { cursor = '', limit = 12, signal } = {}) {
+  const params = new URLSearchParams({ limit: String(limit) })
+  if (cursor) params.set('cursor', cursor)
+  return request(`/feed?${params.toString()}`, {
+    signal,
+    headers: authHeaders(token),
   })
 }
 
@@ -25,7 +36,7 @@ export async function createProject(token, payload) {
   return request('/projects', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${token}`,
+      ...mutationHeaders(token),
     },
     body: payload,
   })
@@ -33,15 +44,32 @@ export async function createProject(token, payload) {
 
 export async function uploadProjectFile(token, projectId, fileMeta, file) {
   const body = await file.arrayBuffer()
+  const idempotencyKey = crypto.randomUUID()
+
+  if (flags.objectStorage) {
+    const digest = await crypto.subtle.digest('SHA-256', body)
+    const checksum = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
+    const initiated = await request(`/projects/${encodeURIComponent(projectId)}/uploads/initiate`, {
+      method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Idempotency-Key': idempotencyKey },
+      body: { name: fileMeta.name, relativePath: fileMeta.relativePath, mimeType: fileMeta.mimeType || file.type || '', size: body.byteLength, checksum },
+    })
+    const uploadResponse = await fetch(initiated.uploadUrl, { method: 'PUT', headers: { 'Content-Type': fileMeta.mimeType || file.type || 'application/octet-stream', 'Cache-Control': 'public, max-age=31536000, immutable' }, body })
+    if (!uploadResponse.ok) throw new Error('Direct upload failed.')
+    return request(`/uploads/${encodeURIComponent(initiated.uploadId)}/complete`, {
+      method: 'POST', headers: { Authorization: `Bearer ${token}` },
+      body: { checksum, size: body.byteLength, etag: uploadResponse.headers.get('etag') || '' },
+    })
+  }
 
   const response = await fetch(`${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/files`, {
     method: 'PUT',
     headers: {
-      Authorization: `Bearer ${token}`,
+      ...mutationHeaders(token),
       'Content-Type': 'application/octet-stream',
       'X-File-Name': fileMeta.name,
       'X-Relative-Path': fileMeta.relativePath,
       'X-Mime-Type': fileMeta.mimeType || file.type || 'application/octet-stream',
+      'Idempotency-Key': idempotencyKey,
     },
     body,
   })
@@ -59,7 +87,7 @@ export async function publishProject(token, projectId) {
   return request(`/projects/${encodeURIComponent(projectId)}/publish`, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${token}`,
+      ...mutationHeaders(token),
     },
   })
 }
@@ -68,7 +96,7 @@ export async function updateProject(token, projectId, payload) {
   return request(`/projects/${encodeURIComponent(projectId)}`, {
     method: 'PATCH',
     headers: {
-      Authorization: `Bearer ${token}`,
+      ...mutationHeaders(token),
     },
     body: payload,
   })
@@ -78,7 +106,7 @@ export async function deleteProject(token, projectId) {
   return request(`/projects/${encodeURIComponent(projectId)}`, {
     method: 'DELETE',
     headers: {
-      Authorization: `Bearer ${token}`,
+      ...mutationHeaders(token),
     },
   })
 }
@@ -86,9 +114,7 @@ export async function deleteProject(token, projectId) {
 export async function updateContentEngagement(token, contentType, contentId, payload) {
   return request(`/content/${encodeURIComponent(contentType)}/${encodeURIComponent(contentId)}/engagement`, {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: mutationHeaders(token),
     body: payload,
   })
 }
@@ -101,30 +127,30 @@ export async function fetchPostEngagement(token, postId) {
   })
 }
 
+export async function fetchPostComments(token, postId, { cursor = '', limit = 30 } = {}) {
+  const params = new URLSearchParams({ limit: String(limit) })
+  if (cursor) params.set('cursor', cursor)
+  return request(`/posts/${encodeURIComponent(postId)}/comments?${params.toString()}`, { headers: authHeaders(token) })
+}
+
 export async function togglePostLike(token, postId) {
   return request(`/posts/${encodeURIComponent(postId)}/like`, {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: mutationHeaders(token),
   })
 }
 
 export async function togglePostSave(token, postId) {
   return request(`/posts/${encodeURIComponent(postId)}/save`, {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: mutationHeaders(token),
   })
 }
 
 export async function createPostComment(token, postId, payload) {
   return request(`/posts/${encodeURIComponent(postId)}/comments`, {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: mutationHeaders(token),
     body: payload,
   })
 }
@@ -132,9 +158,7 @@ export async function createPostComment(token, postId, payload) {
 export async function createCommentReply(token, commentId, payload) {
   return request(`/comments/${encodeURIComponent(commentId)}/replies`, {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: mutationHeaders(token),
     body: payload,
   })
 }

@@ -12,6 +12,12 @@ import ProjectFile from '../models/ProjectFile.js'
 import { publishProjectEngagement } from '../realtime/eventPublisher.js'
 import { seedAssets, seedGames } from '../data/seedData.js'
 import asyncHandler from '../middlewares/asyncHandler.js'
+import env from '../config/env.js'
+import { getRedisReadiness } from '../config/redis.js'
+import { recordUploadMetric } from '../middlewares/observabilityMiddleware.js'
+import { removeFeedProjection, upsertFeedProjection } from '../services/feedProjection.js'
+import MutationReceipt from '../models/MutationReceipt.js'
+import { createPresignedPutUrl, immutableObjectKey, objectStorageReady, publicObjectUrl } from '../services/objectStorage.js'
 
 const UPLOADS_ROOT = path.join(process.cwd(), 'uploads', 'projects')
 const PUBLIC_UPLOADS_PREFIX = '/api/uploads/projects'
@@ -21,7 +27,7 @@ const MAX_PROJECT_FILES = 100
 const MAX_PATH_BYTES = 512
 const MAX_NAME_BYTES = 255
 const SAFE_TEXT_EXTENSIONS = new Set(['.html', '.htm', '.js', '.mjs', '.css', '.json', '.txt', '.svg'])
-const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif'])
+const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif', '.ico'])
 const GAME_BINARY_EXTENSIONS = new Set(['.wasm', '.br', '.gz', '.unityweb'])
 
 function hasMagicBytes(buffer, extension) {
@@ -414,9 +420,7 @@ function getViewerId(request) {
 }
 
 async function computeProjectEngagementMap(projectIds = [], viewerId = '') {
-  const normalizedIds = projectIds
-    .filter(Boolean)
-    .map((projectId) => new mongoose.Types.ObjectId(String(projectId)))
+  const normalizedIds = projectIds.filter(Boolean).map(String)
 
   if (normalizedIds.length === 0) {
     return new Map()
@@ -424,23 +428,23 @@ async function computeProjectEngagementMap(projectIds = [], viewerId = '') {
 
   const [likesAgg, savesAgg, commentsAgg, viewerRows] = await Promise.all([
     PostEngagement.aggregate([
-      { $match: { postId: { $in: normalizedIds }, liked: true } },
-      { $group: { _id: '$postId', count: { $sum: 1 } } },
+      { $match: { contentType: 'project', contentId: { $in: normalizedIds }, liked: true } },
+      { $group: { _id: '$contentId', count: { $sum: 1 } } },
     ]),
     PostEngagement.aggregate([
-      { $match: { postId: { $in: normalizedIds }, saved: true } },
-      { $group: { _id: '$postId', count: { $sum: 1 } } },
+      { $match: { contentType: 'project', contentId: { $in: normalizedIds }, saved: true } },
+      { $group: { _id: '$contentId', count: { $sum: 1 } } },
     ]),
     PostComment.aggregate([
-      { $match: { postId: { $in: normalizedIds } } },
-      { $group: { _id: '$postId', count: { $sum: 1 } } },
+      { $match: { contentType: 'project', contentId: { $in: normalizedIds } } },
+      { $group: { _id: '$contentId', count: { $sum: 1 } } },
     ]),
     viewerId
       ? PostEngagement.find({
-          postId: { $in: normalizedIds },
+          contentType: 'project', contentId: { $in: normalizedIds },
           userId: viewerId,
         })
-          .select('postId liked saved')
+          .select('contentId liked saved')
           .lean()
       : [],
   ])
@@ -450,7 +454,7 @@ async function computeProjectEngagementMap(projectIds = [], viewerId = '') {
   const commentsMap = new Map(commentsAgg.map((entry) => [String(entry._id), Number(entry.count || 0)]))
   const viewerMap = new Map(
     viewerRows.map((entry) => [
-      String(entry.postId),
+      String(entry.contentId),
       {
         isLiked: Boolean(entry.liked),
         isSaved: Boolean(entry.saved),
@@ -460,8 +464,7 @@ async function computeProjectEngagementMap(projectIds = [], viewerId = '') {
 
   const result = new Map()
 
-  for (const projectId of normalizedIds) {
-    const projectKey = String(projectId)
+  for (const projectKey of normalizedIds) {
     result.set(
       projectKey,
       normalizeProjectEngagementSummary(
@@ -481,7 +484,7 @@ async function computeProjectEngagementMap(projectIds = [], viewerId = '') {
 }
 
 async function buildProjectCommentsTree(postId) {
-  const comments = await PostComment.find({ postId }).sort({ createdAt: -1 }).limit(200).lean()
+  const comments = await PostComment.find({ contentType: 'project', contentId: String(postId) }).sort({ createdAt: -1 }).limit(200).lean()
   const byParent = new Map()
 
   for (const comment of comments) {
@@ -674,6 +677,23 @@ export function getHealth(_request, response) {
   })
 }
 
+export const getReadiness = asyncHandler(async (_request, response) => {
+  const mongoReady = mongoose.connection.readyState === 1
+  const redis = await getRedisReadiness()
+  const redisRequired = env.nodeEnv === 'production'
+  const ready = mongoReady && (!redisRequired || redis.ready)
+
+  response.status(ready ? 200 : 503).json({
+    status: ready ? 'ready' : 'not_ready',
+    service: 'gameflow-api',
+    dependencies: {
+      mongo: mongoReady ? 'ready' : 'not_ready',
+      redis: redis.ready ? 'ready' : redis.configured ? 'not_ready' : 'not_configured',
+    },
+    timestamp: new Date().toISOString(),
+  })
+})
+
 export const getContent = asyncHandler(async (request, response) => {
   const includeDraftsFlag = includeDrafts(request)
   const viewerId = getViewerId(request)
@@ -732,7 +752,7 @@ export const getProjectById = asyncHandler(async (request, response) => {
   }
 
   const engagement = await getProjectEngagementPayload(project._id, viewerId, {
-    includeComments: true,
+    includeComments: false,
     sharesCount: project?.engagement?.sharesCount || 0,
   })
   response.json({ project: buildProjectPayload(project, engagement) })
@@ -947,6 +967,57 @@ export const uploadProjectFile = asyncHandler(async (request, response) => {
     status: uploadRecord.status,
     file: savedFile,
   })
+  recordUploadMetric()
+})
+
+export const initiateProjectUpload = asyncHandler(async (request, response) => {
+  if (!objectStorageReady()) throw createError(503, 'Object storage is not configured.')
+  const { projectId } = request.params
+  const { name, relativePath, mimeType = '', size, checksum } = request.body ?? {}
+  const idempotencyKey = String(request.headers['idempotency-key'] || '').trim()
+  if (!idempotencyKey || idempotencyKey.length > 128) throw createError(400, 'A valid Idempotency-Key header is required.')
+  if (!mongoose.isValidObjectId(projectId)) throw createError(400, 'Invalid project ID.')
+  const project = await Project.findById(projectId)
+  if (!project) throw createError(404, 'Project not found.')
+  if (String(project.ownerId) !== String(request.user._id)) throw createError(403, 'You cannot modify this project.')
+  const byteSize = Number(size)
+  const normalizedPath = safeRelativePath(relativePath, name)
+  const extension = path.posix.extname(normalizedPath).toLowerCase()
+  const allowed = project.type === 'game'
+    ? SAFE_TEXT_EXTENSIONS.has(extension) || GAME_BINARY_EXTENSIONS.has(extension) || IMAGE_EXTENSIONS.has(extension)
+    : project.type === '3d'
+      ? extension === '.glb' || extension === '.gltf' || IMAGE_EXTENSIONS.has(extension) || extension === '.bin'
+      : IMAGE_EXTENSIONS.has(extension)
+  if (!allowed || !Number.isFinite(byteSize) || byteSize <= 0 || byteSize > MAX_UPLOAD_BYTES || !/^[a-f\d]{64}$/i.test(String(checksum))) throw createError(400, 'Invalid upload manifest.')
+  const existing = await Upload.findOne({ ownerId: request.user._id, idempotencyKey }).lean()
+  if (existing) return response.json({ uploadId: existing.uploadId, status: existing.status, uploadUrl: existing.status === 'pending' ? createPresignedPutUrl(existing.storageKey) : null, storageKey: existing.storageKey })
+  const existingFiles = await ProjectFile.find({ projectId: project._id, status: 'ready' }).lean()
+  if (existingFiles.some((file) => file.relativePath === normalizedPath)) throw createError(409, 'A file with this relative path already exists.')
+  if (existingFiles.length >= MAX_PROJECT_FILES || existingFiles.reduce((total, file) => total + Number(file.size || 0), 0) + byteSize > MAX_PROJECT_BYTES) throw createError(413, 'Project storage quota exceeded.')
+  const storageKey = immutableObjectKey(project.slug, String(checksum).toLowerCase(), normalizedPath)
+  const upload = await Upload.create({ uploadId: crypto.randomUUID(), idempotencyKey, ownerId: request.user._id, projectId: project._id, storageKey, relativePath: normalizedPath, detectedType: extension, mimeType: String(mimeType), size: byteSize, checksum: String(checksum).toLowerCase(), status: 'pending', provider: 's3', expiresAt: new Date(Date.now() + 15 * 60 * 1000) })
+  response.status(201).json({ uploadId: upload.uploadId, status: upload.status, storageKey, uploadUrl: createPresignedPutUrl(storageKey), expiresAt: upload.expiresAt })
+})
+
+export const completeProjectUpload = asyncHandler(async (request, response) => {
+  const upload = await Upload.findOne({ uploadId: request.params.uploadId, ownerId: request.user._id })
+  if (!upload || upload.status !== 'pending' || (upload.expiresAt && upload.expiresAt < new Date())) throw createError(409, 'Upload is unavailable or expired.')
+  const { checksum, size, etag = '' } = request.body ?? {}
+  if (String(checksum).toLowerCase() !== upload.checksum || Number(size) !== upload.size) throw createError(400, 'Upload completion manifest does not match the authorized upload.')
+  const project = await Project.findById(upload.projectId)
+  if (!project) throw createError(404, 'Project not found.')
+  const url = publicObjectUrl(upload.storageKey)
+  if (!url) throw createError(503, 'Object storage public delivery URL is not configured.')
+  const file = await ProjectFile.create({ projectId: project._id, ownerId: project.ownerId, name: path.posix.basename(upload.relativePath), relativePath: upload.relativePath, url, storageKey: upload.storageKey, mimeType: upload.mimeType, size: upload.size, checksum: upload.checksum, version: 1, status: 'ready' })
+  upload.status = 'ready'; upload.etag = String(etag); await upload.save()
+  const files = await ProjectFile.find({ projectId: project._id, status: 'ready' }).lean()
+  const mainFile = pickMainFile(files, project.type)
+  if (mainFile) {
+    const coverFile = files.find((entry) => entry.relativePath.toLowerCase().startsWith('cover/')) ?? files.find((entry) => IMAGE_EXTENSIONS.has(path.posix.extname(entry.relativePath).toLowerCase()))
+    project.previewUrl = coverFile?.url ?? mainFile.url; project.gameUrl = project.type === 'game' ? mainFile.url : ''; project.modelUrl = project.type === '3d' ? mainFile.url : ''; project.imageUrl = project.type === '2d' ? mainFile.url : ''
+    await project.save()
+  }
+  response.status(201).json({ message: 'Upload completed successfully.', uploadId: upload.uploadId, status: upload.status, file })
 })
 
 export const publishProject = asyncHandler(async (request, response) => {
@@ -993,8 +1064,10 @@ export const publishProject = asyncHandler(async (request, response) => {
   project.modelUrl = project.type === '3d' ? mainFile.url : ''
   project.imageUrl = project.type === '2d' ? mainFile.url : ''
   project.isPublished = project.visibility === 'public'
+  project.publishedAt = project.isPublished ? (project.publishedAt || new Date()) : null
 
   await project.save()
+  await upsertFeedProjection('project', project)
 
   response.json({
     message: 'Project published successfully.',
@@ -1058,6 +1131,7 @@ export const updateProject = asyncHandler(async (request, response) => {
   }
 
   await project.save()
+  await upsertFeedProjection('project', project)
 
   response.json({
     message: 'Project updated successfully.',
@@ -1068,6 +1142,86 @@ export const updateProject = asyncHandler(async (request, response) => {
     ),
   })
 })
+
+function requireIdempotencyKey(request) {
+  const key = String(request.headers['idempotency-key'] || '').trim()
+  if (!key || key.length > 128) throw createError(400, 'A valid Idempotency-Key header is required.')
+  return key
+}
+
+async function getGeneralEngagement(contentType, target, viewerId = '') {
+  const viewer = viewerId
+    ? await PostEngagement.findOne({ contentType, contentId: String(target._id), userId: viewerId }).select('liked saved').lean()
+    : null
+  return {
+    likesCount: Number(target.engagement?.likesCount || 0),
+    commentsCount: Number(target.engagement?.commentsCount || 0),
+    savesCount: Number(target.engagement?.savesCount || 0),
+    sharesCount: Number(target.engagement?.sharesCount || 0),
+    viewerHasLiked: Boolean(viewer?.liked), viewerHasSaved: Boolean(viewer?.saved),
+    isLiked: Boolean(viewer?.liked), isSaved: Boolean(viewer?.saved),
+    comments: [],
+  }
+}
+
+async function mutateGeneralEngagement(request, contentType, contentId, action, text = '') {
+  const idempotencyKey = requireIdempotencyKey(request)
+  const target = await loadEngagementTarget(contentType, contentId)
+  if (contentType === 'project') ensureProjectEngagementAccess(target, request.user._id)
+
+  const previousReceipt = await MutationReceipt.findOne({ userId: request.user._id, idempotencyKey }).lean()
+  if (previousReceipt?.result) return previousReceipt.result
+  if (previousReceipt) throw createError(409, 'This mutation is already being processed.')
+
+  try {
+    await MutationReceipt.create({ userId: request.user._id, idempotencyKey, action, contentType, contentId: String(target._id) })
+  } catch (error) {
+    if (error?.code === 11000) {
+      const receipt = await MutationReceipt.findOne({ userId: request.user._id, idempotencyKey }).lean()
+      if (receipt?.result) return receipt.result
+      throw createError(409, 'This mutation is already being processed.')
+    }
+    throw error
+  }
+
+  const Model = getEngagementTarget(contentType)
+  const targetId = target._id
+  let message = 'Engagement updated successfully.'
+  if (action === 'react' || action === 'save') {
+    const field = action === 'react' ? 'liked' : 'saved'
+    const counter = action === 'react' ? 'likesCount' : 'savesCount'
+    const record = await PostEngagement.findOneAndUpdate(
+      { contentType, contentId: String(targetId), userId: request.user._id },
+      [{ $set: { [field]: { $not: [{ $ifNull: [`$${field}`, false] }] }, liked: { $ifNull: ['$liked', false] }, saved: { $ifNull: ['$saved', false] } } }],
+      { upsert: true, returnDocument: 'after', updatePipeline: true },
+    )
+    const delta = record[field] ? 1 : -1
+    await Model.updateOne({ _id: targetId }, [{ $set: { [`engagement.${counter}`]: { $max: [0, { $add: [{ $ifNull: [`$engagement.${counter}`, 0] }, delta] }] } } }])
+    message = record[field] ? `${action === 'react' ? 'Liked' : 'Saved'}.` : `${action === 'react' ? 'Unliked' : 'Unsaved'}.`
+  } else if (action === 'comment') {
+    if (!text) throw createError(400, 'Comment text is required.')
+    await PostComment.create({
+      postId: contentType === 'project' ? targetId : undefined,
+      contentType, contentId: String(targetId), userId: request.user._id,
+      username: request.user.username, name: request.user.name, avatar: safeAvatarUrl(request.user.avatar), text, idempotencyKey,
+    })
+    await Model.updateOne({ _id: targetId }, { $inc: { 'engagement.commentsCount': 1 } })
+    message = 'Comment added successfully.'
+  } else if (action === 'share') {
+    await Model.updateOne({ _id: targetId }, { $inc: { 'engagement.sharesCount': 1 } })
+    message = 'Share recorded.'
+  } else {
+    throw createError(400, 'Invalid engagement action.')
+  }
+
+  const updated = await Model.findById(targetId)
+  const engagement = await getGeneralEngagement(contentType, updated, getViewerId(request))
+  await upsertFeedProjection(contentType, updated)
+  if (contentType === 'project') await publishProjectEngagement(updated._id, engagement)
+  const result = { message, contentType, contentId: String(updated._id), engagement, version: Number(updated.__v || 0) }
+  await MutationReceipt.updateOne({ userId: request.user._id, idempotencyKey }, { $set: { result } })
+  return result
+}
 
 export const getPostEngagement = asyncHandler(async (request, response) => {
   const { postId } = request.params
@@ -1085,130 +1239,20 @@ export const getPostEngagement = asyncHandler(async (request, response) => {
 })
 
 export const togglePostLike = asyncHandler(async (request, response) => {
-  const { postId } = request.params
-  const viewerId = getViewerId(request)
-  const project = await loadEngagementTarget('project', postId)
-  ensureProjectEngagementAccess(project, request.user._id)
-
-  const record = await PostEngagement.findOneAndUpdate(
-    {
-      postId: project._id,
-      userId: request.user._id,
-    },
-    [
-      {
-        $set: {
-          liked: { $not: '$liked' },
-          saved: { $ifNull: ['$saved', false] },
-        },
-      },
-    ],
-    {
-      upsert: true,
-      returnDocument: 'after',
-      updatePipeline: true,
-    },
-  )
-
-  const engagement = await getProjectEngagementPayload(project._id, viewerId, {
-    includeComments: false,
-    sharesCount: project?.engagement?.sharesCount || 0,
-  })
-  await publishProjectEngagement(project._id, engagement)
-
-  response.json({
-    message: record.liked ? 'Post liked.' : 'Post unliked.',
-    postId: String(project._id),
-    engagement,
-  })
+  response.json(await mutateGeneralEngagement(request, 'project', request.params.postId, 'react'))
 })
 
 export const togglePostSave = asyncHandler(async (request, response) => {
-  const { postId } = request.params
-  const viewerId = getViewerId(request)
-  const project = await loadEngagementTarget('project', postId)
-  ensureProjectEngagementAccess(project, request.user._id)
-
-  const record = await PostEngagement.findOneAndUpdate(
-    {
-      postId: project._id,
-      userId: request.user._id,
-    },
-    [
-      {
-        $set: {
-          liked: { $ifNull: ['$liked', false] },
-          saved: { $not: '$saved' },
-        },
-      },
-    ],
-    {
-      upsert: true,
-      returnDocument: 'after',
-      updatePipeline: true,
-    },
-  )
-
-  const engagement = await getProjectEngagementPayload(project._id, viewerId, {
-    includeComments: false,
-    sharesCount: project?.engagement?.sharesCount || 0,
-  })
-
-  response.json({
-    message: record.saved ? 'Post saved.' : 'Post unsaved.',
-    postId: String(project._id),
-    engagement,
-  })
+  response.json(await mutateGeneralEngagement(request, 'project', request.params.postId, 'save'))
 })
 
 export const createPostComment = asyncHandler(async (request, response) => {
-  const { postId } = request.params
-  const viewerId = getViewerId(request)
-  const text = String(request.body?.text || request.body?.commentText || '').trim()
-  const idempotencyKey = String(request.headers['idempotency-key'] || '').trim()
-
-  if (!text) {
-    throw createError(400, 'Comment text is required.')
-  }
-
-  if (!idempotencyKey || idempotencyKey.length > 128) {
-    throw createError(400, 'A valid Idempotency-Key header is required.')
-  }
-
-  const project = await loadEngagementTarget('project', postId)
-
-  const comment = await PostComment.findOneAndUpdate(
-    { userId: request.user._id, idempotencyKey },
-    { $setOnInsert: {
-    postId: project._id,
-    userId: request.user._id,
-    username: request.user.username,
-    name: request.user.name,
-    avatar: safeAvatarUrl(request.user.avatar),
-    text,
-    idempotencyKey,
-    } },
-    { upsert: true, new: true, setDefaultsOnInsert: true },
-  )
-
-  const engagement = await getProjectEngagementPayload(project._id, viewerId, {
-    includeComments: true,
-    sharesCount: project?.engagement?.sharesCount || 0,
-  })
-  await publishProjectEngagement(project._id, engagement)
-
-  response.status(201).json({
-    message: 'Comment added successfully.',
-    postId: String(project._id),
-    engagement,
-  })
+  response.status(201).json(await mutateGeneralEngagement(request, 'project', request.params.postId, 'comment', String(request.body?.text || request.body?.commentText || '').trim()))
 })
 
 export const createCommentReply = asyncHandler(async (request, response) => {
   const { commentId } = request.params
   const text = String(request.body?.text || '').trim()
-  const viewerId = getViewerId(request)
-
   if (!text) {
     throw createError(400, 'Reply text is required.')
   }
@@ -1219,143 +1263,28 @@ export const createCommentReply = asyncHandler(async (request, response) => {
     throw createError(404, 'Comment not found.')
   }
 
-  const project = await Project.findById(parentComment.postId).lean()
-  if (!project) throw createError(404, 'Project not found.')
-  ensureProjectEngagementAccess(project, request.user._id)
-  const idempotencyKey = String(request.headers['idempotency-key'] || '').trim()
-  if (!idempotencyKey || idempotencyKey.length > 128) throw createError(400, 'A valid Idempotency-Key header is required.')
-
-  await PostComment.findOneAndUpdate(
-    { userId: request.user._id, idempotencyKey },
-    { $setOnInsert: {
-    postId: parentComment.postId,
-    userId: request.user._id,
-    parentCommentId: parentComment._id,
-    username: request.user.username,
-    name: request.user.name,
-    avatar: safeAvatarUrl(request.user.avatar),
-    text,
-    idempotencyKey,
-    } },
-    { upsert: true, new: true, setDefaultsOnInsert: true },
-  )
-
-  const engagement = await getProjectEngagementPayload(parentComment.postId, viewerId, {
-    includeComments: true,
-    sharesCount: project?.engagement?.sharesCount || 0,
-  })
-  await publishProjectEngagement(parentComment.postId, engagement)
-
-  response.status(201).json({
-    message: 'Reply added successfully.',
-    postId: String(parentComment.postId),
-    engagement,
-  })
+  const idempotencyKey = requireIdempotencyKey(request)
+  const contentType = parentComment.contentType || 'project'
+  const contentId = parentComment.contentId || String(parentComment.postId)
+  const target = await loadEngagementTarget(contentType, contentId)
+  if (contentType === 'project') ensureProjectEngagementAccess(target, request.user._id)
+  const existing = await MutationReceipt.findOne({ userId: request.user._id, idempotencyKey }).lean()
+  if (existing?.result) return response.status(201).json(existing.result)
+  await MutationReceipt.create({ userId: request.user._id, idempotencyKey, action: 'reply', contentType, contentId: String(target._id) })
+  await PostComment.create({ postId: contentType === 'project' ? target._id : undefined, contentType, contentId: String(target._id), parentCommentId: parentComment._id, userId: request.user._id, username: request.user.username, name: request.user.name, avatar: safeAvatarUrl(request.user.avatar), text, idempotencyKey })
+  await getEngagementTarget(contentType).updateOne({ _id: target._id }, { $inc: { 'engagement.commentsCount': 1 } })
+  const updated = await getEngagementTarget(contentType).findById(target._id)
+  const result = { message: 'Reply added successfully.', contentType, contentId: String(target._id), engagement: await getGeneralEngagement(contentType, updated, getViewerId(request)) }
+  await MutationReceipt.updateOne({ userId: request.user._id, idempotencyKey }, { $set: { result } })
+  await upsertFeedProjection(contentType, updated)
+  response.status(201).json(result)
 })
 
 export const updateContentEngagement = asyncHandler(async (request, response) => {
   const { contentType, contentId } = request.params
   const action = String(request.body?.action || '').trim()
   const commentText = String(request.body?.commentText || '').trim()
-  const viewerId = getViewerId(request)
-
-  if (!request.user) {
-    throw createError(401, 'Please sign in to interact with posts.')
-  }
-
-  if (!['react', 'comment', 'save', 'share'].includes(action)) {
-    throw createError(400, 'Invalid engagement action.')
-  }
-
-  const target = await loadEngagementTarget(contentType, contentId)
-  ensureEngagement(target)
-
-  if (contentType === 'project' && action !== 'share') {
-    throw createError(400, 'Use the post engagement routes for project likes, saves, and comments.')
-  }
-
-  if (action === 'react') {
-    const existingIndex = target.engagement.reactions.findIndex(
-      (reaction) => String(reaction.userId) === viewerId,
-    )
-
-    if (existingIndex >= 0) {
-      target.engagement.reactions.splice(existingIndex, 1)
-      target.engagement.likesCount = Math.max(0, target.engagement.likesCount - 1)
-    } else {
-      target.engagement.reactions.push({
-        userId: request.user._id,
-        username: request.user.username,
-        name: request.user.name,
-        avatar: safeAvatarUrl(request.user.avatar),
-        type: 'like',
-        createdAt: new Date(),
-      })
-      target.engagement.likesCount += 1
-    }
-  }
-
-  if (action === 'save') {
-    const existingIndex = target.engagement.savedBy.findIndex(
-      (entry) => String(entry.userId) === viewerId,
-    )
-
-    if (existingIndex >= 0) {
-      target.engagement.savedBy.splice(existingIndex, 1)
-      target.engagement.savesCount = Math.max(0, target.engagement.savesCount - 1)
-    } else {
-      target.engagement.savedBy.push({
-        userId: request.user._id,
-        username: request.user.username,
-        name: request.user.name,
-        avatar: safeAvatarUrl(request.user.avatar),
-      })
-      target.engagement.savesCount += 1
-    }
-  }
-
-  if (action === 'comment') {
-    if (!commentText) {
-      throw createError(400, 'Comment text is required.')
-    }
-
-    target.engagement.comments.push({
-      commentId: crypto.randomUUID(),
-      userId: request.user._id,
-      username: request.user.username,
-      name: request.user.name,
-      avatar: safeAvatarUrl(request.user.avatar),
-      text: commentText,
-      createdAt: new Date(),
-    })
-    target.engagement.commentsCount += 1
-  }
-
-  if (action === 'share') {
-    target.engagement.sharesCount += 1
-  }
-
-  await target.save()
-
-  const content =
-    contentType === 'project'
-      ? buildProjectPayload(
-          target.toObject(),
-          await getProjectEngagementPayload(target._id, viewerId, {
-            includeComments: true,
-            sharesCount: target.engagement.sharesCount,
-          }),
-        )
-      : buildContentPayload(contentType, target.toObject(), viewerId)
-
-  if (contentType === 'project') {
-    await publishProjectEngagement(target._id, content.engagement)
-  }
-
-  response.json({
-    message: 'Engagement updated successfully.',
-    content,
-  })
+  response.json(await mutateGeneralEngagement(request, contentType, contentId, action, commentText))
 })
 
 export const deleteProject = asyncHandler(async (request, response) => {
@@ -1386,6 +1315,7 @@ export const deleteProject = asyncHandler(async (request, response) => {
     PostComment.deleteMany({ postId: projectId }),
   ])
   await Project.deleteOne({ _id: projectId })
+  await removeFeedProjection('project', projectId)
 
   response.json({
     message: 'Project deleted successfully.',

@@ -11,6 +11,7 @@ function GltfAssetViewer({
   background = '#101820',
   assets = [],
   textures = null,
+  isActive = true,
 }) {
   const containerRef = useRef(null)
   const mountRef = useRef(null)
@@ -49,8 +50,8 @@ function GltfAssetViewer({
   useEffect(() => {
     const mountNode = mountRef.current
 
-    if (!mountNode || !activeModelUrl) {
-      setStatus(activeModelUrl ? 'loading' : 'idle')
+    if (!mountNode || !activeModelUrl || !isActive) {
+      setStatus(activeModelUrl && isActive ? 'loading' : 'idle')
       setProgress(0)
       setError('')
       return undefined
@@ -90,6 +91,7 @@ function GltfAssetViewer({
 
     let animationFrameId = 0
     let loadedModel = null
+    const loadedTextures = []
     let disposed = false
 
     const resizeRenderer = () => {
@@ -137,7 +139,7 @@ function GltfAssetViewer({
         // Apply custom textures if provided
         if (activeAsset?.textures) {
           const textureLoader = new THREE.TextureLoader()
-          const loadedTextures = {}
+          const textureMap = {}
 
           Object.entries(activeAsset.textures).forEach(([key, url]) => {
             if (url) {
@@ -146,22 +148,23 @@ function GltfAssetViewer({
               if (key === 'map') {
                 texture.colorSpace = THREE.SRGBColorSpace
               }
-              loadedTextures[key] = texture
+              textureMap[key] = texture
+              loadedTextures.push(texture)
             }
           })
 
           loadedModel.traverse((child) => {
             if (child.isMesh && child.material) {
               const applyTextures = (mat) => {
-                if (loadedTextures.map) mat.map = loadedTextures.map
-                if (loadedTextures.normalMap) {
-                  mat.normalMap = loadedTextures.normalMap
+                if (textureMap.map) mat.map = textureMap.map
+                if (textureMap.normalMap) {
+                  mat.normalMap = textureMap.normalMap
                   mat.normalScale = new THREE.Vector2(1, 1)
                 }
-                if (loadedTextures.roughnessMap) mat.roughnessMap = loadedTextures.roughnessMap
-                if (loadedTextures.metalnessMap) mat.metalnessMap = loadedTextures.metalnessMap
-                if (loadedTextures.emissiveMap) {
-                  mat.emissiveMap = loadedTextures.emissiveMap
+                if (textureMap.roughnessMap) mat.roughnessMap = textureMap.roughnessMap
+                if (textureMap.metalnessMap) mat.metalnessMap = textureMap.metalnessMap
+                if (textureMap.emissiveMap) {
+                  mat.emissiveMap = textureMap.emissiveMap
                   mat.emissive = new THREE.Color(0xffffff)
                   mat.emissiveIntensity = 1.0
                 }
@@ -199,7 +202,7 @@ function GltfAssetViewer({
           setProgress(Math.min(100, Math.round((event.loaded / event.total) * 100)))
         }
       },
-      () => {
+      (loadError) => {
         if (disposed) {
           return
         }
@@ -207,6 +210,7 @@ function GltfAssetViewer({
         setError('Unable to load this 3D asset.')
         setProgress(0)
         setStatus('error')
+        window.dispatchEvent(new CustomEvent('gameflow:client-error', { detail: { message: loadError?.message || '3D asset load failed', mediaType: 'gltf', modelUrl: activeModelUrl, release: import.meta.env.VITE_RELEASE_VERSION || 'development' } }))
       },
     )
 
@@ -245,12 +249,13 @@ function GltfAssetViewer({
       }
 
       renderer.dispose()
+      loadedTextures.forEach((texture) => texture.dispose())
 
       if (mountNode.contains(renderer.domElement)) {
         mountNode.removeChild(renderer.domElement)
       }
     }
-  }, [activeAsset?.textures, activeBackground, activeModelUrl])
+  }, [activeAsset?.textures, activeBackground, activeModelUrl, isActive])
 
   return (
     <section
@@ -301,7 +306,7 @@ function GltfAssetViewer({
           </div>
         </div>
       ) : null}
-      {status === 'idle' ? (
+      {status === 'idle' && !activeModelUrl ? (
         <div className="gltf-asset-viewer__overlay">
           Add a `.gltf` or `.glb` file path to view a model.
         </div>

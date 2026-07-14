@@ -100,7 +100,7 @@ function WebGLGamePlayer({
 
   useEffect(() => {
     if (!isActive) {
-      stopGame();
+      queueMicrotask(stopGame);
     }
   }, [isActive]);
 

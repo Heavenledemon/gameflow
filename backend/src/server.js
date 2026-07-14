@@ -5,7 +5,6 @@ import http from 'node:http'
 import { attachSocketServer } from './realtime/socketServer.js'
 import { seedDatabase } from './controllers/contentController.js'
 import { logger } from './utils/logger.js'
-import { startOutboxWorker, stopOutboxWorker } from './realtime/eventPublisher.js'
 
 let server
 let closeSocketServer = async () => {}
@@ -20,7 +19,6 @@ async function startServer() {
   const httpServer = http.createServer(app)
   const socketServer = attachSocketServer(httpServer)
   closeSocketServer = socketServer.close
-  startOutboxWorker()
   server = httpServer.listen(env.port, () => {
     logger.info('server_started', { port: env.port, environment: env.nodeEnv })
   })
@@ -43,7 +41,6 @@ async function shutdown(signal) {
   }
 
   await closeSocketServer()
-  stopOutboxWorker()
 
   await disconnectDatabase()
 }
