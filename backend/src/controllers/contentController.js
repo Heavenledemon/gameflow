@@ -5,6 +5,7 @@ import mongoose from 'mongoose'
 import Asset from '../models/Asset.js'
 import Game from '../models/Game.js'
 import PostComment from '../models/PostComment.js'
+import CommentReaction from '../models/CommentReaction.js'
 import PostEngagement from '../models/PostEngagement.js'
 import Project from '../models/Project.js'
 import Upload from '../models/Upload.js'
@@ -1190,9 +1191,12 @@ async function mutateGeneralEngagement(request, contentType, contentId, action, 
   if (action === 'react' || action === 'save') {
     const field = action === 'react' ? 'liked' : 'saved'
     const counter = action === 'react' ? 'likesCount' : 'savesCount'
+    const toggleValues = action === 'react'
+      ? { liked: { $not: [{ $ifNull: ['$liked', false] }] }, saved: { $ifNull: ['$saved', false] } }
+      : { liked: { $ifNull: ['$liked', false] }, saved: { $not: [{ $ifNull: ['$saved', false] }] } }
     const record = await PostEngagement.findOneAndUpdate(
       { contentType, contentId: String(targetId), userId: request.user._id },
-      [{ $set: { [field]: { $not: [{ $ifNull: [`$${field}`, false] }] }, liked: { $ifNull: ['$liked', false] }, saved: { $ifNull: ['$saved', false] } } }],
+      [{ $set: toggleValues }],
       { upsert: true, returnDocument: 'after', updatePipeline: true },
     )
     const delta = record[field] ? 1 : -1
@@ -1216,8 +1220,14 @@ async function mutateGeneralEngagement(request, contentType, contentId, action, 
 
   const updated = await Model.findById(targetId)
   const engagement = await getGeneralEngagement(contentType, updated, getViewerId(request))
-  await upsertFeedProjection(contentType, updated)
-  if (contentType === 'project') await publishProjectEngagement(updated._id, engagement)
+  // The comment/engagement write is already durable. Realtime and feed projection
+  // failures must not turn a successful user action into a 500 response.
+  try {
+    await upsertFeedProjection(contentType, updated)
+    if (contentType === 'project') await publishProjectEngagement(updated._id, engagement)
+  } catch (error) {
+    console.error('Engagement projection failed after a committed mutation:', error)
+  }
   const result = { message, contentType, contentId: String(updated._id), engagement, version: Number(updated.__v || 0) }
   await MutationReceipt.updateOne({ userId: request.user._id, idempotencyKey }, { $set: { result } })
   return result
@@ -1252,6 +1262,9 @@ export const createPostComment = asyncHandler(async (request, response) => {
 
 export const createCommentReply = asyncHandler(async (request, response) => {
   const { commentId } = request.params
+  if (!mongoose.isValidObjectId(commentId)) {
+    throw createError(400, 'Invalid comment ID.')
+  }
   const text = String(request.body?.text || '').trim()
   if (!text) {
     throw createError(400, 'Reply text is required.')
@@ -1268,16 +1281,36 @@ export const createCommentReply = asyncHandler(async (request, response) => {
   const contentId = parentComment.contentId || String(parentComment.postId)
   const target = await loadEngagementTarget(contentType, contentId)
   if (contentType === 'project') ensureProjectEngagementAccess(target, request.user._id)
-  const existing = await MutationReceipt.findOne({ userId: request.user._id, idempotencyKey }).lean()
-  if (existing?.result) return response.status(201).json(existing.result)
-  await MutationReceipt.create({ userId: request.user._id, idempotencyKey, action: 'reply', contentType, contentId: String(target._id) })
-  await PostComment.create({ postId: contentType === 'project' ? target._id : undefined, contentType, contentId: String(target._id), parentCommentId: parentComment._id, userId: request.user._id, username: request.user.username, name: request.user.name, avatar: safeAvatarUrl(request.user.avatar), text, idempotencyKey })
-  await getEngagementTarget(contentType).updateOne({ _id: target._id }, { $inc: { 'engagement.commentsCount': 1 } })
+  const existingReply = await PostComment.findOne({ userId: request.user._id, idempotencyKey }).lean()
+  if (!existingReply) {
+    await PostComment.create({ postId: contentType === 'project' ? target._id : undefined, contentType, contentId: String(target._id), parentCommentId: parentComment._id, userId: request.user._id, username: request.user.username, name: request.user.name, avatar: safeAvatarUrl(request.user.avatar), text, idempotencyKey })
+    await getEngagementTarget(contentType).updateOne({ _id: target._id }, { $inc: { 'engagement.commentsCount': 1 } })
+  }
   const updated = await getEngagementTarget(contentType).findById(target._id)
   const result = { message: 'Reply added successfully.', contentType, contentId: String(target._id), engagement: await getGeneralEngagement(contentType, updated, getViewerId(request)) }
-  await MutationReceipt.updateOne({ userId: request.user._id, idempotencyKey }, { $set: { result } })
-  await upsertFeedProjection(contentType, updated)
+  try {
+    await upsertFeedProjection(contentType, updated)
+    if (contentType === 'project') await publishProjectEngagement(updated._id, result.engagement)
+  } catch (error) {
+    console.error('Reply projection failed after a committed mutation:', error)
+  }
   response.status(201).json(result)
+})
+
+export const toggleCommentReaction = asyncHandler(async (request, response) => {
+  const { commentId } = request.params
+  const emoji = String(request.body?.emoji || '')
+  if (!mongoose.isValidObjectId(commentId)) throw createError(400, 'Invalid comment ID.')
+  if (!['heart', 'laugh', 'wow', 'sad', 'fire'].includes(emoji)) throw createError(400, 'Invalid reaction.')
+  const comment = await PostComment.findById(commentId).lean()
+  if (!comment) throw createError(404, 'Comment not found.')
+  const existing = await CommentReaction.findOne({ commentId, userId: request.user._id })
+  if (existing?.emoji === emoji) await existing.deleteOne()
+  else if (existing) { existing.emoji = emoji; await existing.save() }
+  else await CommentReaction.create({ commentId, userId: request.user._id, emoji })
+  const rows = await CommentReaction.aggregate([{ $match: { commentId: new mongoose.Types.ObjectId(commentId) } }, { $group: { _id: '$emoji', count: { $sum: 1 } } }])
+  const viewer = await CommentReaction.findOne({ commentId, userId: request.user._id }).lean()
+  response.json({ commentId, reactions: Object.fromEntries(rows.map((row) => [row._id, row.count])), viewerReaction: viewer?.emoji || null })
 })
 
 export const updateContentEngagement = asyncHandler(async (request, response) => {

@@ -12,6 +12,7 @@ import {
   fetchPostEngagement,
   togglePostLike,
   togglePostSave,
+  toggleCommentReaction,
   updateContentEngagement,
 } from '../../lib/content'
 import { useReelFeed } from '../../hooks/useReelFeed'
@@ -28,6 +29,7 @@ import './HomePage.css'
 
 const DEFAULT_AVATAR =
   'https://image.qwenlm.ai/public_source/581c980c-93ea-4473-a881-d706c334af84/19f781f2a-1e76-4c62-8f73-55c5248d45ab.png'
+const COMMENT_REACTIONS = { heart: '❤️', laugh: '😂', wow: '😮', sad: '😢', fire: '🔥' }
 
 function buildEngagement(counts = {}) {
   return {
@@ -236,6 +238,8 @@ function HomePage() {
   const [commentTarget, setCommentTarget] = useState(null)
   const [commentText, setCommentText] = useState('')
   const [isSubmittingComment, setIsSubmittingComment] = useState(false)
+  const [commentError, setCommentError] = useState('')
+  const [replyTarget, setReplyTarget] = useState(null)
   const feedContainerRef = useRef(null)
   const reelNodesRef = useRef(new Map())
   const observerRef = useRef(null)
@@ -544,6 +548,8 @@ function HomePage() {
             engagement,
           })
           setCommentText('')
+          setCommentError('')
+          setReplyTarget(null)
         })
         .catch((error) => {
           window.alert(error.message || 'Failed to load comments.')
@@ -553,6 +559,8 @@ function HomePage() {
 
     setCommentTarget(reel)
     setCommentText('')
+    setCommentError('')
+    setReplyTarget(null)
   }
 
   const submitComment = async (event) => {
@@ -563,8 +571,37 @@ function HomePage() {
     }
 
     setIsSubmittingComment(true)
+    setCommentError('')
 
     try {
+      if (replyTarget) {
+        const replyId = replyTarget.commentId || replyTarget._id
+        const result = await createCommentReply(token, replyId, { text: commentText.trim() })
+        syncProjectEngagement(commentTarget.contentId, result.engagement)
+        const confirmedReply = {
+          commentId: `reply-${nextLocalId()}`,
+          userId: user?.id || user?._id || 'me',
+          username: user?.username || 'me',
+          name: user?.name || 'Me',
+          avatar: user?.avatar || DEFAULT_AVATAR,
+          text: commentText.trim(),
+          createdAt: new Date().toISOString(),
+          replies: [],
+        }
+        const appendReply = (comments) => comments.map((comment) => {
+          if (comment.commentId === replyId || String(comment._id) === String(replyId)) {
+            return { ...comment, replies: [...(comment.replies ?? []), confirmedReply] }
+          }
+          return { ...comment, replies: appendReply(comment.replies ?? []) }
+        })
+        setCommentTarget((prev) => prev ? {
+          ...prev,
+          engagement: { ...prev.engagement, ...result.engagement, comments: appendReply(prev.engagement?.comments ?? []) },
+        } : prev)
+        setCommentText('')
+        setReplyTarget(null)
+        return
+      }
       if (commentTarget.contentType === 'demo') {
         const localComment = {
           commentId: nextLocalId(),
@@ -607,7 +644,13 @@ function HomePage() {
           setCommentTarget((prev) => prev
             ? {
                 ...prev,
-                engagement: result.engagement,
+                // The mutation response carries counts, while the optimistic
+                // list contains the newly rendered comment. Do not replace it
+                // with the response's empty comments summary.
+                engagement: {
+                  ...result.engagement,
+                  comments: prev.engagement?.comments ?? [],
+                },
               }
             : prev)
         } catch (error) {
@@ -634,85 +677,166 @@ function HomePage() {
 
       setCommentText('')
     } catch (error) {
-      window.alert(error.message || 'Failed to add comment.')
+      setCommentError(error.message || 'Could not post your comment. Your text is still here - try again.')
     } finally {
       setIsSubmittingComment(false)
     }
   }
 
-  const handleReply = async (reel, commentId) => {
-    const replyText = window.prompt('Write a reply')
-
-    if (!replyText || !replyText.trim()) {
-      return
-    }
-
-    try {
-      const result = await createCommentReply(token, commentId, { text: replyText.trim() })
-      syncProjectEngagement(reel.contentId, result.engagement)
-      setCommentTarget((prev) => prev
-        ? {
-            ...prev,
-            engagement: result.engagement,
-          }
-        : prev)
-    } catch (error) {
-      window.alert(error.message || 'Failed to add reply.')
-    }
+  const handleReply = (_reel, comment) => {
+    setReplyTarget(comment)
+    setCommentError('')
   }
 
-  const renderCommentThread = (reel, comment, depth = 0) => (
-    <div key={comment.commentId} style={{ marginLeft: depth > 0 ? 18 : 0 }}>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: 12,
-        }}
-      >
-        <img
-          src={(user && comment.username === user.username && user.avatar) ? user.avatar : (comment.avatar || DEFAULT_AVATAR)}
-          alt={comment.username || comment.name || 'member'}
-          style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
-        />
-        <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-          <div style={{ fontSize: 13, color: '#f3f4f6', lineHeight: '1.4' }}>
-            <span style={{ fontWeight: 700, color: '#fff', marginRight: 6 }}>{comment.username || comment.name || 'member'}</span>
-            {comment.text}
-          </div>
-          <div style={{ display: 'flex', gap: 16, marginTop: 4, fontSize: 11, color: 'rgba(255, 255, 255, 0.45)', fontWeight: 600 }}>
-            <span>{(() => {
-              if (!comment.createdAt) return 'Just now'
-              const now = new Date()
-              const date = new Date(comment.createdAt)
-              const seconds = Math.floor((now - date) / 1000)
-              if (seconds < 60) return 'now'
-              const minutes = Math.floor(seconds / 60)
-              if (minutes < 60) return `${minutes}m`
-              const hours = Math.floor(minutes / 60)
-              if (hours < 24) return `${hours}h`
-              const days = Math.floor(hours / 24)
-              return `${days}d`
-            })()}</span>
-            {reel.contentType === 'project' ? (
-              <button
-                onClick={() => handleReply(reel, comment.commentId)}
-                style={{ background: 'none', border: 'none', color: 'rgba(255, 255, 255, 0.45)', font: 'inherit', fontWeight: 700, padding: 0, cursor: 'pointer' }}
-              >
-                Reply
-              </button>
-            ) : null}
-          </div>
-        </div>
-      </div>
+  const [openEmojiPicker, setOpenEmojiPicker] = useState(null) // { commentId, top, left } or null
+  const emojiPickerRef = useRef(null)
 
-      {(comment.replies ?? []).length > 0 ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 14 }}>
-          {comment.replies.map((reply) => renderCommentThread(reel, reply, depth + 1))}
+  // Close picker when clicking outside
+  useEffect(() => {
+    if (!openEmojiPicker) return
+    const handler = (e) => {
+      if (emojiPickerRef.current && !emojiPickerRef.current.contains(e.target)) {
+        setOpenEmojiPicker(null)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    document.addEventListener('touchstart', handler)
+    return () => {
+      document.removeEventListener('mousedown', handler)
+      document.removeEventListener('touchstart', handler)
+    }
+  }, [openEmojiPicker])
+
+  const handleCommentReaction = async (comment, emoji) => {
+    if (isGuest) { setCommentError('Sign in to react to comments.'); return }
+    const commentId = comment.commentId || comment._id
+    setOpenEmojiPicker(null) // close picker immediately
+    try {
+      const result = await toggleCommentReaction(token, commentId, emoji)
+      const updateTree = (items) => items.map((item) => {
+        if ((item.commentId || item._id) === commentId) return { ...item, reactions: result.reactions, viewerReaction: result.viewerReaction }
+        return { ...item, replies: updateTree(item.replies || []) }
+      })
+      setCommentTarget((prev) => prev ? { ...prev, engagement: { ...prev.engagement, comments: updateTree(prev.engagement?.comments || []) } } : prev)
+    } catch (error) { setCommentError(error.message || 'Could not add a reaction.') }
+  }
+
+  const renderCommentThread = (reel, comment, depth = 0) => {
+    const commentId = comment.commentId || comment._id
+    const viewerEmoji = comment.viewerReaction ? COMMENT_REACTIONS[comment.viewerReaction] : null
+    const hasReactions = Object.values(comment.reactions || {}).some(c => c > 0)
+
+    return (
+      <div key={commentId} style={{ marginLeft: depth > 0 ? 18 : 0 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+          <img
+            src={(user && comment.username === user.username && user.avatar) ? user.avatar : (comment.avatar || DEFAULT_AVATAR)}
+            alt={comment.username || comment.name || 'member'}
+            style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+          />
+          <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+            {/* Comment text */}
+            <div style={{ fontSize: 13, color: '#f3f4f6', lineHeight: '1.4' }}>
+              <span style={{ fontWeight: 700, color: '#fff', marginRight: 6 }}>{comment.username || comment.name || 'member'}</span>
+              {comment.text}
+            </div>
+
+            {/* Meta row: time | Reply | emoji picker trigger */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 6, fontSize: 11, color: 'rgba(255,255,255,0.45)', fontWeight: 600 }}>
+              <span>{(() => {
+                if (!comment.createdAt) return 'Just now'
+                const now = new Date()
+                const date = new Date(comment.createdAt)
+                const seconds = Math.floor((now - date) / 1000)
+                if (seconds < 60) return 'now'
+                const minutes = Math.floor(seconds / 60)
+                if (minutes < 60) return `${minutes}m`
+                const hours = Math.floor(minutes / 60)
+                if (hours < 24) return `${hours}h`
+                const days = Math.floor(hours / 24)
+                return `${days}d`
+              })()}</span>
+
+              {reel.contentType === 'project' ? (
+                <button
+                  onClick={() => handleReply(reel, comment)}
+                  style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.45)', font: 'inherit', fontWeight: 700, padding: 0, cursor: 'pointer' }}
+                >
+                  Reply
+                </button>
+              ) : null}
+
+              {/* Emoji reaction trigger — Instagram style */}
+              <div style={{ marginLeft: 'auto' }}>
+                <button
+                  type="button"
+                  aria-label={viewerEmoji ? 'Change reaction' : 'Add reaction'}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    if (openEmojiPicker && openEmojiPicker.commentId === commentId) {
+                      setOpenEmojiPicker(null)
+                    } else {
+                      const rect = e.currentTarget.getBoundingClientRect()
+                      setOpenEmojiPicker({ commentId, comment, top: rect.top, left: rect.right })
+                    }
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: '4px 6px',
+                    cursor: 'pointer',
+                    fontSize: viewerEmoji ? 18 : 16,
+                    lineHeight: 1,
+                    opacity: viewerEmoji ? 1 : 0.45,
+                    transition: 'all 0.15s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 3,
+                  }}
+                >
+                  {viewerEmoji || '🙂'}
+                  {viewerEmoji && (() => {
+                    const cnt = (comment.reactions || {})[comment.viewerReaction] || 0
+                    return cnt > 0 ? <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', fontWeight: 700 }}>{cnt}</span> : null
+                  })()}
+                </button>
+              </div>
+            </div>
+
+            {/* Reaction count bubbles */}
+            {hasReactions && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 6 }}>
+                {Object.entries(comment.reactions || {}).filter(([,cnt]) => cnt > 0).map(([key, cnt]) => (
+                  <span
+                    key={key}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 3,
+                      padding: '2px 7px',
+                      borderRadius: 10,
+                      background: comment.viewerReaction === key ? 'rgba(255,122,89,0.18)' : 'rgba(255,255,255,0.06)',
+                      border: `1px solid ${comment.viewerReaction === key ? '#ff7a59' : 'rgba(255,255,255,0.1)'}`,
+                      fontSize: 12,
+                      color: '#fff',
+                    }}
+                  >
+                    {COMMENT_REACTIONS[key]} <span style={{ fontSize: 10, opacity: 0.7 }}>{cnt}</span>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-      ) : null}
-    </div>
-  )
+
+        {(comment.replies ?? []).length > 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 14 }}>
+            {comment.replies.map((reply) => renderCommentThread(reel, reply, depth + 1))}
+          </div>
+        ) : null}
+      </div>
+    )
+  }
 
   const safeActiveIdx = Math.min(
     activeIdx,
@@ -949,14 +1073,14 @@ function HomePage() {
       </div>
 
       {commentTarget ? (
-        <div className="details-overlay" onClick={() => setCommentTarget(null)}>
+        <div className="details-overlay" onClick={() => { setCommentTarget(null); setReplyTarget(null); setCommentError(''); setOpenEmojiPicker(null) }}>
           <div className="details-card anim-fade-up" onClick={(event) => event.stopPropagation()} style={{ display: 'flex', flexDirection: 'column', height: '80vh', maxHeight: 540, borderRadius: '24px 24px 0 0', padding: '16px 20px 24px' }}>
             <div className="details-header" style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: 12, marginBottom: 16 }}>
               <div className="details-title-group">
                 <span className="details-subtitle" style={{ color: '#FF7A59', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>Comments</span>
                 <h2 className="details-main-title" style={{ fontSize: 16, fontWeight: 700, margin: '2px 0 0' }}>{commentTarget.projectTitle}</h2>
               </div>
-              <button onClick={() => setCommentTarget(null)} className="close-btn" style={{ background: 'rgba(255,255,255,0.06)', border: 'none', width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff' }}>
+              <button onClick={() => { setCommentTarget(null); setReplyTarget(null); setCommentError('') }} className="close-btn" aria-label="Close comments" style={{ background: 'rgba(255,255,255,0.06)', border: 'none', width: 44, height: 44, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff' }}>
                 <CloseIcon size={14} />
               </button>
             </div>
@@ -971,14 +1095,22 @@ function HomePage() {
               )}
             </div>
 
-            <form onSubmit={submitComment} style={{ display: 'flex', alignItems: 'center', gap: 12, borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 16 }}>
+            {commentError ? <div role="alert" style={{ color: '#ff8b9b', fontSize: 12, lineHeight: 1.4 }}>{commentError}</div> : null}
+            {replyTarget ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#bfc7d5', fontSize: 12 }}>
+                <span>Replying to <strong style={{ color: '#fff' }}>@{replyTarget.username || replyTarget.name || 'creator'}</strong></span>
+                <button type="button" onClick={() => setReplyTarget(null)} style={{ border: 0, background: 'transparent', color: '#ff8b72', fontWeight: 700, padding: 8 }}>Cancel</button>
+              </div>
+            ) : null}
+            <form onSubmit={submitComment} style={{ display: 'flex', alignItems: 'center', gap: 12, borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: 16 }}>
               <img src={user?.avatar || DEFAULT_AVATAR} alt="Me" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }} />
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.05)', borderRadius: 24, padding: '6px 14px 6px 16px', border: '1px solid rgba(255,255,255,0.08)' }}>
                 <input
                   type="text"
                   value={commentText}
                   onChange={(event) => setCommentText(event.target.value)}
-                  placeholder={isGuest ? 'Sign in to comment...' : 'Add a comment...'}
+                  maxLength={500}
+                  placeholder={isGuest ? 'Sign in to comment...' : replyTarget ? `Reply to @${replyTarget.username || replyTarget.name || 'creator'}...` : 'Add a comment...'}
                   disabled={isGuest || isSubmittingComment}
                   style={{
                     flex: 1,
@@ -1008,6 +1140,7 @@ function HomePage() {
                 </button>
               </div>
             </form>
+            {!isGuest ? <div style={{ alignSelf: 'flex-end', color: commentText.length >= 450 ? '#ff8b72' : 'rgba(255,255,255,.38)', fontSize: 11 }}>{commentText.length}/500</div> : null}
           </div>
         </div>
       ) : null}
@@ -1065,6 +1198,64 @@ function HomePage() {
           </div>
         </div>
       ) : null}
+
+      {/* ── Fixed-position emoji picker (escapes all overflow:auto containers) ── */}
+      {openEmojiPicker && (() => {
+        const { top, left, comment } = openEmojiPicker
+        // Position: appear above + to the left of the trigger button
+        const pickerW = 5 * 44 + 16 // 5 emojis * 44px + padding
+        const safeLeft = Math.max(8, Math.min(left - pickerW, window.innerWidth - pickerW - 8))
+        const safeTop = top - 60  // appear above the button row
+        return (
+          <div
+            ref={emojiPickerRef}
+            style={{
+              position: 'fixed',
+              top: safeTop,
+              left: safeLeft,
+              zIndex: 9999,
+              display: 'flex',
+              gap: 4,
+              padding: '8px 10px',
+              borderRadius: 28,
+              background: '#1e1e24',
+              border: '1px solid rgba(255,255,255,0.18)',
+              boxShadow: '0 8px 40px rgba(0,0,0,0.75)',
+              animation: 'emojiPickerIn 0.2s cubic-bezier(0.34,1.56,0.64,1)',
+              transformOrigin: 'bottom center',
+            }}
+          >
+            {Object.entries(COMMENT_REACTIONS).map(([key, symbol]) => (
+              <button
+                key={key}
+                type="button"
+                aria-label={key}
+                onClick={(e) => { e.stopPropagation(); handleCommentReaction(comment, key) }}
+                style={{
+                  border: comment.viewerReaction === key ? '2px solid #ff7a59' : '2px solid transparent',
+                  background: comment.viewerReaction === key ? 'rgba(255,122,89,0.2)' : 'transparent',
+                  borderRadius: '50%',
+                  width: 40,
+                  height: 40,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 22,
+                  cursor: 'pointer',
+                  transition: 'transform 0.12s, background 0.15s',
+                  padding: 0,
+                }}
+                onTouchStart={e => { e.currentTarget.style.transform = 'scale(1.3)' }}
+                onTouchEnd={e => { e.currentTarget.style.transform = 'scale(1)' }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.3)' }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)' }}
+              >
+                {symbol}
+              </button>
+            ))}
+          </div>
+        )
+      })()}
     </div>
   )
 }

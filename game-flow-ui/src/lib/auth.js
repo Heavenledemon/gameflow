@@ -45,14 +45,14 @@ export function clearStoredSession() {
 export async function signUp(input) {
   return request('/auth/signup', {
     method: 'POST',
-    body: JSON.stringify(input),
+    body: input,
   })
 }
 
 export async function signIn(input) {
   return request('/auth/signin', {
     method: 'POST',
-    body: JSON.stringify(input),
+    body: input,
   })
 }
 
@@ -70,6 +70,6 @@ export async function updateProfile(token, profileData) {
     headers: {
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify(profileData),
+    body: profileData,
   })
 }

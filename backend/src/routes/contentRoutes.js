@@ -1,6 +1,7 @@
 import express, { Router } from 'express'
 import {
   createCommentReply,
+  toggleCommentReaction,
   createPostComment,
   createProject,
   getContent,
@@ -21,6 +22,7 @@ import {
   updateContentEngagement,
   deleteProject,
 } from '../controllers/contentController.js'
+import { createCollaborationRequest } from '../controllers/socialController.js'
 import { optionalProtect, protect } from '../middlewares/authMiddleware.js'
 import { redisRateLimit } from '../middlewares/rateLimitMiddleware.js'
 import { getFeed, getPost, getPostComments } from '../controllers/feedController.js'
@@ -48,6 +50,7 @@ router.post('/posts/:postId/like', protect, engagementRateLimit, togglePostLike)
 router.post('/posts/:postId/save', protect, engagementRateLimit, togglePostSave)
 router.post('/posts/:postId/comments', protect, commentRateLimit, createPostComment)
 router.post('/comments/:commentId/replies', protect, commentRateLimit, createCommentReply)
+router.post('/comments/:commentId/reactions', protect, engagementRateLimit, toggleCommentReaction)
 router.post('/content/:contentType/:contentId/engagement', protect, engagementRateLimit, updateContentEngagement)
 router.put(
   '/projects/:projectId/files',
@@ -58,5 +61,6 @@ router.put(
 router.post('/projects/:projectId/uploads/initiate', protect, initiateProjectUpload)
 router.post('/uploads/:uploadId/complete', protect, completeProjectUpload)
 router.post('/projects/:projectId/publish', protect, publishProject)
+router.post('/projects/:projectId/collaboration-requests', protect, engagementRateLimit, createCollaborationRequest)
 
 export default router

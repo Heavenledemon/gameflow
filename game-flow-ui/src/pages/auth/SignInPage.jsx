@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import wavingVideo from '../../assets/wave.mp4';
 import logoImg    from '../../assets/logo.jpg';
@@ -113,39 +113,39 @@ const EyeBtn = ({ visible, onToggle }) => (
 );
 
 // ─── Primary CTA ──────────────────────────────────────────────────────────
-const CTA = ({ label, onClick, disabled }) => (
+const CTA = ({ label, onClick, disabled, loading }) => (
   <button
     onClick={onClick}
-    disabled={disabled}
+    disabled={disabled || loading}
     style={{
       width: '100%',
       height: 56,
-      background: disabled ? 'rgba(248,249,250,0.3)' : T.ctaBg,
+      background: (disabled || loading) ? 'rgba(248,249,250,0.3)' : T.ctaBg,
       border: 'none',
       borderRadius: 20,
       fontSize: 16,
       fontWeight: 600,
-      color: disabled ? 'rgba(17,24,39,0.35)' : T.ctaText,
+      color: (disabled || loading) ? 'rgba(17,24,39,0.35)' : T.ctaText,
       letterSpacing: -0.1,
-      cursor: disabled ? 'not-allowed' : 'pointer',
+      cursor: (disabled || loading) ? 'not-allowed' : 'pointer',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       gap: 6,
       outline: 'none',
       WebkitTapHighlightColor: 'transparent',
-      boxShadow: disabled ? 'none' : '0 8px 24px rgba(0,0,0,0.18)',
+      boxShadow: (disabled || loading) ? 'none' : '0 8px 24px rgba(0,0,0,0.18)',
       transition: 'transform 0.2s ease, opacity 0.2s ease',
     }}
-    onMouseEnter={e  => !disabled && (e.currentTarget.style.transform = 'scale(1.01)')}
+    onMouseEnter={e  => !(disabled || loading) && (e.currentTarget.style.transform = 'scale(1.01)')}
     onMouseLeave={e  => (e.currentTarget.style.transform = 'scale(1)')}
-    onMouseDown={e   => !disabled && (e.currentTarget.style.transform = 'scale(0.98)')}
-    onMouseUp={e     => !disabled && (e.currentTarget.style.transform = 'scale(1.01)')}
-    onTouchStart={e  => !disabled && (e.currentTarget.style.transform = 'scale(0.98)')}
+    onMouseDown={e   => !(disabled || loading) && (e.currentTarget.style.transform = 'scale(0.98)')}
+    onMouseUp={e     => !(disabled || loading) && (e.currentTarget.style.transform = 'scale(1.01)')}
+    onTouchStart={e  => !(disabled || loading) && (e.currentTarget.style.transform = 'scale(0.98)')}
     onTouchEnd={e    => (e.currentTarget.style.transform = 'scale(1)')}
   >
-    {label}
-    <span style={{ fontSize: 16, opacity: disabled ? 0.3 : 0.55 }}>→</span>
+    {loading ? 'Signing in...' : label}
+    {!loading && <span style={{ fontSize: 16, opacity: disabled ? 0.3 : 0.55 }}>→</span>}
   </button>
 );
 
@@ -202,6 +202,7 @@ const OAuthButton = ({ label, icon, onClick }) => (
 
 const SignInPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { signIn } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -213,6 +214,9 @@ const SignInPage = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const slides = [slide1, slide2, slide3];
 
+  const searchParams = new URLSearchParams(location.search);
+  const redirectPath = searchParams.get('redirect') || '/app/home';
+
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 100);
     return () => clearTimeout(t);
@@ -220,7 +224,7 @@ const SignInPage = () => {
 
   useEffect(() => {
     const t = setInterval(() => setActiveSlide(p => (p + 1) % slides.length), 5000);
-    return () => clearInterval(t);
+    return () => clearTimeout(t);
   }, [slides.length]);
 
   const handleSignIn = async () => {
@@ -233,7 +237,7 @@ const SignInPage = () => {
         username,
         password,
       });
-      navigate('/app/home');
+      navigate(redirectPath);
     } catch (error) {
       setErrorMessage(error.message || 'Unable to sign in right now.');
     } finally {
@@ -428,7 +432,7 @@ const SignInPage = () => {
           ) : null}
 
           {/* Primary CTA */}
-          <CTA label="Sign In" onClick={handleSignIn} disabled={!isReady} />
+          <CTA label="Sign In" onClick={handleSignIn} disabled={!isReady} loading={isSubmitting} />
 
           {/* Divider + Google */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

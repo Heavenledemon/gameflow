@@ -162,3 +162,25 @@ export async function createCommentReply(token, commentId, payload) {
     body: payload,
   })
 }
+
+export async function toggleCommentReaction(token, commentId, emoji) {
+  return request(`/comments/${encodeURIComponent(commentId)}/reactions`, {
+    method: 'POST', headers: mutationHeaders(token), body: { emoji },
+  })
+}
+
+export async function fetchCollaborationCandidates(token) {
+  return request('/auth/social/collaboration-candidates', { headers: authHeaders(token) })
+}
+
+export async function toggleUserFollow(token, userId) {
+  return request(`/auth/social/users/${encodeURIComponent(userId)}/follow`, {
+    method: 'POST', headers: mutationHeaders(token),
+  })
+}
+
+export async function createCollaborationRequest(token, projectId, payload) {
+  return request(`/projects/${encodeURIComponent(projectId)}/collaboration-requests`, {
+    method: 'POST', headers: mutationHeaders(token), body: payload,
+  })
+}

@@ -59,64 +59,39 @@ const NotificationsPage = () => {
         </h1>
       </header>
 
-      {/* Notifications List */}
       <div
-        className="scrollbar-hide"
         style={{
           flex: 1,
-          overflowY: 'auto',
-          padding: '16px 20px 100px',
           display: 'flex',
           flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '40px 20px',
+          textAlign: 'center',
           gap: 16,
         }}
       >
-        {NOTIFICATIONS.map((notif) => (
-          <div
-            key={notif.id}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 14,
-              padding: '16px',
-              background: 'rgba(255, 255, 255, 0.03)',
-              borderRadius: 18,
-              border: '1px solid rgba(255, 255, 255, 0.04)',
-              transition: 'transform 0.15s ease',
-            }}
-          >
-            {/* Avatar */}
-            <div style={{ position: 'relative', width: 44, height: 44, borderRadius: '50%', overflow: 'hidden', flexShrink: 0 }}>
-              <img src={notif.avatar} alt={notif.user} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            </div>
-
-            {/* Message Body */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <div style={{ fontSize: 14, lineHeight: 1.4, color: '#E2E8F0' }}>
-                <span style={{ fontWeight: 700, color: '#FFF' }}>
-                  {notif.user}
-                </span>{' '}
-                {notif.isVerified && <VerifiedIcon style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: 4 }} />}
-                {notif.action}{' '}
-                {notif.target && (
-                  <span style={{ fontWeight: 600, color: '#FF7A59' }}>
-                    "{notif.target}"
-                  </span>
-                )}
-              </div>
-              <span style={{ fontSize: 11, color: 'rgba(255, 255, 255, 0.35)', fontWeight: 500 }}>
-                {notif.time}
-              </span>
-            </div>
-
-            {/* Type Indicator Icon */}
-            <div style={{ flexShrink: 0 }}>
-              {notif.type === 'like' && <HeartIcon filled size={16} style={{ color: '#FF7A59' }} />}
-              {notif.type === 'follow' && <span style={{ fontSize: 14 }}>👤</span>}
-              {notif.type === 'feature' && <span style={{ fontSize: 14 }}>✨</span>}
-            </div>
-          </div>
-        ))}
+        <div style={{
+          width: 80,
+          height: 80,
+          borderRadius: '55%',
+          background: 'rgba(255, 255, 255, 0.03)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'rgba(255, 255, 255, 0.3)',
+          border: '1px solid rgba(255, 255, 255, 0.05)',
+        }}>
+          <BellIcon size={36} />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 280 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: '#FFFFFF' }}>
+            Alerts Unavailable
+          </h2>
+          <p style={{ fontSize: 14, lineHeight: 1.4, color: 'rgba(255, 255, 255, 0.5)', margin: 0 }}>
+            Real-time notifications are currently not supported in this mobile prototype.
+          </p>
+        </div>
       </div>
     </div>
   );

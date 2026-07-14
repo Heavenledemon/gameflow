@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useProjectRealtime } from '../../hooks/useProjectRealtime';
 import {
   createCommentReply,
   createPostComment,
@@ -8,17 +9,21 @@ import {
   togglePostLike,
   togglePostSave,
   updateContentEngagement,
+  deleteProject,
+  updateProject,
+  createCollaborationRequest,
+  fetchCollaborationCandidates,
+  toggleUserFollow,
 } from '../../lib/content';
 import GltfAssetViewer from '../../components/GltfAssetViewer';
 import WebGLGamePlayer from '../../components/WebGLGamePlayer';
 import GuestBanner from '../../components/layout/GuestBanner';
-import GuestToast from '../../components/layout/GuestToast';
+import { BottomSheet, ConfirmDialog } from '../../components/ui/Overlay';
 import {
   ChevronLeftIcon, HeartIcon,
-  CommentIcon, BookmarkIcon, ShareIcon, VerifiedIcon,
+  CommentIcon, BookmarkIcon, ShareIcon, VerifiedIcon, DotsIcon
 } from '../../components/icons/Icons';
 
-/* ─── Design Tokens ────────────────────────────────────────────────────── */
 const C = {
   bg: '#090909',
   surface: '#121212',
@@ -42,7 +47,6 @@ const formatCount = (value = 0) => {
 const AVATAR = 'https://image.qwenlm.ai/public_source/581c980c-93ea-4473-a881-d706c334af84/19f781f2a-1e76-4c62-8f73-55c5248d45ab.png';
 const BANNER = 'https://image.qwenlm.ai/public_source/581c980c-93ea-4473-a881-d706c334af84/1bd8db8c4-7446-4905-bbe6-106a3bce5dc2.png';
 
-/* ─── Premium Glass Badge ──────────────────────────────────────────────── */
 const GlassBadge = ({ children }) => (
   <span style={{
     padding: '6px 12px',
@@ -61,7 +65,6 @@ const GlassBadge = ({ children }) => (
   </span>
 );
 
-/* ─── Premium Glass Chip ───────────────────────────────────────────────── */
 const GlassChip = ({ children, accent }) => (
   <span style={{
     padding: '6px 12px',
@@ -77,7 +80,6 @@ const GlassChip = ({ children, accent }) => (
   </span>
 );
 
-/* ─── ProjectDetailPage Component ──────────────────────────────────────── */
 const ProjectDetailPage = () => {
   const navigate = useNavigate();
   const { projectId } = useParams();
@@ -87,17 +89,44 @@ const ProjectDetailPage = () => {
   const [error, setError] = useState(null);
   const [commentText, setCommentText] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
-  const [showAllComments, setShowAllComments] = useState(false);
+  const [showCommentsSheet, setShowCommentsSheet] = useState(false);
+  const [showOwnerSheet, setShowOwnerSheet] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteConfirmTitle, setDeleteConfirmTitle] = useState('');
   const [descExpanded, setDescExpanded] = useState(false);
-  const [toast, setToast] = useState(null);
   const [isFollowing, setIsFollowing] = useState(false);
-  const [collaborated, setCollaborated] = useState(false);
+  const [showCollaborationSheet, setShowCollaborationSheet] = useState(false);
+  const [collaborationCandidates, setCollaborationCandidates] = useState([]);
+  const [selectedCollaborator, setSelectedCollaborator] = useState(null);
+  const [collaborationMessage, setCollaborationMessage] = useState('');
+  const [collaborationError, setCollaborationError] = useState('');
+  const [isLoadingCollaborators, setIsLoadingCollaborators] = useState(false);
+  const [isSendingCollaborationRequest, setIsSendingCollaborationRequest] = useState(false);
+  const [showGuestAuthSheet, setShowGuestAuthSheet] = useState(false);
 
   const localIdRef = useRef(0);
   const nextLocalId = () => {
     localIdRef.current += 1;
     return `local-${localIdRef.current}`;
   };
+
+  useProjectRealtime(projectId, token, {
+    onEngagementUpdated: (data) => {
+      if (data?.engagement) {
+        syncProject({ engagement: data.engagement });
+      }
+    },
+    onReconnected: async () => {
+      try {
+        const data = await fetchProject(projectId, token);
+        if (data?.project) {
+          syncProject(data.project);
+        }
+      } catch (err) {
+        console.warn('Failed to refetch project data after reconnection:', err);
+      }
+    }
+  });
 
   useEffect(() => {
     let isMounted = true;
@@ -124,13 +153,9 @@ const ProjectDetailPage = () => {
     };
   }, [projectId, token]);
 
-  const handleGuestAction = (actionName) => {
-    setToast({ action: actionName });
-  };
-
-  const guard = (actionName, fn) => (...args) => {
+  const guard = (fn) => (...args) => {
     if (isGuest) {
-      handleGuestAction(actionName);
+      setShowGuestAuthSheet(true);
     } else {
       fn(...args);
     }
@@ -159,10 +184,7 @@ const ProjectDetailPage = () => {
 
   const mutateEngagement = async (action, payload = {}) => {
     if (isGuest) {
-      const label = action === 'comment' ? 'comment on posts'
-                  : action === 'react' ? 'react to posts'
-                  : action === 'save' ? 'save posts' : 'share posts';
-      handleGuestAction(label);
+      setShowGuestAuthSheet(true);
       return;
     }
 
@@ -224,6 +246,54 @@ const ProjectDetailPage = () => {
     if (!isGuest) await mutateEngagement('share');
   };
 
+  const openCollaborationPicker = async () => {
+    setShowCollaborationSheet(true);
+    setCollaborationError('');
+    setIsLoadingCollaborators(true);
+    try {
+      const data = await fetchCollaborationCandidates(token);
+      setCollaborationCandidates(Array.isArray(data?.candidates) ? data.candidates : []);
+    } catch (err) {
+      setCollaborationError(err.message || 'Unable to load your connections.');
+    } finally {
+      setIsLoadingCollaborators(false);
+    }
+  };
+
+  const sendCollaborationRequest = async () => {
+    if (!selectedCollaborator) return;
+    setIsSendingCollaborationRequest(true);
+    setCollaborationError('');
+    try {
+      await createCollaborationRequest(token, projectId, {
+        recipientId: selectedCollaborator.id,
+        message: collaborationMessage.trim(),
+      });
+      const username = selectedCollaborator.username;
+      setShowCollaborationSheet(false);
+      setCollaborationMessage('');
+      setSelectedCollaborator(null);
+      alert(`Collaboration request sent to @${username}.`);
+    } catch (err) {
+      setCollaborationError(err.message || 'Unable to send the collaboration request.');
+    } finally {
+      setIsSendingCollaborationRequest(false);
+    }
+  };
+
+  const toggleFollowing = async () => {
+    if (!project?.ownerId) return;
+    const previousValue = isFollowing;
+    setIsFollowing(!previousValue);
+    try {
+      const result = await toggleUserFollow(token, project.ownerId);
+      setIsFollowing(Boolean(result.following));
+    } catch (err) {
+      setIsFollowing(previousValue);
+      alert(err.message || 'Unable to update follow status.');
+    }
+  };
+
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
     if (!commentText.trim()) return;
@@ -261,7 +331,7 @@ const ProjectDetailPage = () => {
 
   const handleReply = async (commentId) => {
     if (isGuest) {
-      handleGuestAction('reply to comments');
+      setShowGuestAuthSheet(true);
       return;
     }
     const text = window.prompt('Write a reply');
@@ -272,6 +342,32 @@ const ProjectDetailPage = () => {
       syncProject({ engagement: result.engagement });
     } catch (err) {
       alert(err.message || 'Failed to add reply.');
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (deleteConfirmTitle !== project.title) {
+      alert('Project title does not match. Deletion cancelled.');
+      return;
+    }
+    try {
+      await deleteProject(token, projectId);
+      alert('Project deleted successfully.');
+      navigate('/app/profile');
+    } catch (err) {
+      alert(err.message || 'Failed to delete project.');
+    }
+  };
+
+  const toggleVisibility = async () => {
+    try {
+      const updated = await updateProject(token, projectId, {
+        visibility: project.visibility === 'public' ? 'private' : 'public'
+      });
+      syncProject(updated.project);
+      alert(`Project is now ${updated.project.visibility}.`);
+    } catch (err) {
+      alert(err.message || 'Failed to update visibility.');
     }
   };
 
@@ -294,6 +390,12 @@ const ProjectDetailPage = () => {
 
   const imageSrc = project.previewUrl || project.imageUrl || BANNER;
   const creatorRole = project.type === 'game' ? 'Game Developer' : project.type === '3d' ? '3D Artist' : '2D Artist';
+  const normalizedOwnerUsername = String(project.ownerUsername || '').trim().toLowerCase();
+  const normalizedViewerUsername = String(user?.username || '').trim().toLowerCase();
+  const isOwner = Boolean(user && (
+    (project.ownerId && String(project.ownerId) === String(user.id || user._id)) ||
+    (normalizedOwnerUsername && normalizedOwnerUsername === normalizedViewerUsername)
+  ));
 
   return (
     <div
@@ -309,7 +411,6 @@ const ProjectDetailPage = () => {
         color: C.text,
       }}
     >
-      {/* Immersive blur element */}
       <div aria-hidden style={{
         position: 'absolute', top: 0, left: 0, right: 0, height: '40%',
         background: `radial-gradient(circle at 50% 0%, ${C.accent}12, transparent 65%)`,
@@ -342,20 +443,20 @@ const ProjectDetailPage = () => {
 
           <div
             onClick={() => {
-              if (user && project.ownerUsername === user.username) navigate('/app/profile');
+              if (isOwner) navigate('/app/profile');
               else navigate(`/app/creator/${project.ownerUsername || 'creator'}`);
             }}
             style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
           >
             <img
-              src={(user && project.ownerUsername === user.username && user.avatar) ? user.avatar : (project.ownerAvatar || AVATAR)}
+              src={(isOwner && user.avatar) ? user.avatar : (project.ownerAvatar || AVATAR)}
               alt="creator"
               style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }}
             />
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <span style={{ fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 3, lineHeight: 1.2 }}>
                 {project.ownerUsername || 'creator'}
-                {((!user || project.ownerUsername !== user.username) || user.isVerified) && <VerifiedIcon size={11} />}
+                {(!isOwner || user?.isVerified) && <VerifiedIcon size={11} />}
               </span>
               <span style={{ fontSize: 10, color: C.textSecondary }}>{creatorRole}</span>
             </div>
@@ -363,21 +464,36 @@ const ProjectDetailPage = () => {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button
-            onClick={guard('follow creators', () => setIsFollowing(!isFollowing))}
-            style={{
-              padding: '6px 14px',
-              borderRadius: 100,
-              background: isFollowing ? 'transparent' : C.accent,
-              border: `1px solid ${isFollowing ? C.borderGlass : 'transparent'}`,
-              color: '#FFF',
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            {isFollowing ? 'Following' : 'Follow'}
-          </button>
+          {isOwner ? (
+            <button
+              onClick={() => setShowOwnerSheet(true)}
+              style={{
+                width: 38, height: 38, borderRadius: '50%',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: `1px solid ${C.borderGlass}`,
+                color: C.text, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              <DotsIcon size={20} />
+            </button>
+          ) : (
+            <button
+              onClick={guard(toggleFollowing)}
+              style={{
+                padding: '6px 14px',
+                borderRadius: 100,
+                background: isFollowing ? 'transparent' : C.accent,
+                border: `1px solid ${isFollowing ? C.borderGlass : 'transparent'}`,
+                color: '#FFF',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              {isFollowing ? 'Following' : 'Follow'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -426,20 +542,15 @@ const ProjectDetailPage = () => {
               style={{
                 width: '100%',
                 height: '100%',
-                objectFit: 'cover',
-                transition: 'transform 0.4s ease',
+                objectFit: 'contain',
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.03)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = 'none'; }}
             />
           )}
 
-          {/* Floating Category Badge */}
           <div style={{ position: 'absolute', top: 16, right: 16, zIndex: 5 }}>
             <GlassBadge>{project.category || project.type}</GlassBadge>
           </div>
 
-          {/* User Guide for 3D Viewer */}
           {project.type === '3d' && (
             <div style={{
               position: 'absolute', bottom: 16,
@@ -459,8 +570,6 @@ const ProjectDetailPage = () => {
 
         {/* ── INFO & DETAILS AREA ── */}
         <div style={{ padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: 24 }}>
-
-          {/* Title and stats summary */}
           <div>
             <h1 style={{
               fontSize: 26,
@@ -480,7 +589,6 @@ const ProjectDetailPage = () => {
             </p>
           </div>
 
-          {/* Expandable Description */}
           <div>
             <p style={{
               fontSize: 14,
@@ -509,7 +617,6 @@ const ProjectDetailPage = () => {
             )}
           </div>
 
-          {/* Project tags */}
           {Array.isArray(project.tags) && project.tags.length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {project.tags.map(t => (
@@ -539,7 +646,7 @@ const ProjectDetailPage = () => {
               {
                 icon: <CommentIcon size={22} />,
                 label: formatCount(engagement.commentsCount),
-                onClick: () => setShowAllComments(!showAllComments),
+                onClick: () => setShowCommentsSheet(true),
               },
               {
                 icon: <BookmarkIcon filled={saved} size={22} color={saved ? C.accent : 'currentColor'} />,
@@ -549,16 +656,15 @@ const ProjectDetailPage = () => {
               },
               {
                 icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
-                label: 'Collab',
-                onClick: guard('collaborate', () => setCollaborated(!collaborated)),
-                active: collaborated,
+                label: 'Invite',
+                onClick: guard(openCollaborationPicker),
               },
               {
                 icon: <ShareIcon size={22} />,
                 label: 'Share',
                 onClick: handleShare,
               },
-            ].map((act, i) => (
+            ].filter((act) => !isOwner || act.label !== 'Invite').map((act, i) => (
               <button
                 key={i}
                 onClick={act.onClick}
@@ -579,7 +685,7 @@ const ProjectDetailPage = () => {
           </div>
 
           {/* ── PROJECT STATS GLASS CARD ── */}
-          <div style={{
+          {!isOwner ? <div style={{
             background: 'rgba(255, 255, 255, 0.02)',
             border: `1px solid ${C.borderGlass}`,
             borderRadius: 20,
@@ -601,37 +707,32 @@ const ProjectDetailPage = () => {
                 <div style={{ fontSize: 16, fontWeight: 700 }}>{stat.value}</div>
               </div>
             ))}
-          </div>
+          </div> : null}
 
           {/* ── COLLABORATION CTA ── */}
-          <div style={{
+          {isOwner ? <div style={{
             background: 'linear-gradient(135deg, rgba(255, 122, 92, 0.06) 0%, rgba(168, 85, 247, 0.04) 100%)',
             border: `1px solid rgba(255, 122, 92, 0.15)`,
             borderRadius: 20,
             padding: 22,
             textAlign: 'center',
           }}>
-            <h3 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 700 }}>Interested in collaborating?</h3>
+            <h3 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 700 }}>Invite a collaborator</h3>
             <p style={{ margin: '0 0 16px', fontSize: 12.5, color: C.textSecondary, lineHeight: 1.45 }}>
-              Message the creator to coordinate asset production, dev, or custom pipelines.
+              Choose someone you follow, or someone who follows you, for this project.
             </p>
             <button
-              onClick={guard('collaborate', () => { alert('Collaboration request sent!'); setCollaborated(true); })}
+              onClick={guard(openCollaborationPicker)}
               style={{
                 width: '100%', height: 46, borderRadius: 12,
                 background: C.accentGrad, border: 'none', color: '#FFF',
                 fontWeight: 700, fontSize: 13.5, cursor: 'pointer',
                 transition: 'all 0.2s',
               }}
-              onMouseEnter={e => e.currentTarget.style.filter = 'brightness(1.08)'}
-              onMouseLeave={e => e.currentTarget.style.filter = 'none'}
             >
-              {collaborated ? 'Request Sent ✔' : 'Send Collaboration Request'}
+              Choose a collaborator
             </button>
-            <span style={{ display: 'block', marginTop: 8, fontSize: 10.5, color: C.textSecondary }}>
-              Requests are delivered to the creator's inbox.
-            </span>
-          </div>
+          </div> : null}
 
           {/* ── TOOLS USED ── */}
           {Array.isArray(project.software) && project.software.length > 0 && (
@@ -647,122 +748,6 @@ const ProjectDetailPage = () => {
             </div>
           )}
 
-          {/* ── COMMENTS PREVIEW SECTION ── */}
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: C.textSecondary }}>
-                Comments ({comments.length})
-              </h3>
-              <button
-                onClick={() => setShowAllComments(!showAllComments)}
-                style={{ background: 'none', border: 'none', color: C.accent, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
-              >
-                {showAllComments ? 'Hide Comments' : 'View All'}
-              </button>
-            </div>
-
-            {/* Comment form inside */}
-            <form onSubmit={handleCommentSubmit} style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-              <input
-                type="text"
-                value={commentText}
-                onChange={e => setCommentText(e.target.value)}
-                placeholder={isGuest ? 'Sign in to comment' : 'Add a response...'}
-                disabled={isGuest || isSubmittingComment}
-                style={{
-                  flex: 1, height: 42, borderRadius: 10,
-                  background: C.surface, border: `1px solid ${C.borderGlass}`,
-                  color: C.text, padding: '0 14px', fontSize: 13, outline: 'none',
-                }}
-              />
-              <button
-                type="submit"
-                disabled={!commentText.trim() || isSubmittingComment}
-                style={{
-                  height: 42, padding: '0 16px', borderRadius: 10,
-                  background: C.accent, border: 'none', color: '#FFF',
-                  fontWeight: 600, fontSize: 13, cursor: 'pointer',
-                  opacity: commentText.trim() ? 1 : 0.5,
-                }}
-              >
-                Post
-              </button>
-            </form>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {comments.slice(0, showAllComments ? undefined : 2).map((comment) => (
-                <div key={comment.commentId} style={{
-                  padding: 14, borderRadius: 12,
-                  background: 'rgba(255, 255, 255, 0.02)',
-                  border: `1px solid ${C.borderGlass}`,
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <img
-                        src={comment.avatar || AVATAR}
-                        alt="commenter"
-                        style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover' }}
-                      />
-                      <span style={{ fontSize: 12.5, fontWeight: 700 }}>
-                        {comment.username || 'member'}
-                      </span>
-                    </div>
-                    <span style={{ fontSize: 10.5, color: C.textSecondary }}>
-                      {comment.createdAt ? new Date(comment.createdAt).toLocaleDateString() : 'Just now'}
-                    </span>
-                  </div>
-                  <p style={{ margin: 0, fontSize: 13.5, color: C.textSecondary, lineHeight: 1.45 }}>
-                    {comment.text}
-                  </p>
-                </div>
-              ))}
-
-              {comments.length === 0 && (
-                <p style={{ margin: 0, fontSize: 13, color: C.textSecondary, fontStyle: 'italic' }}>
-                  No responses yet. Be the first to start a conversation!
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* ── RELATED PROJECTS ── */}
-          <div>
-            <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: C.textSecondary }}>
-              More from Creator
-            </h3>
-            <div
-              className="scrollbar-hide"
-              style={{
-                display: 'flex', gap: 12, overflowX: 'auto',
-                paddingBottom: 8, scrollbarWidth: 'none', msOverflowStyle: 'none',
-              }}
-            >
-              {[
-                { title: 'Cyberpunk Rigging Loop', category: 'Animation', image: 'https://image.qwenlm.ai/public_source/581c980c-93ea-4473-a881-d706c334af84/12de9432e-ccf4-418f-a563-5181abb44ff3.png', views: '18K' },
-                { title: 'Volumetric Portal Effect', category: 'VFX', image: 'https://image.qwenlm.ai/public_source/581c980c-93ea-4473-a881-d706c334af84/1bd8db8c4-7446-4905-bbe6-106a3bce5dc2.png', views: '24K' },
-                { title: 'Sci-Fi Mech Turntable', category: '3D', image: 'https://image.qwenlm.ai/public_source/581c980c-93ea-4473-a881-d706c334af84/1a26c70d3-6e59-4426-897a-6546a2e98a7e.png', views: '32K' }
-              ].map((proj, i) => (
-                <div
-                  key={i}
-                  style={{
-                    width: 150, flexShrink: 0,
-                    background: 'rgba(255, 255, 255, 0.02)',
-                    border: `1px solid ${C.borderGlass}`,
-                    borderRadius: 14, overflow: 'hidden',
-                  }}
-                >
-                  <img src={proj.image} alt={proj.title} style={{ width: '100%', aspectRatio: '16/10', objectFit: 'cover' }} />
-                  <div style={{ padding: 8 }}>
-                    <div style={{ fontSize: 12.5, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {proj.title}
-                    </div>
-                    <div style={{ fontSize: 10.5, color: C.textSecondary }}>{proj.views} views</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* ── CREATOR PROFILE CARD ── */}
           <div style={{
             background: 'rgba(255, 255, 255, 0.02)',
@@ -775,14 +760,14 @@ const ProjectDetailPage = () => {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
               <img
-                src={(user && project.ownerUsername === user.username && user.avatar) ? user.avatar : (project.ownerAvatar || AVATAR)}
+                src={(isOwner && user.avatar) ? user.avatar : (project.ownerAvatar || AVATAR)}
                 alt="creator"
                 style={{ width: 52, height: 52, borderRadius: '50%', objectFit: 'cover' }}
               />
               <div>
                 <h4 style={{ margin: 0, fontSize: 16, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
                   {project.ownerUsername || 'creator'}
-                  {((!user || project.ownerUsername !== user.username) || user.isVerified) && <VerifiedIcon size={12} />}
+                  {(!isOwner || user?.isVerified) && <VerifiedIcon size={12} />}
                 </h4>
                 <p style={{ margin: '2px 0 0', fontSize: 12, color: C.textSecondary }}>
                   Verified CreativeVerse Creator
@@ -790,8 +775,8 @@ const ProjectDetailPage = () => {
               </div>
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button
-                onClick={guard('follow', () => setIsFollowing(!isFollowing))}
+              {!isOwner ? <button
+                onClick={guard(toggleFollowing)}
                 style={{
                   flex: 1, height: 38, borderRadius: 10,
                   background: isFollowing ? 'transparent' : C.accent,
@@ -800,10 +785,13 @@ const ProjectDetailPage = () => {
                 }}
               >
                 {isFollowing ? 'Following' : 'Follow'}
-              </button>
+              </button> : <button
+                onClick={() => navigate(`/app/upload?edit=${project.id || project._id}`)}
+                style={{ flex: 1, height: 38, borderRadius: 10, background: C.accent, border: 'none', color: '#FFF', fontWeight: 600, fontSize: 12.5, cursor: 'pointer' }}
+              >Edit Project</button>}
               <button
                 onClick={() => {
-                  if (user && project.ownerUsername === user.username) navigate('/app/profile');
+                  if (isOwner) navigate('/app/profile');
                   else navigate(`/app/creator/${project.ownerUsername || 'creator'}`);
                 }}
                 style={{
@@ -816,18 +804,248 @@ const ProjectDetailPage = () => {
               </button>
             </div>
           </div>
-
         </div>
       </div>
 
-      {/* Guest Toast Notification */}
-      {toast && (
-        <GuestToast
-          message={`Sign in to ${toast.action} on CreativeVerse.`}
-          onSignIn={() => { setToast(null); navigate('/signin'); }}
-          onDismiss={() => setToast(null)}
-        />
-      )}
+      {/* ── COMMENTS BOTTOM SHEET ── */}
+      <BottomSheet open={showCommentsSheet} title={`Responses (${comments.length})`} onClose={() => setShowCommentsSheet(false)}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '10px 0' }}>
+          <form onSubmit={handleCommentSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ position: 'relative' }}>
+              <textarea
+                value={commentText}
+                onChange={e => setCommentText(e.target.value.slice(0, 200))}
+                placeholder={isGuest ? 'Sign in to add a response' : 'What are your thoughts?'}
+                disabled={isGuest || isSubmittingComment}
+                style={{
+                  width: '100%',
+                  height: 80,
+                  borderRadius: 12,
+                  background: 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${C.borderGlass}`,
+                  color: C.text,
+                  padding: 12,
+                  fontSize: 14,
+                  outline: 'none',
+                  resize: 'none',
+                  fontFamily: 'inherit',
+                  boxSizing: 'border-box'
+                }}
+              />
+              <span style={{
+                position: 'absolute',
+                bottom: 8,
+                right: 12,
+                fontSize: 11,
+                color: commentText.length >= 200 ? C.accent : C.textSecondary
+              }}>
+                {commentText.length}/200
+              </span>
+            </div>
+            <button
+              type="submit"
+              disabled={!commentText.trim() || isSubmittingComment}
+              style={{
+                height: 44,
+                borderRadius: 12,
+                background: C.accent,
+                border: 'none',
+                color: '#FFF',
+                fontWeight: 700,
+                fontSize: 14,
+                cursor: 'pointer',
+                opacity: commentText.trim() ? 1 : 0.5,
+              }}
+            >
+              {isSubmittingComment ? 'Sending...' : 'Post Response'}
+            </button>
+          </form>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 12 }}>
+            {comments.map((comment) => (
+              <div key={comment.commentId} style={{
+                padding: 14,
+                borderRadius: 12,
+                background: 'rgba(255, 255, 255, 0.02)',
+                border: `1px solid ${C.borderGlass}`,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <img
+                      src={comment.avatar || AVATAR}
+                      alt="commenter"
+                      style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover' }}
+                    />
+                    <span style={{ fontSize: 13, fontWeight: 700 }}>
+                      {comment.username || 'member'}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: 11, color: C.textSecondary }}>
+                    {comment.createdAt ? new Date(comment.createdAt).toLocaleDateString() : 'Just now'}
+                  </span>
+                </div>
+                <p style={{ margin: '0 0 8px', fontSize: 13.5, color: C.textSecondary, lineHeight: 1.45 }}>
+                  {comment.text}
+                </p>
+                <button
+                  onClick={() => handleReply(comment.commentId)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: C.accent,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    padding: 0
+                  }}
+                >
+                  Reply
+                </button>
+              </div>
+            ))}
+            {comments.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '24px 0', color: C.textSecondary, fontStyle: 'italic' }}>
+                No responses yet.
+              </div>
+            )}
+          </div>
+        </div>
+      </BottomSheet>
+
+      {/* ── GUEST AUTHENTICATION BANNER SHEET ── */}
+      <BottomSheet open={showCollaborationSheet} title="Invite a collaborator" onClose={() => { if (!isSendingCollaborationRequest) setShowCollaborationSheet(false); }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '8px 0' }}>
+          <p style={{ margin: 0, color: C.textSecondary, fontSize: 13, lineHeight: 1.45 }}>
+            Invite a person you follow or who follows you to collaborate on <strong style={{ color: C.text }}>{project.title}</strong>.
+          </p>
+          {collaborationError ? <p style={{ margin: 0, color: '#ff8b72', fontSize: 13 }}>{collaborationError}</p> : null}
+          {isLoadingCollaborators ? <p style={{ margin: 0, color: C.textSecondary, fontSize: 13 }}>Loading your connections…</p> : null}
+          {!isLoadingCollaborators && !collaborationError && collaborationCandidates.length === 0 ? <div style={{ padding: '20px 4px', textAlign: 'center', color: C.textSecondary, fontSize: 13, lineHeight: 1.5 }}>No eligible collaborators yet. Follow creators, or wait for someone to follow you, then invite them here.</div> : null}
+          {collaborationCandidates.map((candidate) => {
+            const selected = selectedCollaborator?.id === candidate.id;
+            return <button key={candidate.id} onClick={() => setSelectedCollaborator(candidate)} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: 12, textAlign: 'left', borderRadius: 12, cursor: 'pointer', background: selected ? 'rgba(255,122,92,0.12)' : 'rgba(255,255,255,0.03)', border: `1px solid ${selected ? C.accent : C.borderGlass}`, color: C.text }}>
+              <img src={candidate.avatar || AVATAR} alt="" style={{ width: 38, height: 38, borderRadius: '50%', objectFit: 'cover' }} />
+              <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}><strong style={{ fontSize: 13 }}>{candidate.name || candidate.username}</strong><span style={{ fontSize: 12, color: C.textSecondary }}>@{candidate.username} · {candidate.relationship}</span></span>
+            </button>;
+          })}
+          {selectedCollaborator ? <>
+            <textarea value={collaborationMessage} onChange={(event) => setCollaborationMessage(event.target.value.slice(0, 500))} placeholder={`Add a note for @${selectedCollaborator.username} (optional)`} style={{ width: '100%', height: 72, boxSizing: 'border-box', padding: 12, borderRadius: 12, resize: 'none', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.borderGlass}`, color: C.text, fontFamily: 'inherit', fontSize: 13, outline: 'none' }} />
+            <button onClick={sendCollaborationRequest} disabled={isSendingCollaborationRequest} style={{ height: 46, borderRadius: 12, border: 'none', background: C.accentGrad, color: '#fff', fontWeight: 700, cursor: isSendingCollaborationRequest ? 'wait' : 'pointer', opacity: isSendingCollaborationRequest ? 0.7 : 1 }}>
+              {isSendingCollaborationRequest ? 'Sending…' : `Invite @${selectedCollaborator.username}`}
+            </button>
+          </> : null}
+        </div>
+      </BottomSheet>
+
+      <BottomSheet open={showGuestAuthSheet} title="Access Protected Action" onClose={() => setShowGuestAuthSheet(false)}>
+        <div style={{ textAlign: 'center', padding: '16px 0', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <p style={{ color: C.textSecondary, fontSize: 14, lineHeight: 1.5, margin: 0 }}>
+            Sign in to your account to like, save, comment, or collaborate with creators on CreativeVerse.
+          </p>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <button
+              onClick={() => { setShowGuestAuthSheet(false); navigate('/signin'); }}
+              style={{
+                flex: 1, height: 46, borderRadius: 12,
+                background: C.accentGrad, border: 'none', color: '#FFF',
+                fontWeight: 700, fontSize: 14, cursor: 'pointer'
+              }}
+            >
+              Sign In
+            </button>
+            <button
+              onClick={() => setShowGuestAuthSheet(false)}
+              style={{
+                flex: 1, height: 46, borderRadius: 12,
+                background: 'rgba(255,255,255,0.05)', border: `1px solid ${C.borderGlass}`,
+                color: C.text, fontWeight: 700, fontSize: 14, cursor: 'pointer'
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </BottomSheet>
+
+      {/* ── OWNER ACTIONS SHEET ── */}
+      <BottomSheet open={showOwnerSheet} title="Manage Project" onClose={() => setShowOwnerSheet(false)}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '10px 0' }}>
+          <button
+            onClick={() => {
+              setShowOwnerSheet(false);
+              navigate(`/app/upload?edit=${projectId}`);
+            }}
+            style={{
+              height: 48, width: '100%', borderRadius: 12,
+              background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.borderGlass}`,
+              color: C.text, fontWeight: 600, fontSize: 14, cursor: 'pointer'
+            }}
+          >
+            Edit Project Metadata
+          </button>
+          <button
+            onClick={() => {
+              setShowOwnerSheet(false);
+              toggleVisibility();
+            }}
+            style={{
+              height: 48, width: '100%', borderRadius: 12,
+              background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.borderGlass}`,
+              color: C.text, fontWeight: 600, fontSize: 14, cursor: 'pointer'
+            }}
+          >
+            Make {project.visibility === 'public' ? 'Private' : 'Public'}
+          </button>
+          <button
+            onClick={() => {
+              setShowOwnerSheet(false);
+              setShowDeleteDialog(true);
+            }}
+            style={{
+              height: 48, width: '100%', borderRadius: 12,
+              background: 'rgba(217, 75, 98, 0.1)', border: '1px solid rgba(217, 75, 98, 0.2)',
+              color: '#d94b62', fontWeight: 600, fontSize: 14, cursor: 'pointer'
+            }}
+          >
+            Delete Project
+          </button>
+        </div>
+      </BottomSheet>
+
+      {/* ── DELETE DIALOG ── */}
+      <ConfirmDialog
+        open={showDeleteDialog}
+        title="Confirm Deletion"
+        confirmLabel="Delete Permanently"
+        onConfirm={handleDeleteConfirm}
+        onClose={() => {
+          setShowDeleteDialog(false);
+          setDeleteConfirmTitle('');
+        }}
+        message={
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <span>This action cannot be undone. To verify, please type the project title: <strong>{project.title}</strong></span>
+            <input
+              type="text"
+              value={deleteConfirmTitle}
+              onChange={e => setDeleteConfirmTitle(e.target.value)}
+              placeholder="Type project title..."
+              style={{
+                width: '100%',
+                height: 42,
+                borderRadius: 10,
+                background: 'rgba(255,255,255,0.04)',
+                border: `1px solid ${C.borderGlass}`,
+                color: C.text,
+                padding: '0 12px',
+                fontSize: 14,
+                outline: 'none',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+        }
+      />
     </div>
   );
 };

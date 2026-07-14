@@ -91,89 +91,17 @@ const ForgotPasswordPage = () => {
             boxShadow: '0 24px 48px rgba(0,0,0,0.5)',
           }}
         >
-          {!submitted ? (
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: T.textPrimary, letterSpacing: -0.5 }}>
-                  Reset Password
-                </h1>
-                <p style={{ margin: 0, fontSize: 14, color: T.textMuted, lineHeight: 1.4 }}>
-                  Enter your email address and we'll send you recovery instructions.
-                </p>
-              </div>
-
-              {/* Email Input */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <label style={{ fontSize: 11, fontWeight: 600, color: T.textMuted, letterSpacing: 0.8, textTransform: 'uppercase' }}>
-                  Email Address
-                </label>
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    height: 56,
-                    background: T.inputBg,
-                    border: `1px solid ${focused ? T.inputFocus : T.inputBorder}`,
-                    borderRadius: 16,
-                    padding: '0 18px',
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    onFocus={() => setFocused(true)}
-                    onBlur={() => setFocused(false)}
-                    placeholder="you@example.com"
-                    style={{
-                      flex: 1,
-                      background: 'transparent',
-                      border: 'none',
-                      outline: 'none',
-                      fontSize: 16,
-                      color: T.textPrimary,
-                      fontFamily: T.font,
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* CTA button */}
-              <button
-                type="submit"
-                disabled={!email.trim()}
-                style={{
-                  height: 56,
-                  borderRadius: 16,
-                  border: 'none',
-                  background: email.trim() ? T.ctaBg : 'rgba(255,255,255,0.05)',
-                  color: email.trim() ? T.ctaText : 'rgba(255,255,255,0.25)',
-                  fontSize: 16,
-                  fontWeight: 700,
-                  cursor: email.trim() ? 'pointer' : 'default',
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                Send Instructions
-              </button>
-            </form>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20, textAlign: 'center' }}>
-              <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(52,168,83,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#34A853" strokeWidth="2.5">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20, textAlign: 'center', padding: '12px 0' }}>
+              <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(255,122,89,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                <span style={{ fontSize: 28 }}>🔒</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: T.textPrimary }}>Check your email</h1>
+                <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: T.textPrimary }}>Reset Unavailable</h1>
                 <p style={{ margin: 0, fontSize: 14, color: T.textMuted, lineHeight: 1.5 }}>
-                  We've sent recovery instructions to <strong style={{ color: '#fff' }}>{email}</strong>.
+                  Self-service password recovery is not available in this mobile prototype. Please sign in using the provided demo account credentials or contact an administrator.
                 </p>
               </div>
             </div>
-          )}
         </div>
 
         {/* Back to Sign In */}

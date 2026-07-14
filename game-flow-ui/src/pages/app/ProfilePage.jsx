@@ -344,9 +344,40 @@ const ProfilePage = () => {
     reader.readAsDataURL(file);
   };
 
+  const isValidUrl = (url) => {
+    if (!url) return true;
+    if (url.startsWith('data:')) return true;
+    try {
+      new URL(url.startsWith('http') ? url : `https://${url}`);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  };
+
   const handleSaveProfile = async (event) => {
     event.preventDefault();
     if (isGuest) return;
+
+    // URL Validations
+    const urlsToValidate = [
+      { name: 'Avatar', value: editAvatar },
+      { name: 'Banner', value: editBanner },
+      { name: 'Personal Website', value: editWebsite },
+      { name: 'GitHub Link', value: editGithub },
+      { name: 'Itch.io Link', value: editItchio },
+      { name: 'Behance Link', value: editBehance },
+      { name: 'ArtStation Link', value: editArtstation },
+      { name: 'Instagram Link', value: editInstagram },
+      { name: 'LinkedIn Link', value: editLinkedin }
+    ];
+
+    for (const field of urlsToValidate) {
+      if (field.value && !isValidUrl(field.value)) {
+        alert(`Please enter a valid URL for ${field.name}`);
+        return;
+      }
+    }
 
     setIsSaving(true);
 
