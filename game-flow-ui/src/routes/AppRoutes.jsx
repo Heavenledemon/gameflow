@@ -18,6 +18,7 @@ import HomePage from '../pages/app/HomePage';
 import ExplorePage from '../pages/app/ExplorePage';
 import UploadPage from '../pages/app/UploadPage';
 import NotificationsPage from '../pages/app/NotificationsPage';
+import InboxPage from '../pages/app/InboxPage';
 import ProfilePage from '../pages/app/ProfilePage';
 import ProjectDetailPage from '../pages/app/ProjectDetailPage';
 import CreatorProfilePage from '../pages/app/CreatorProfilePage';
@@ -61,6 +62,7 @@ const AppRoutes = () => {
           <Route path="/app/explore" element={<ExplorePage />} />
           <Route path="/app/upload" element={<UploadPage />} />
           <Route path="/app/notifications" element={<NotificationsPage />} />
+          <Route path="/app/inbox" element={<InboxPage />} />
           <Route path="/app/profile" element={<ProfilePage />} />
           <Route path="/app/project/:projectId" element={<ProjectDetailPage />} />
           <Route path="/app/creator/:creatorId" element={<CreatorProfilePage />} />

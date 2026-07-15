@@ -4,6 +4,7 @@ import path from 'node:path'
 import authRoutes from './routes/authRoutes.js'
 import env from './config/env.js'
 import contentRoutes from './routes/contentRoutes.js'
+import socialRoutes from './routes/socialRoutes.js'
 import { errorHandler, notFound } from './middlewares/errorMiddleware.js'
 import { getMetrics, observabilityMiddleware } from './middlewares/observabilityMiddleware.js'
 import { protect } from './middlewares/authMiddleware.js'
@@ -86,6 +87,7 @@ app.use(
 
 app.use('/api/auth', authRoutes)
 app.use('/api', contentRoutes)
+app.use('/api', socialRoutes)
 
 app.use(notFound)
 app.use(errorHandler)

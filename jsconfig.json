@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "NodeNext",
+    "checkJs": false,
+    "maxNodeModuleJsDepth": 0
+  },
+  "exclude": [
+    "**/node_modules",
+    "node_modules",
+    "backend/node_modules",
+    "game-flow-ui/node_modules",
+    "gameflow/node_modules",
+    "**/dist",
+    "dist"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "NodeNext",
+    "checkJs": false,
+    "maxNodeModuleJsDepth": 0
+  },
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}
