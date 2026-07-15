@@ -1,0 +1,41 @@
+.inbox-page { min-height: 100%; box-sizing: border-box; overflow-y: auto; padding: calc(24px + env(safe-area-inset-top, 0px)) 16px calc(108px + env(safe-area-inset-bottom, 0px)); background: radial-gradient(circle at top right, rgba(255, 122, 89, .13), transparent 36%), #0b0d12; color: #fff; }
+.inbox-page__header { margin-bottom: 22px; }
+.inbox-page__header h1 { margin: 2px 0 6px; font-size: 29px; line-height: 1.1; letter-spacing: -.7px; }
+.inbox-page__header p { margin: 0; color: rgba(255, 255, 255, .6); font-size: 14px; line-height: 1.45; }
+.inbox-page__kicker { color: #ff9a82 !important; font-weight: 750; font-size: 11px !important; letter-spacing: .08em; text-transform: uppercase; }
+.inbox-tabs, .inbox-subtabs { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+.inbox-tabs { margin-bottom: 14px; padding-bottom: 2px; }
+.inbox-subtabs { margin-bottom: 14px; }
+.inbox-tabs::-webkit-scrollbar, .inbox-subtabs::-webkit-scrollbar { display: none; }
+.inbox-tab, .inbox-subtab, .inbox-button, .inbox-load-more { min-height: 44px; border: 1px solid rgba(255, 255, 255, .11); border-radius: 12px; color: #fff; cursor: pointer; font: inherit; font-weight: 700; }
+.inbox-tab { flex: 1 0 auto; padding: 0 14px; background: rgba(255, 255, 255, .045); white-space: nowrap; }
+.inbox-tab--active { border-color: rgba(255, 122, 89, .6); background: rgba(255, 122, 89, .18); color: #ffd4c8; }
+.inbox-subtab { min-height: 36px; padding: 0 12px; border-color: transparent; background: transparent; color: rgba(255, 255, 255, .6); font-size: 13px; }
+.inbox-subtab--active { background: rgba(255, 255, 255, .08); color: #fff; }
+.inbox-list { display: grid; gap: 10px; }
+.inbox-card { box-sizing: border-box; width: 100%; border: 1px solid rgba(255, 255, 255, .1); border-radius: 17px; background: rgba(255, 255, 255, .045); color: #fff; overflow: hidden; text-align: left; }
+.inbox-card__body { display: block; width: 100%; padding: 15px; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; font: inherit; }
+.inbox-card__body:disabled { cursor: default; }
+.inbox-card strong { display: block; margin: 4px 0; font-size: 15px; line-height: 1.35; }
+.inbox-card p { margin: 0; color: rgba(255, 255, 255, .74); font-size: 13px; line-height: 1.45; }
+.inbox-card__eyebrow { display: flex; justify-content: space-between; gap: 12px; color: #ffad96; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.inbox-card__eyebrow time { color: rgba(255, 255, 255, .44); font-size: 11px; }
+.inbox-card__preview { display: block; overflow: hidden; margin-top: 8px; color: rgba(255, 255, 255, .55); font-size: 12px; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
+.inbox-card__footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border-top: 1px solid rgba(255, 255, 255, .08); }
+.inbox-status { color: rgba(255, 255, 255, .55); font-size: 12px; text-transform: capitalize; }
+.inbox-actions { display: flex; gap: 8px; }
+.inbox-button { min-height: 36px; padding: 0 11px; background: rgba(255, 255, 255, .08); font-size: 12px; }
+.inbox-button--primary { border-color: transparent; background: #ff7a59; }
+.inbox-button:disabled, .inbox-load-more:disabled { cursor: wait; opacity: .62; }
+.inbox-card--conversation { display: flex; align-items: center; gap: 12px; padding: 14px; cursor: pointer; font: inherit; }
+.inbox-conversation-icon { display: grid; flex: 0 0 42px; width: 42px; height: 42px; place-items: center; border-radius: 14px; background: rgba(255, 255, 255, .1); color: #fff; font-size: 13px; font-weight: 900; }
+.inbox-conversation-icon--project { background: rgba(255, 122, 89, .2); color: #ffb09b; }
+.inbox-conversation-copy { min-width: 0; flex: 1; }
+.inbox-conversation-copy strong { margin-top: 2px; }
+.inbox-load-more { width: 100%; margin-top: 2px; background: rgba(255, 255, 255, .07); }
+.inbox-card--skeleton { padding: 16px; }
+.inbox-skeleton { display: block; width: 100%; height: 12px; margin: 10px 0; border-radius: 99px; }
+.inbox-skeleton--title { width: 52%; height: 15px; }
+.inbox-skeleton--short { width: 74%; }
+.inbox-page button:focus-visible { outline: 2px solid #ff9a82; outline-offset: 2px; }
+@media (max-width: 350px) { .inbox-page { padding-right: 12px; padding-left: 12px; } .inbox-tab { padding: 0 11px; font-size: 12px; } .inbox-card__footer { align-items: flex-start; flex-direction: column; } .inbox-actions { width: 100%; } .inbox-button { flex: 1; } }

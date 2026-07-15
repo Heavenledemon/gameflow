@@ -10,7 +10,7 @@ const BottomNav = () => {
   const items = [
     { key: 'home',          label: 'Home',          Icon: HomeIcon,        target: '/app/home' },
     { key: 'explore',       label: 'Explore',       Icon: ExploreIcon,     target: '/app/explore' },
-    { key: 'notifications', label: 'Alerts',        Icon: BellIcon,        target: '/app/notifications' },
+    { key: 'notifications', label: 'Inbox',         Icon: BellIcon,        target: '/app/inbox' },
     { key: 'profile',       label: 'Profile',       Icon: ProfileIcon,     target: '/app/profile' },
   ];
 
