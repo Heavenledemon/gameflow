@@ -5,8 +5,9 @@ import { redisRateLimit } from '../middlewares/rateLimitMiddleware.js'
 
 const router = Router()
 const messageRateLimit = redisRateLimit({ bucket: 'conversation-message', limit: 30, windowSeconds: 60 })
+const directConversationRateLimit = redisRateLimit({ bucket: 'direct-conversation', limit: 10, windowSeconds: 60 })
 router.get('/conversations', protect, listConversations)
-router.post('/conversations/direct', protect, messageRateLimit, createDirectConversation)
+router.post('/conversations/direct', protect, directConversationRateLimit, createDirectConversation)
 router.get('/conversations/:conversationId/messages', protect, getConversationMessages)
 router.post('/conversations/:conversationId/messages', protect, messageRateLimit, sendConversationMessage)
 router.post('/conversations/:conversationId/read', protect, markConversationRead)

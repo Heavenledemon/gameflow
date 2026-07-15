@@ -8,6 +8,7 @@ import Follow from '../models/Follow.js'
 import User from '../models/User.js'
 import ProjectMember from '../models/ProjectMember.js'
 import { publishRealtimeEvent } from '../realtime/eventPublisher.js'
+import { isBlockedBetween } from '../services/moderationService.js'
 
 function createError(statusCode, message) { const error = new Error(message); error.statusCode = statusCode; return error }
 function validId(value) { return mongoose.isValidObjectId(value) }
@@ -69,6 +70,8 @@ export const sendConversationMessage = asyncHandler(async (request, response) =>
   if (!body || body.length > 2000) throw createError(400, 'Message body must be between 1 and 2,000 characters.')
   if (!clientMessageId || clientMessageId.length > 128) throw createError(400, 'A valid clientMessageId is required.')
   const { conversation } = await loadParticipantConversation(request.params.conversationId, request.user._id)
+  const otherParticipant = conversation.participantIds.find((participantId) => String(participantId) !== String(request.user._id))
+  if (otherParticipant && await isBlockedBetween(request.user._id, otherParticipant)) throw createError(403, 'Messaging is unavailable between these creators.')
   await assertCanSend(conversation, request.user._id)
   const existing = await Message.findOne({ conversationId: conversation._id, clientMessageId }).lean()
   if (existing) return response.json({ message: messageDto(existing), idempotent: true })
@@ -104,6 +107,7 @@ export const createDirectConversation = asyncHandler(async (request, response) =
     : await User.findOne({ username: recipientInput.toLowerCase() }).select('_id username').lean()
   if (!recipient) throw createError(404, 'Creator not found.')
   if (String(recipient._id) === String(request.user._id)) throw createError(400, 'You cannot message yourself.')
+  if (await isBlockedBetween(request.user._id, recipient._id)) throw createError(403, 'Messaging is unavailable between these creators.')
   const [followsRecipient, recipientFollows] = await Promise.all([
     Follow.exists({ followerId: request.user._id, followingId: recipient._id }),
     Follow.exists({ followerId: recipient._id, followingId: request.user._id }),
