@@ -5,6 +5,7 @@ import { useToast } from '../../context/ToastContext'
 import { useConversation } from '../../hooks/useConversation'
 import { useConversations } from '../../hooks/useConversations'
 import { useCollaborationRequest } from '../../hooks/useCollaborationRequest'
+import { useMessagingRealtime } from '../../hooks/useMessagingRealtime'
 import { ErrorState, LoadingState } from '../../components/ui/Feedback'
 import { BottomSheet, ConfirmDialog } from '../../components/ui/Overlay'
 import { createModerationReport, toggleUserBlock } from '../../lib/moderation'
@@ -57,6 +58,16 @@ export default function ConversationPage() {
   const moderationTarget = location.state?.moderationTarget || requestTarget || null
   const header = useMemo(() => conversationHeading(kind, request), [kind, request])
   const isReadOnly = isBlocked || (kind === 'collaboration_request' && requestState.status === 'ready' && request?.status !== 'pending')
+  const reloadMessages = reload
+  const reloadConversationList = conversations.reload
+  const reloadRequest = requestState.reload
+  const handleRealtimeEvent = useCallback((eventName, event) => {
+    const eventConversationId = event?.message?.conversationId || event?.conversationId || event?.payload?.conversationId
+    if ((eventName === 'conversation.message.created' || eventName === 'conversation.read.updated') && String(eventConversationId) === String(conversationId)) reloadMessages()
+    if (eventName === 'collaboration.request.updated' && requestId && String(event?.request?.id) === String(requestId)) { reloadRequest(); reloadMessages() }
+    if (eventName === 'project.member.added' && kind === 'project' && String(event?.projectId) === String(conversation?.projectId)) { reloadConversationList(); reloadMessages() }
+  }, [conversation?.projectId, conversationId, kind, reloadConversationList, reloadMessages, reloadRequest, requestId])
+  const { connectionState } = useMessagingRealtime(token, { onEvent: handleRealtimeEvent, onReady: reloadMessages })
 
   useLayoutEffect(() => {
     const element = scrollRef.current
@@ -134,6 +145,7 @@ export default function ConversationPage() {
 
   return <main className="conversation-page">
     <header className="conversation-header"><button className="conversation-back" type="button" aria-label="Back to inbox" onClick={() => navigate('/app/inbox')}>‹</button><div className="conversation-header__copy"><h1>{header.title}</h1><p>{header.subtitle}</p></div><button className="conversation-safety" type="button" aria-label="Conversation safety options" onClick={openSafety}>•••</button></header>
+    {connectionState === 'reconnecting' ? <div className="conversation-connection" role="status">Reconnecting… messages will refresh when you’re back online.</div> : null}
     {isReadOnly ? <div className="conversation-notice" role="status">{isBlocked ? 'You blocked this creator. This conversation is read-only.' : `This request is ${request.status}. Its messages are available to read, but replies are closed.`}</div> : null}
     <section className="conversation-stream" ref={scrollRef} onScroll={onScroll} aria-label={`${header.title} messages`}>
       {nextCursor ? <button className="conversation-history" type="button" onClick={loadOlder} disabled={status === 'loading-more'}>{status === 'loading-more' ? 'Loading older messages…' : 'Load older messages'}</button> : null}

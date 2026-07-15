@@ -7,6 +7,7 @@
 .conversation-header h1 { overflow: hidden; margin: 0; font-size: 16px; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
 .conversation-header p { overflow: hidden; margin: 2px 0 0; color: rgba(255,255,255,.57); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; text-transform: capitalize; }
 .conversation-notice { margin: 10px 16px 0; padding: 10px 12px; border: 1px solid rgba(255, 190, 90, .28); border-radius: 12px; background: rgba(255, 190, 90, .1); color: #ffd895; font-size: 12px; line-height: 1.4; }
+.conversation-connection { padding: 7px 16px; background: rgba(255, 190, 90, .1); color: #ffd895; font-size: 11px; text-align: center; }
 .conversation-stream { min-height: 0; flex: 1; overflow-y: auto; padding: 16px; scroll-behavior: smooth; }
 .conversation-history { display: block; min-height: 38px; margin: 0 auto 16px; padding: 0 13px; border: 1px solid rgba(255,255,255,.12); border-radius: 12px; background: rgba(255,255,255,.06); color: rgba(255,255,255,.82); cursor: pointer; font: inherit; font-size: 12px; font-weight: 700; }
 .conversation-empty { margin: 32px auto; color: rgba(255,255,255,.55); font-size: 13px; text-align: center; }

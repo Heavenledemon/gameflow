@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useProjectRealtime } from '../../hooks/useProjectRealtime';
 import { useProjectMembers } from '../../hooks/useProjectMembers';
 import { useConversations } from '../../hooks/useConversations';
 import { useInbox } from '../../hooks/useInbox';
+import { useMessagingRealtime } from '../../hooks/useMessagingRealtime';
 import { useToast } from '../../context/ToastContext';
 import {
   createCommentReply,
@@ -206,6 +207,24 @@ const ProjectDetailPage = () => {
         : updatedContent
     );
   };
+
+  const reloadProjectAccess = useCallback(async () => {
+    try {
+      const data = await fetchProject(projectId, token);
+      if (data?.project) syncProject(data.project);
+    } catch {
+      // The next protected read will make removed/private access authoritative.
+    }
+  }, [projectId, token]);
+  const reloadMembers = members.reload;
+  const reloadProjectConversations = conversations.reload;
+  const handleProjectRealtimeEvent = useCallback((eventName, event) => {
+    if (!eventName.startsWith('project.member.') || String(event?.projectId) !== String(projectId)) return;
+    reloadMembers();
+    reloadProjectConversations();
+    reloadProjectAccess();
+  }, [projectId, reloadMembers, reloadProjectAccess, reloadProjectConversations]);
+  useMessagingRealtime(token, { onEvent: handleProjectRealtimeEvent, onReady: reloadProjectAccess });
 
   const mutateEngagement = async (action, payload = {}) => {
     if (isGuest) {

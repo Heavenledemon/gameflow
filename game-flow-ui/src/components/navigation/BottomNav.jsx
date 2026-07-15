@@ -2,11 +2,13 @@ import { NavLink } from 'react-router-dom';
 import { HomeIcon, ExploreIcon, BellIcon, ProfileIcon, PlusIcon } from '../icons/Icons';
 import { useAuth } from '../../context/AuthContext';
 import { useInbox } from '../../hooks/useInbox';
+import { useMessagingRealtime } from '../../hooks/useMessagingRealtime';
 import './BottomNav.css';
 
 const BottomNav = () => {
   const { user, token } = useAuth();
-  const { items: incomingRequests } = useInbox(token, 'incoming');
+  const { items: incomingRequests, reload: reloadIncomingRequests } = useInbox(token, 'incoming');
+  useMessagingRealtime(token, { onEvent: (eventName) => { if (eventName.startsWith('collaboration.request')) reloadIncomingRequests() }, onReady: reloadIncomingRequests })
   const items = [
     { key: 'home',          label: 'Home',          Icon: HomeIcon,        target: '/app/home' },
     { key: 'explore',       label: 'Explore',       Icon: ExploreIcon,     target: '/app/explore' },

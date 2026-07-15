@@ -89,7 +89,11 @@ export default function InboxPage() {
   const reloadConversations = conversations.reload
 
   const refreshAll = useCallback(() => { reloadRequests(); reloadConversations() }, [reloadConversations, reloadRequests])
-  useMessagingRealtime(token, { onRefresh: refreshAll })
+  const handleRealtimeEvent = useCallback((eventName) => {
+    if (eventName.startsWith('collaboration.request')) requests.reload()
+    if (eventName.startsWith('conversation.') || eventName.startsWith('project.member.')) conversations.reload()
+  }, [conversations, requests])
+  useMessagingRealtime(token, { onEvent: handleRealtimeEvent, onReady: refreshAll })
 
   const act = async (item, action) => {
     setWorking(item.id)

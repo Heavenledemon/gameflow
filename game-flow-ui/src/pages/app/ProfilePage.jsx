@@ -1,10 +1,11 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useCallback, useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { FaGithub, FaInstagram, FaLinkedin, FaBehance, FaArtstation } from 'react-icons/fa';
 import { SiItchdotio } from 'react-icons/si';
-import { fetchContent, togglePostLike, updateProject, deleteProject, uploadProjectFile } from '../../lib/content';
+import { fetchContent, togglePostLike, updateContentEngagement, updateProject, deleteProject, uploadProjectFile } from '../../lib/content';
 import { fetchMyCollaborations } from '../../lib/collaboration';
+import { useMessagingRealtime } from '../../hooks/useMessagingRealtime';
 import GuestBanner from '../../components/layout/GuestBanner';
 import GuestToast from '../../components/layout/GuestToast';
 import {
@@ -300,14 +301,17 @@ const ProfilePage = () => {
     };
   }, [user, isGuest, refreshTrigger, token]);
 
-  useEffect(() => {
-    if (isGuest || !token) return;
-    fetchMyCollaborations(token).then((data) => setCollaborationItems((data.items || []).map((entry) => ({
+  const loadCollaborations = useCallback(() => {
+    if (isGuest || !token) return Promise.resolve();
+    return fetchMyCollaborations(token).then((data) => setCollaborationItems((data.items || []).map((entry) => ({
       ...entry.project, id: entry.projectId, kind: 'Project', role: entry.role,
       thumbnail: entry.project.previewUrl || BANNER,
       subtitle: `${entry.role} · ${entry.project.category || entry.project.type || 'Project'}`,
     })))).catch(() => setCollaborationItems([]));
-  }, [isGuest, token, refreshTrigger]);
+  }, [isGuest, token]);
+  useEffect(() => { loadCollaborations(); }, [loadCollaborations, refreshTrigger]);
+  const handleProfileRealtimeEvent = useCallback((eventName) => { if (eventName.startsWith('project.member.')) loadCollaborations(); }, [loadCollaborations]);
+  useMessagingRealtime(token, { onEvent: handleProfileRealtimeEvent, onReady: loadCollaborations });
 
   const handleGuestAction = (actionName) => {
     setToast({ action: actionName });
