@@ -12,5 +12,7 @@ export function useInbox(token, box, status = 'pending') {
     } catch (error) { setState((current) => ({ ...current, status: 'error', error: error.message || 'Unable to load collaboration requests.' })) }
   }, [box, status, token])
   useEffect(() => { load() }, [load])
-  return { ...state, reload: () => load(), loadMore: () => state.nextCursor && load(state.nextCursor, true), setItems: (updater) => setState((current) => ({ ...current, items: typeof updater === 'function' ? updater(current.items) : updater })) }
+  const reload = useCallback(() => load(), [load])
+  const loadMore = useCallback(() => state.nextCursor && load(state.nextCursor, true), [load, state.nextCursor])
+  return { ...state, reload, loadMore, setItems: (updater) => setState((current) => ({ ...current, items: typeof updater === 'function' ? updater(current.items) : updater })) }
 }

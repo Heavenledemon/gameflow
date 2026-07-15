@@ -1,10 +1,12 @@
 import { NavLink } from 'react-router-dom';
 import { HomeIcon, ExploreIcon, BellIcon, ProfileIcon, PlusIcon } from '../icons/Icons';
 import { useAuth } from '../../context/AuthContext';
+import { useInbox } from '../../hooks/useInbox';
 import './BottomNav.css';
 
 const BottomNav = () => {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
+  const { items: incomingRequests } = useInbox(token, 'incoming');
   const items = [
     { key: 'home',          label: 'Home',          Icon: HomeIcon,        target: '/app/home' },
     { key: 'explore',       label: 'Explore',       Icon: ExploreIcon,     target: '/app/explore' },
@@ -52,6 +54,7 @@ const BottomNav = () => {
               ) : (
                 <item.Icon size={22} />
               )}
+              {item.key === 'notifications' && incomingRequests.length > 0 && <span style={{ position: 'absolute', top: 4, right: 12, minWidth: 15, height: 15, padding: '0 3px', borderRadius: 9, background: '#FF7A59', color: '#fff', fontSize: 9, fontWeight: 800, display: 'grid', placeItems: 'center' }}>{incomingRequests.length > 9 ? '9+' : incomingRequests.length}</span>}
             </NavLink>
           </div>
         );

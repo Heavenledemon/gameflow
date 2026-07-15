@@ -9,6 +9,7 @@ import ConversationParticipant from '../models/ConversationParticipant.js'
 import Message from '../models/Message.js'
 import User from '../models/User.js'
 import { canManageProject } from '../services/projectAccessService.js'
+import { publishRealtimeEvent } from '../realtime/eventPublisher.js'
 
 function createError(statusCode, message) {
   const error = new Error(message)
@@ -186,6 +187,7 @@ export const createCollaborationRequest = asyncHandler(async (request, response)
     })
   } finally { await session.endSession() }
   const populated = await populateRequest(CollaborationRequest.findById(requestRecord._id)).lean()
+  publishRealtimeEvent({ eventType: 'collaboration.request.created', aggregateId: requestRecord._id, audiences: { userIds: [targetRecipientId] }, payload: { request: requestDto(populated) } }).catch(() => {})
   response.status(201).json({ request: requestDto(populated) })
 })
 
@@ -221,6 +223,7 @@ async function resolveRequest(request, response, status) {
   record.resolvedAt = new Date()
   record.resolutionEvent = status
   await record.save()
+  publishRealtimeEvent({ eventType: 'collaboration.request.updated', aggregateId: record._id, audiences: { userIds: [record.requesterId._id || record.requesterId, record.recipientId._id || record.recipientId] }, payload: { request: requestDto(record.toObject()) } }).catch(() => {})
   response.json({ request: requestDto(record.toObject()) })
 }
 
@@ -232,6 +235,7 @@ export const cancelCollaborationRequest = asyncHandler(async (request, response)
   if (record.status !== 'pending') throw createError(409, 'This collaboration request has already been resolved.')
   record.status = 'cancelled'; record.resolvedBy = request.user._id; record.resolvedAt = new Date(); record.resolutionEvent = 'cancelled'
   await record.save()
+  publishRealtimeEvent({ eventType: 'collaboration.request.updated', aggregateId: record._id, audiences: { userIds: [record.requesterId._id || record.requesterId, record.recipientId._id || record.recipientId] }, payload: { request: requestDto(record.toObject()) } }).catch(() => {})
   response.json({ request: requestDto(record.toObject()) })
 })
 
@@ -271,5 +275,7 @@ export const acceptCollaborationRequest = asyncHandler(async (request, response)
     })
   } finally { await session.endSession() }
   const updated = await populateRequest(CollaborationRequest.findById(record._id)).lean()
+  publishRealtimeEvent({ eventType: 'collaboration.request.updated', aggregateId: record._id, audiences: { userIds: [record.requesterId._id || record.requesterId, record.recipientId._id || record.recipientId] }, payload: { request: requestDto(updated) } }).catch(() => {})
+  publishRealtimeEvent({ eventType: 'project.member.added', aggregateId: updated.projectId._id || updated.projectId, audiences: { userIds: [memberId], projectId: updated.projectId._id || updated.projectId }, payload: { projectId: String(updated.projectId._id || updated.projectId), userId: String(memberId) } }).catch(() => {})
   response.json({ request: requestDto(updated) })
 })

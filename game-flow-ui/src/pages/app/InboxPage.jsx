@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { acceptCollaborationRequest, cancelCollaborationRequest, declineCollaborationRequest } from '../../lib/collaboration'
 import { useInbox } from '../../hooks/useInbox'
+import { useMessagingRealtime } from '../../hooks/useMessagingRealtime'
 
 const styles = { page: { height: '100%', overflowY: 'auto', padding: '24px 16px 100px', background: '#0B0D12', color: '#fff' }, tabs: { display: 'flex', gap: 8, margin: '18px 0' }, tab: (active) => ({ flex: 1, padding: '10px', borderRadius: 12, border: '1px solid rgba(255,255,255,.1)', background: active ? '#FF7A59' : 'rgba(255,255,255,.04)', color: '#fff', fontWeight: 700 }), card: { padding: 14, marginBottom: 10, border: '1px solid rgba(255,255,255,.1)', borderRadius: 16, background: 'rgba(255,255,255,.04)' }, action: { padding: '8px 11px', borderRadius: 9, border: 0, fontWeight: 700, cursor: 'pointer' } }
 
@@ -10,6 +11,7 @@ export default function InboxPage() {
   const [box, setBox] = useState('incoming')
   const [working, setWorking] = useState('')
   const { items, status, error, nextCursor, loadMore, reload, setItems } = useInbox(token, box)
+  useMessagingRealtime(token, { onRefresh: reload })
   const act = async (item, action) => {
     setWorking(item.id)
     try {

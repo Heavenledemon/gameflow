@@ -7,6 +7,7 @@ import Message from '../models/Message.js'
 import Follow from '../models/Follow.js'
 import User from '../models/User.js'
 import ProjectMember from '../models/ProjectMember.js'
+import { publishRealtimeEvent } from '../realtime/eventPublisher.js'
 
 function createError(statusCode, message) { const error = new Error(message); error.statusCode = statusCode; return error }
 function validId(value) { return mongoose.isValidObjectId(value) }
@@ -81,6 +82,7 @@ export const sendConversationMessage = asyncHandler(async (request, response) =>
     Conversation.updateOne({ _id: conversation._id }, { $set: { lastMessageAt: message.createdAt, lastMessagePreview: body } }),
     ConversationParticipant.updateMany({ conversationId: conversation._id }, { $set: { hiddenAt: null } }),
   ])
+  publishRealtimeEvent({ eventType: 'conversation.message.created', aggregateId: conversation._id, audiences: { userIds: conversation.participantIds, conversationId: conversation._id }, payload: { message: messageDto(message) } }).catch(() => {})
   response.status(201).json({ message: messageDto(message), idempotent: false })
 })
 
@@ -90,6 +92,7 @@ export const markConversationRead = asyncHandler(async (request, response) => {
   let message = requestedId ? await Message.findOne({ _id: requestedId, conversationId: conversation._id }).lean() : await Message.findOne({ conversationId: conversation._id }).sort({ createdAt: -1, _id: -1 }).lean()
   if (requestedId && !message) throw createError(400, 'Message does not belong to this conversation.')
   await ConversationParticipant.updateOne({ conversationId: conversation._id, userId: request.user._id }, { $set: { lastReadMessageId: message?._id || null, lastReadAt: new Date() } })
+  publishRealtimeEvent({ eventType: 'conversation.read.updated', aggregateId: conversation._id, audiences: { conversationId: conversation._id }, payload: { conversationId: String(conversation._id), userId: String(request.user._id), lastReadMessageId: message ? String(message._id) : null } }).catch(() => {})
   response.json({ conversationId: String(conversation._id), lastReadMessageId: message ? String(message._id) : null })
 })
 

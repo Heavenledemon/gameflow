@@ -14,6 +14,24 @@ const workerOwner = `worker:${process.pid}:${crypto.randomUUID()}`
 
 export function attachEventPublisher(io) { ioInstance = io }
 
+export function emitRealtimeEvent(io, event) {
+  const audiences = event.audiences || {}
+  for (const userId of audiences.userIds || []) io.to(`user:${String(userId)}`).emit(event.eventType, event)
+  if (audiences.conversationId) io.to(`conversation:${String(audiences.conversationId)}`).emit(event.eventType, event)
+  if (audiences.projectId) io.to(`project:${String(audiences.projectId)}`).emit(event.eventType, event)
+  if (!audiences.userIds?.length && !audiences.conversationId && !audiences.projectId) io.to(`project:${event.aggregateId}`).emit(event.eventType, event)
+}
+
+export async function publishRealtimeEvent({ eventType, aggregateId, audiences = {}, payload = {} }) {
+  const event = { eventId: crypto.randomUUID(), eventType, schemaVersion: 1, aggregateId: String(aggregateId), aggregateVersion: Date.now(), occurredAt: new Date().toISOString(), audiences, ...payload }
+  await RealtimeOutbox.create({ eventId: event.eventId, eventType, aggregateId: event.aggregateId, payload: event })
+  if (!env.redisUrl && ioInstance) {
+    emitRealtimeEvent(ioInstance, event)
+    await RealtimeOutbox.updateOne({ eventId: event.eventId }, { $set: { status: 'published', publishedAt: new Date() }, $inc: { attempts: 1 } })
+  }
+  return event
+}
+
 export async function publishProjectEngagement(projectId, engagement) {
   const event = {
     eventId: crypto.randomUUID(), eventType: 'project.engagement.updated', schemaVersion: 1,
@@ -29,7 +47,7 @@ export async function publishProjectEngagement(projectId, engagement) {
   }, $inc: { version: 1 } })
   await RealtimeOutbox.create({ eventId: event.eventId, eventType: event.eventType, aggregateId: event.aggregateId, payload: event })
   if (!env.redisUrl && ioInstance) {
-    ioInstance.to(`project:${event.aggregateId}`).emit(event.eventType, event)
+    emitRealtimeEvent(ioInstance, event)
     await RealtimeOutbox.updateOne({ eventId: event.eventId }, { $set: { status: 'published', publishedAt: new Date() }, $inc: { attempts: 1 } })
   }
 }

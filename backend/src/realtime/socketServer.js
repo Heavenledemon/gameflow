@@ -1,9 +1,11 @@
 import { Server } from 'socket.io'
 import Project from '../models/Project.js'
+import ProjectMember from '../models/ProjectMember.js'
+import ConversationParticipant from '../models/ConversationParticipant.js'
 import User from '../models/User.js'
 import env from '../config/env.js'
 import { verifyToken } from '../utils/generateToken.js'
-import { REALTIME_STREAM, attachEventPublisher } from './eventPublisher.js'
+import { REALTIME_STREAM, attachEventPublisher, emitRealtimeEvent } from './eventPublisher.js'
 import { createAdapter } from '@socket.io/redis-adapter'
 import { createClient } from 'redis'
 import { recordSocketMetric } from '../middlewares/observabilityMiddleware.js'
@@ -53,6 +55,7 @@ export function attachSocketServer(httpServer) {
   io.on('connection', (socket) => {
     recordSocketMetric(1)
     socket.once('disconnect', () => recordSocketMetric(-1))
+    socket.join(`user:${String(socket.user._id)}`)
     socket.emit('realtime.ready', { resyncRequired: true, reason: 'connection' })
     socket.on('join_project', async (payload, acknowledge) => {
       const done = typeof acknowledge === 'function' ? acknowledge : () => {}
@@ -65,11 +68,21 @@ export function attachSocketServer(httpServer) {
       if (rate.count > 30) return done({ ok: false, error: 'Too many room requests.' })
       if (!projectId || projectId.length > 100) return done({ ok: false, error: 'Invalid project ID.' })
       const project = await Project.findOne({ $or: [{ _id: projectId }, { slug: projectId.toLowerCase() }] }).select('ownerId visibility isPublished').lean().catch(() => null)
-      const canView = project && ((project.visibility === 'public' && project.isPublished) || String(project.ownerId) === String(socket.user._id))
+      const member = project ? await ProjectMember.exists({ projectId: project._id, userId: socket.user._id, status: 'active' }) : false
+      const canView = project && ((project.visibility === 'public' && project.isPublished) || member || String(project.ownerId) === String(socket.user._id))
       if (!canView) return done({ ok: false, error: 'Project access denied.' })
       const room = `project:${String(project._id)}`
       await socket.join(room)
       done({ ok: true, room })
+    })
+
+    socket.on('join_conversation', async (payload, acknowledge) => {
+      const done = typeof acknowledge === 'function' ? acknowledge : () => {}
+      const conversationId = typeof payload?.conversationId === 'string' ? payload.conversationId.trim() : ''
+      if (!conversationId || conversationId.length > 100) return done({ ok: false, error: 'Invalid conversation ID.' })
+      const participant = await ConversationParticipant.exists({ conversationId, userId: socket.user._id, hiddenAt: null }).catch(() => false)
+      if (!participant) return done({ ok: false, error: 'Conversation access denied.' })
+      const room = `conversation:${conversationId}`; await socket.join(room); done({ ok: true, room })
     })
 
     socket.on('leave_project', async (payload, acknowledge) => {
@@ -113,7 +126,7 @@ async function startRealtimeStreamConsumer(io) {
           if (consumedEventIds.size > 10000) consumedEventIds.delete(consumedEventIds.values().next().value)
           try {
             const event = JSON.parse(message.message.event)
-            io.to(`project:${event.aggregateId}`).emit(event.eventType, event)
+            emitRealtimeEvent(io, event)
           } catch { /* malformed events are acknowledged and audited by the producer */ }
         }
         await streamConsumer.xAck(REALTIME_STREAM, group, message.id)
