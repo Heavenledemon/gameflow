@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { createDirectConversation } from '../../lib/messaging';
 import { fetchContent } from '../../lib/content';
 import GuestToast from '../../components/layout/GuestToast';
 import {
@@ -76,12 +77,13 @@ const PROJECTS = [
 const CreatorProfilePage = () => {
   const navigate = useNavigate();
   const { creatorId } = useParams();
-  const { isGuest } = useAuth();
+  const { isGuest, token } = useAuth();
 
   const [activeTab, setActiveTab] = useState('Projects');
   const [isFollowing, setIsFollowing] = useState(false);
   const [likedMap, setLikedMap] = useState({});
   const [toast, setToast] = useState(null);
+  const [messageError, setMessageError] = useState('');
 
   const handleFollow = () => {
     if (isGuest) { setToast({ action: 'follow creators' }); return; }
@@ -92,6 +94,14 @@ const CreatorProfilePage = () => {
     e.stopPropagation();
     if (isGuest) { setToast({ action: 'like projects' }); return; }
     setLikedMap(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const openDirectMessage = async () => {
+    if (isGuest) { setToast({ action: 'message creators' }); return; }
+    try {
+      const result = await createDirectConversation(token, creatorId || currentCreator.username);
+      navigate(`/app/inbox/${result.conversation.id}`);
+    } catch (error) { setMessageError(error.message || 'Unable to open a conversation.'); }
   };
 
   const currentCreator = useMemo(() => {
@@ -261,7 +271,7 @@ const CreatorProfilePage = () => {
               {isFollowing ? 'Following' : 'Follow'}
             </button>
             <button
-              onClick={() => isGuest ? setToast({ action: 'message creators' }) : alert('Message composer opened')}
+              onClick={openDirectMessage}
               style={{
                 display: 'flex',
                 alignItems: 'center',

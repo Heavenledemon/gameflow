@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { acceptCollaborationRequest, cancelCollaborationRequest, declineCollaborationRequest } from '../../lib/collaboration'
 import { useInbox } from '../../hooks/useInbox'
@@ -8,6 +9,7 @@ const styles = { page: { height: '100%', overflowY: 'auto', padding: '24px 16px 
 
 export default function InboxPage() {
   const { token } = useAuth()
+  const navigate = useNavigate()
   const [box, setBox] = useState('incoming')
   const [working, setWorking] = useState('')
   const { items, status, error, nextCursor, loadMore, reload, setItems } = useInbox(token, box)
@@ -26,7 +28,7 @@ export default function InboxPage() {
     {status === 'loading' && <p>Loading requests…</p>}
     {status === 'error' && <div><p style={{ color: '#ff9a82' }}>{error}</p><button onClick={reload}>Try again</button></div>}
     {status === 'ready' && !items.length && <p style={{ color: 'rgba(255,255,255,.6)', textAlign: 'center', padding: 32 }}>No pending collaboration requests.</p>}
-    {items.map((item) => { const person = box === 'incoming' ? item.requester : item.recipient; return <article key={item.id} style={styles.card}><strong>{item.project?.title || 'Project'}</strong><p style={{ margin: '7px 0', color: 'rgba(255,255,255,.78)' }}>{box === 'incoming' ? `@${person?.username || 'creator'} wants to collaborate as ${item.proposedRole}.` : `Sent to @${person?.username || 'creator'} as ${item.proposedRole}.`}</p>{item.message && <p style={{ margin: '0 0 12px', fontSize: 13, color: 'rgba(255,255,255,.56)' }}>{item.message}</p>}<div style={{ display: 'flex', gap: 8 }}>{box === 'incoming' ? <><button disabled={working === item.id} style={{ ...styles.action, background: '#FF7A59', color: '#fff' }} onClick={() => act(item, 'accept')}>Accept</button><button disabled={working === item.id} style={{ ...styles.action, background: 'rgba(255,255,255,.1)', color: '#fff' }} onClick={() => act(item, 'decline')}>Decline</button></> : <button disabled={working === item.id} style={{ ...styles.action, background: 'rgba(255,255,255,.1)', color: '#fff' }} onClick={() => act(item, 'cancel')}>Cancel</button>}</div></article> })}
+    {items.map((item) => { const person = box === 'incoming' ? item.requester : item.recipient; return <article key={item.id} onClick={() => item.conversationId && navigate(`/app/inbox/${item.conversationId}`)} style={{ ...styles.card, cursor: item.conversationId ? 'pointer' : 'default' }}><strong>{item.project?.title || 'Project'}</strong><p style={{ margin: '7px 0', color: 'rgba(255,255,255,.78)' }}>{box === 'incoming' ? `@${person?.username || 'creator'} wants to collaborate as ${item.proposedRole}.` : `Sent to @${person?.username || 'creator'} as ${item.proposedRole}.`}</p>{item.message && <p style={{ margin: '0 0 12px', fontSize: 13, color: 'rgba(255,255,255,.56)' }}>{item.message}</p>}<div style={{ display: 'flex', gap: 8 }}>{box === 'incoming' ? <><button disabled={working === item.id} style={{ ...styles.action, background: '#FF7A59', color: '#fff' }} onClick={(event) => { event.stopPropagation(); act(item, 'accept') }}>Accept</button><button disabled={working === item.id} style={{ ...styles.action, background: 'rgba(255,255,255,.1)', color: '#fff' }} onClick={(event) => { event.stopPropagation(); act(item, 'decline') }}>Decline</button></> : <button disabled={working === item.id} style={{ ...styles.action, background: 'rgba(255,255,255,.1)', color: '#fff' }} onClick={(event) => { event.stopPropagation(); act(item, 'cancel') }}>Cancel</button>}</div></article> })}
     {nextCursor && <button onClick={loadMore} style={{ ...styles.action, width: '100%', background: 'rgba(255,255,255,.1)', color: '#fff' }}>Load more</button>}
   </main>
 }
