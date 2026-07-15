@@ -8,6 +8,7 @@ import PostComment from '../models/PostComment.js'
 import CommentReaction from '../models/CommentReaction.js'
 import PostEngagement from '../models/PostEngagement.js'
 import Project from '../models/Project.js'
+import ProjectMember from '../models/ProjectMember.js'
 import Upload from '../models/Upload.js'
 import ProjectFile from '../models/ProjectFile.js'
 import { publishProjectEngagement } from '../realtime/eventPublisher.js'
@@ -19,6 +20,7 @@ import { recordUploadMetric } from '../middlewares/observabilityMiddleware.js'
 import { removeFeedProjection, upsertFeedProjection } from '../services/feedProjection.js'
 import MutationReceipt from '../models/MutationReceipt.js'
 import { createPresignedPutUrl, immutableObjectKey, objectStorageReady, publicObjectUrl } from '../services/objectStorage.js'
+import { canManageProject, canViewProject, getProjectRole } from '../services/projectAccessService.js'
 
 const UPLOADS_ROOT = path.join(process.cwd(), 'uploads', 'projects')
 const PUBLIC_UPLOADS_PREFIX = '/api/uploads/projects'
@@ -344,7 +346,7 @@ function formatProjectComment(comment, replies = []) {
   }
 }
 
-function buildProjectPayload(project, engagement = {}, projectFiles = []) {
+function buildProjectPayload(project, engagement = {}, projectFiles = [], collaboration = {}) {
   return {
     contentType: 'project',
     contentId: String(project._id),
@@ -368,11 +370,39 @@ function buildProjectPayload(project, engagement = {}, projectFiles = []) {
     gameUrl: project.gameUrl,
     modelUrl: project.modelUrl,
     imageUrl: project.imageUrl,
+    collaborationOpen: Boolean(project.collaborationOpen),
+    collaborationRoles: Array.isArray(project.collaborationRoles) ? project.collaborationRoles : [],
+    collaborationSummary: project.collaborationSummary || '',
+    collaborators: collaboration.collaborators ?? [],
+    viewerRole: collaboration.viewerRole ?? null,
     uploadedFiles: projectFiles.length > 0 ? projectFiles : (project.uploadedFiles ?? []),
     engagement,
     createdAt: project.createdAt,
     updatedAt: project.updatedAt,
   }
+}
+
+async function getProjectCollaborationMap(projects = [], viewerId = '') {
+  const ids = projects.map((project) => project?._id).filter(Boolean)
+  const members = ids.length
+    ? await ProjectMember.find({ projectId: { $in: ids }, status: 'active' }).select('projectId userId role').populate('userId', 'username name avatar').lean()
+    : []
+  const map = new Map(projects.map((project) => [String(project._id), { collaborators: [], viewerRole: null }]))
+  for (const member of members) {
+    const entry = map.get(String(member.projectId))
+    if (!entry || !member.userId) continue
+    entry.collaborators.push({ id: String(member.userId._id), username: member.userId.username, name: member.userId.name, avatar: safeAvatarUrl(member.userId.avatar), role: member.role })
+    if (viewerId && String(member.userId._id) === String(viewerId)) entry.viewerRole = member.role
+  }
+  for (const project of projects) {
+    const entry = map.get(String(project._id))
+    if (!entry) continue
+    if (!entry.collaborators.some((member) => member.id === String(project.ownerId))) {
+      entry.collaborators.unshift({ id: String(project.ownerId), username: project.ownerUsername, name: project.ownerName, avatar: safeAvatarUrl(project.ownerAvatar), role: 'owner' })
+    }
+    if (viewerId && String(project.ownerId) === String(viewerId)) entry.viewerRole = 'owner'
+  }
+  return map
 }
 
 function buildGamePayload(game, index, viewerId = '') {
@@ -520,10 +550,10 @@ async function getProjectEngagementPayload(postId, viewerId = '', options = {}) 
 }
 
 async function enrichProjects(projects = [], viewerId = '', options = {}) {
-  const engagementMap = await computeProjectEngagementMap(
-    projects.map((project) => project._id),
-    viewerId,
-  )
+  const [engagementMap, collaborationMap] = await Promise.all([
+    computeProjectEngagementMap(projects.map((project) => project._id), viewerId),
+    getProjectCollaborationMap(projects, viewerId),
+  ])
 
   return projects.map((project) => {
     const engagement = engagementMap.get(String(project._id)) ?? normalizeProjectEngagementSummary()
@@ -531,7 +561,7 @@ async function enrichProjects(projects = [], viewerId = '', options = {}) {
       ...engagement,
       sharesCount: Number(project?.engagement?.sharesCount || 0),
       comments: options.includeComments ? engagement.comments : [],
-    })
+    }, [], collaborationMap.get(String(project._id)))
   })
 }
 
@@ -582,8 +612,8 @@ async function loadEngagementTarget(contentType, contentId) {
   return target
 }
 
-function ensureProjectEngagementAccess(project, userId) {
-  if (project.visibility === 'private' && String(project.ownerId) !== String(userId)) {
+async function ensureProjectEngagementAccess(project, userId) {
+  if (project.visibility === 'private' && !await getProjectRole(project, userId)) {
     throw createError(403, 'You cannot interact with a private project.')
   }
 }
@@ -751,12 +781,15 @@ export const getProjectById = asyncHandler(async (request, response) => {
   if (!project) {
     throw createError(404, 'Project not found.')
   }
+  if (!await canViewProject(project, viewerId)) {
+    throw createError(403, 'You cannot view this private project.')
+  }
 
-  const engagement = await getProjectEngagementPayload(project._id, viewerId, {
+  const [engagement, collaborationMap] = await Promise.all([getProjectEngagementPayload(project._id, viewerId, {
     includeComments: false,
     sharesCount: project?.engagement?.sharesCount || 0,
-  })
-  response.json({ project: buildProjectPayload(project, engagement) })
+  }), getProjectCollaborationMap([project], viewerId)])
+  response.json({ project: buildProjectPayload(project, engagement, [], collaborationMap.get(String(project._id))) })
 })
 
 export const createProject = asyncHandler(async (request, response) => {
@@ -769,6 +802,9 @@ export const createProject = asyncHandler(async (request, response) => {
     software,
     visibility,
     mode,
+    collaborationOpen,
+    collaborationRoles,
+    collaborationSummary,
   } = request.body ?? {}
 
   const normalizedTitle = String(title || '').trim()
@@ -779,6 +815,7 @@ export const createProject = asyncHandler(async (request, response) => {
   const normalizedMode = mode === 'portrait' ? 'portrait' : 'landscape'
   const normalizedTags = normalizeList(tags)
   const normalizedSoftware = normalizeList(software)
+  const normalizedCollaborationSummary = String(collaborationSummary || '').trim()
 
   if (!normalizedTitle) {
     throw createError(400, 'Project title is required.')
@@ -790,6 +827,9 @@ export const createProject = asyncHandler(async (request, response) => {
 
   if (!normalizedCategory) {
     throw createError(400, 'Project category is required.')
+  }
+  if (normalizedCollaborationSummary.length > 500) {
+    throw createError(400, 'Collaboration summary must be 500 characters or fewer.')
   }
 
   const existingOwnerProjects = await Project.countDocuments({ ownerId: request.user._id })
@@ -815,14 +855,23 @@ export const createProject = asyncHandler(async (request, response) => {
     gameUrl: '',
     modelUrl: '',
     imageUrl: '',
+    collaborationOpen: Boolean(collaborationOpen),
+    collaborationRoles: normalizeList(collaborationRoles),
+    collaborationSummary: normalizedCollaborationSummary,
     displayOrder: existingOwnerProjects + 1,
   })
+  await ProjectMember.updateOne(
+    { projectId: project._id, userId: request.user._id },
+    { $setOnInsert: { role: 'owner', status: 'active', invitedBy: request.user._id, joinedAt: new Date() } },
+    { upsert: true },
+  )
 
+  const collaborationMap = await getProjectCollaborationMap([project], String(request.user._id))
   response.status(201).json({
     message: 'Project draft created successfully.',
     project: buildProjectPayload(
       project,
-      normalizeProjectEngagementSummary({ sharesCount: Number(project?.engagement?.sharesCount || 0) }),
+      normalizeProjectEngagementSummary({ sharesCount: Number(project?.engagement?.sharesCount || 0) }), [], collaborationMap.get(String(project._id)),
     ),
   })
 })
@@ -857,7 +906,7 @@ export const uploadProjectFile = asyncHandler(async (request, response) => {
     throw createError(404, 'Project not found.')
   }
 
-  if (String(project.ownerId) !== String(request.user._id)) {
+  if (!await canManageProject(project, request.user._id)) {
     throw createError(403, 'You cannot modify this project.')
   }
 
@@ -980,7 +1029,7 @@ export const initiateProjectUpload = asyncHandler(async (request, response) => {
   if (!mongoose.isValidObjectId(projectId)) throw createError(400, 'Invalid project ID.')
   const project = await Project.findById(projectId)
   if (!project) throw createError(404, 'Project not found.')
-  if (String(project.ownerId) !== String(request.user._id)) throw createError(403, 'You cannot modify this project.')
+  if (!await canManageProject(project, request.user._id)) throw createError(403, 'You cannot modify this project.')
   const byteSize = Number(size)
   const normalizedPath = safeRelativePath(relativePath, name)
   const extension = path.posix.extname(normalizedPath).toLowerCase()
@@ -1029,7 +1078,7 @@ export const publishProject = asyncHandler(async (request, response) => {
     throw createError(404, 'Project not found.')
   }
 
-  if (String(project.ownerId) !== String(request.user._id)) {
+  if (!await canManageProject(project, request.user._id)) {
     throw createError(403, 'You cannot publish this project.')
   }
 
@@ -1070,19 +1119,20 @@ export const publishProject = asyncHandler(async (request, response) => {
   await project.save()
   await upsertFeedProjection('project', project)
 
+  const collaborationMap = await getProjectCollaborationMap([project], String(request.user._id))
   response.json({
     message: 'Project published successfully.',
     project: buildProjectPayload(
       project,
       normalizeProjectEngagementSummary({ sharesCount: Number(project?.engagement?.sharesCount || 0) }),
-      uploadedFiles,
+      uploadedFiles, collaborationMap.get(String(project._id)),
     ),
   })
 })
 
 export const updateProject = asyncHandler(async (request, response) => {
   const { projectId } = request.params
-  const { title, category, description, tags, software, visibility, mode, type } = request.body
+  const { title, category, description, tags, software, visibility, mode, type, collaborationOpen, collaborationRoles, collaborationSummary } = request.body
 
   const project = await Project.findById(projectId)
 
@@ -1090,7 +1140,7 @@ export const updateProject = asyncHandler(async (request, response) => {
     throw createError(404, 'Project not found.')
   }
 
-  if (String(project.ownerId) !== String(request.user._id)) {
+  if (!await canManageProject(project, request.user._id)) {
     throw createError(403, 'You cannot modify this project.')
   }
 
@@ -1117,6 +1167,13 @@ export const updateProject = asyncHandler(async (request, response) => {
     }
     project.type = type
   }
+  if (collaborationOpen !== undefined) project.collaborationOpen = Boolean(collaborationOpen)
+  if (collaborationRoles !== undefined) project.collaborationRoles = normalizeList(collaborationRoles)
+  if (collaborationSummary !== undefined) {
+    const summary = String(collaborationSummary).trim()
+    if (summary.length > 500) throw createError(400, 'Collaboration summary must be 500 characters or fewer.')
+    project.collaborationSummary = summary
+  }
 
   const uploadedFiles = await ProjectFile.find({ projectId: project._id, status: 'ready' }).lean()
   const mainFile = pickMainFile(uploadedFiles, project.type)
@@ -1134,12 +1191,13 @@ export const updateProject = asyncHandler(async (request, response) => {
   await project.save()
   await upsertFeedProjection('project', project)
 
+  const collaborationMap = await getProjectCollaborationMap([project], String(request.user._id))
   response.json({
     message: 'Project updated successfully.',
     project: buildProjectPayload(
       project,
       normalizeProjectEngagementSummary({ sharesCount: Number(project?.engagement?.sharesCount || 0) }),
-      uploadedFiles,
+      uploadedFiles, collaborationMap.get(String(project._id)),
     ),
   })
 })
@@ -1168,7 +1226,7 @@ async function getGeneralEngagement(contentType, target, viewerId = '') {
 async function mutateGeneralEngagement(request, contentType, contentId, action, text = '') {
   const idempotencyKey = requireIdempotencyKey(request)
   const target = await loadEngagementTarget(contentType, contentId)
-  if (contentType === 'project') ensureProjectEngagementAccess(target, request.user._id)
+  if (contentType === 'project') await ensureProjectEngagementAccess(target, request.user._id)
 
   const previousReceipt = await MutationReceipt.findOne({ userId: request.user._id, idempotencyKey }).lean()
   if (previousReceipt?.result) return previousReceipt.result
@@ -1254,7 +1312,7 @@ export const getPostEngagement = asyncHandler(async (request, response) => {
   const { postId } = request.params
   const viewerId = getViewerId(request)
   const project = await loadEngagementTarget('project', postId)
-  ensureProjectEngagementAccess(project, request.user._id)
+  await ensureProjectEngagementAccess(project, request.user._id)
   const engagement = await getProjectEngagementPayload(project._id, viewerId, {
     includeComments: true,
     sharesCount: project?.engagement?.sharesCount || 0,
@@ -1297,7 +1355,7 @@ export const createCommentReply = asyncHandler(async (request, response) => {
   const contentType = parentComment.contentType || 'project'
   const contentId = parentComment.contentId || String(parentComment.postId)
   const target = await loadEngagementTarget(contentType, contentId)
-  if (contentType === 'project') ensureProjectEngagementAccess(target, request.user._id)
+  if (contentType === 'project') await ensureProjectEngagementAccess(target, request.user._id)
   const existingReply = await PostComment.findOne({ userId: request.user._id, idempotencyKey }).lean()
   if (!existingReply) {
     await PostComment.create({ postId: contentType === 'project' ? target._id : undefined, contentType, contentId: String(target._id), parentCommentId: parentComment._id, userId: request.user._id, username: request.user.username, name: request.user.name, avatar: safeAvatarUrl(request.user.avatar), text, idempotencyKey })

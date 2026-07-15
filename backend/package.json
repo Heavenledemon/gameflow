@@ -9,6 +9,7 @@
     "seed": "node src/scripts/seed.js",
     "backfill:feed": "node src/scripts/backfillFeedItems.js",
     "migrate:engagement": "node src/scripts/migrateEngagementCollections.js",
+    "backfill:project-members": "node src/scripts/backfillProjectMembers.js",
     "worker": "node src/worker.js",
     "test": "node --test test/*.test.js",
     "check": "node --check src/server.js && node --check src/app.js && node --check src/controllers/contentController.js && node --check src/realtime/socketServer.js"

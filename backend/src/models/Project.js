@@ -137,6 +137,9 @@ const projectSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    collaborationOpen: { type: Boolean, default: false },
+    collaborationRoles: { type: [String], default: [] },
+    collaborationSummary: { type: String, default: '', trim: true, maxlength: 500 },
   },
   {
     timestamps: true,
