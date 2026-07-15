@@ -6,6 +6,7 @@ import ConversationParticipant from '../models/ConversationParticipant.js'
 import Message from '../models/Message.js'
 import Follow from '../models/Follow.js'
 import User from '../models/User.js'
+import ProjectMember from '../models/ProjectMember.js'
 
 function createError(statusCode, message) { const error = new Error(message); error.statusCode = statusCode; return error }
 function validId(value) { return mongoose.isValidObjectId(value) }
@@ -23,6 +24,10 @@ async function loadParticipantConversation(conversationId, userId) {
 }
 
 async function assertCanSend(conversation, userId) {
+  if (conversation.kind === 'project') {
+    if (!await ProjectMember.exists({ projectId: conversation.projectId, userId, status: 'active' })) throw createError(403, 'You are no longer an active project member.')
+    return
+  }
   if (conversation.kind !== 'collaboration_request') return
   const request = await CollaborationRequest.findById(conversation.collaborationRequestId).select('status requesterId recipientId').lean()
   if (!request || request.status !== 'pending') throw createError(409, 'This collaboration conversation is closed.')

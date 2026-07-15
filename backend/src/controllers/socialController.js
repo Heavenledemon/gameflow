@@ -251,6 +251,21 @@ export const acceptCollaborationRequest = asyncHandler(async (request, response)
       const current = await CollaborationRequest.findOne({ _id: record._id, status: 'pending' }).session(session)
       if (!current) throw createError(409, 'This collaboration request has already been resolved.')
       await ProjectMember.updateOne({ projectId: current.projectId, userId: memberId }, { $set: { role: current.proposedRole, status: 'active', invitedBy: request.user._id, joinedAt: new Date(), removedAt: null } }, { upsert: true, session })
+      let workspace = await Conversation.findOne({ kind: 'project', projectId: current.projectId }).session(session)
+      if (!workspace && current.conversationId) {
+        workspace = await Conversation.findById(current.conversationId).session(session)
+        if (workspace) {
+          workspace.kind = 'project'; workspace.collaborationRequestId = undefined; workspace.projectId = current.projectId
+          if (!workspace.participantIds.some((id) => String(id) === String(memberId))) workspace.participantIds.push(memberId)
+          await workspace.save({ session })
+        }
+      }
+      if (!workspace) {
+        const workspaceProject = await Project.findById(current.projectId).select('ownerId').session(session)
+        workspace = await Conversation.create([{ kind: 'project', projectId: current.projectId, participantIds: [workspaceProject.ownerId, memberId], createdBy: request.user._id, lastMessageAt: new Date(), lastMessagePreview: 'Project workspace created.' }], { session }).then(([created]) => created)
+        await ConversationParticipant.updateOne({ conversationId: workspace._id, userId: workspaceProject.ownerId }, { $setOnInsert: { conversationId: workspace._id, userId: workspaceProject.ownerId } }, { upsert: true, session })
+      }
+      await ConversationParticipant.updateOne({ conversationId: workspace._id, userId: memberId }, { $set: { hiddenAt: null }, $setOnInsert: { conversationId: workspace._id, userId: memberId } }, { upsert: true, session })
       current.status = 'accepted'; current.resolvedBy = request.user._id; current.resolvedAt = new Date(); current.resolutionEvent = 'accepted'
       await current.save({ session })
     })

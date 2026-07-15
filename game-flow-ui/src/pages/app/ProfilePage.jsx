@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { FaGithub, FaInstagram, FaLinkedin, FaBehance, FaArtstation } from 'react-icons/fa';
 import { SiItchdotio } from 'react-icons/si';
 import { fetchContent, togglePostLike, updateProject, deleteProject, uploadProjectFile } from '../../lib/content';
+import { fetchMyCollaborations } from '../../lib/collaboration';
 import GuestBanner from '../../components/layout/GuestBanner';
 import GuestToast from '../../components/layout/GuestToast';
 import {
@@ -245,6 +246,7 @@ const ProfilePage = () => {
   const [newPreviewFile, setNewPreviewFile] = useState(null);
   const [previewUrlToDisplay, setPreviewUrlToDisplay] = useState('');
   const [contentFeed, setContentFeed] = useState({ projects: [], games: [], assets: [] });
+  const [collaborationItems, setCollaborationItems] = useState([]);
 
   const triggerRefresh = () => setRefreshTrigger((prev) => prev + 1);
 
@@ -297,6 +299,15 @@ const ProfilePage = () => {
       isMounted = false;
     };
   }, [user, isGuest, refreshTrigger, token]);
+
+  useEffect(() => {
+    if (isGuest || !token) return;
+    fetchMyCollaborations(token).then((data) => setCollaborationItems((data.items || []).map((entry) => ({
+      ...entry.project, id: entry.projectId, kind: 'Project', role: entry.role,
+      thumbnail: entry.project.previewUrl || BANNER,
+      subtitle: `${entry.role} · ${entry.project.category || entry.project.type || 'Project'}`,
+    })))).catch(() => setCollaborationItems([]));
+  }, [isGuest, token, refreshTrigger]);
 
   const handleGuestAction = (actionName) => {
     setToast({ action: actionName });
@@ -808,46 +819,7 @@ const ProfilePage = () => {
     });
   }, [contentFeed, user]);
 
-  const collabItems = useMemo(() => {
-    const makeItem = (item, kind) => ({
-      ...item,
-      kind,
-      thumbnail:
-        item.previewUrl ||
-        item.imageUrl ||
-        item.loadingScreenUrl ||
-        item.modelUrl ||
-        BANNER,
-      title: item.title || item.projectTitle || 'Untitled post',
-      subtitle:
-        kind === 'Project'
-          ? item.category || item.type || 'Project'
-          : kind === 'Game'
-            ? 'Game'
-            : '3D Asset',
-    });
-
-    const isCollab = (item) => {
-      const tags = Array.isArray(item.tags) ? item.tags.map(t => String(t).toLowerCase()) : [];
-      return tags.some(tag => tag.includes('collab') || tag.includes('team') || tag.includes('collaborator'));
-    };
-
-    const projectItems = contentFeed.projects
-      .filter(isCollab)
-      .map((item) => makeItem(item, 'Project'));
-    const gameItems = contentFeed.games
-      .filter(isCollab)
-      .map((item) => makeItem(item, 'Game'));
-    const assetItems = contentFeed.assets
-      .filter(isCollab)
-      .map((item) => makeItem(item, '3D Asset'));
-
-    return [...projectItems, ...gameItems, ...assetItems].sort((a, b) => {
-      const left = new Date(a.updatedAt || a.createdAt || 0).getTime();
-      const right = new Date(b.updatedAt || b.createdAt || 0).getTime();
-      return right - left;
-    });
-  }, [contentFeed]);
+  const collabItems = collaborationItems;
 
   const renderGrid = (items, isOwnPortfolio = false, emptyText = 'No items found', emptySubtext = '') => {
     if (isLoadingProjects) {
