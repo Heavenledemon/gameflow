@@ -1,12 +1,14 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { createDirectConversation } from '../../lib/messaging';
-import { fetchContent } from '../../lib/content';
+import { createModerationReport, toggleUserBlock } from '../../lib/moderation';
+import { useToast } from '../../context/ToastContext';
 import GuestToast from '../../components/layout/GuestToast';
+import { BottomSheet, ConfirmDialog } from '../../components/ui/Overlay';
 import {
   ChevronLeftIcon, ShareIcon2, VerifiedIcon, HeartIcon,
-  DotsIcon, CollabIcon, EyeIcon, BookmarkIcon, CommentIcon
+  DotsIcon, EyeIcon
 } from '../../components/icons/Icons';
 
 /* ─── Local Tab Icons Matching ProfilePage.jsx exactly ─────────────────────── */
@@ -78,12 +80,19 @@ const CreatorProfilePage = () => {
   const navigate = useNavigate();
   const { creatorId } = useParams();
   const { isGuest, token } = useAuth();
+  const { success: showSuccess, error: showError } = useToast();
 
   const [activeTab, setActiveTab] = useState('Projects');
   const [isFollowing, setIsFollowing] = useState(false);
   const [likedMap, setLikedMap] = useState({});
   const [toast, setToast] = useState(null);
   const [messageError, setMessageError] = useState('');
+  const [isOpeningConversation, setIsOpeningConversation] = useState(false);
+  const [showSafetySheet, setShowSafetySheet] = useState(false);
+  const [showBlockConfirm, setShowBlockConfirm] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [isSafetyAction, setIsSafetyAction] = useState(false);
+  const [reportReason, setReportReason] = useState('');
 
   const handleFollow = () => {
     if (isGuest) { setToast({ action: 'follow creators' }); return; }
@@ -98,22 +107,50 @@ const CreatorProfilePage = () => {
 
   const openDirectMessage = async () => {
     if (isGuest) { setToast({ action: 'message creators' }); return; }
+    if (isBlocked) { setMessageError('You blocked this creator. Unblock them before starting a conversation.'); return; }
+    setIsOpeningConversation(true);
+    setMessageError('');
     try {
       const result = await createDirectConversation(token, creatorId || currentCreator.username);
-      navigate(`/app/inbox/${result.conversation.id}`);
-    } catch (error) { setMessageError(error.message || 'Unable to open a conversation.'); }
+      navigate(`/app/inbox/${result.conversation.id}`, { state: { conversation: result.conversation, moderationTarget: result.conversation.recipient } });
+    } catch (error) { const message = error.message || 'Unable to open a conversation.'; setMessageError(message); showError(message); } finally { setIsOpeningConversation(false); }
   };
 
-  const currentCreator = useMemo(() => {
-    if (creatorId) {
-      return {
-        ...MOCK_CREATOR,
-        name: creatorId,
-        username: creatorId
-      };
-    }
-    return MOCK_CREATOR;
-  }, [creatorId]);
+  const currentCreator = creatorId ? {
+    ...MOCK_CREATOR,
+    name: creatorId,
+    username: creatorId
+  } : MOCK_CREATOR;
+
+  const moderationTargetId = /^[a-f\d]{24}$/i.test(String(creatorId || '')) ? creatorId : null;
+
+  const openSafety = () => {
+    if (isGuest) { setToast({ action: 'manage safety settings' }); return; }
+    setShowSafetySheet(true);
+  };
+
+  const toggleBlock = async () => {
+    if (!moderationTargetId) return;
+    setIsSafetyAction(true);
+    try {
+      const result = await toggleUserBlock(token, moderationTargetId);
+      setIsBlocked(Boolean(result.blocked));
+      setShowSafetySheet(false);
+      showSuccess(result.blocked ? 'Creator blocked. Messaging and collaboration are disabled.' : 'Creator unblocked.');
+    } catch (error) { showError(error.message || 'Unable to update this block.'); } finally { setIsSafetyAction(false); }
+  };
+
+  const submitReport = async () => {
+    const reason = reportReason.trim();
+    if (!moderationTargetId || !reason) return;
+    setIsSafetyAction(true);
+    try {
+      await createModerationReport(token, { targetUserId: moderationTargetId, reason, contextType: 'user', contextId: moderationTargetId });
+      setReportReason('');
+      setShowSafetySheet(false);
+      showSuccess('Report submitted. Thank you for helping keep the community safe.');
+    } catch (error) { showError(error.message || 'Unable to submit this report.'); } finally { setIsSafetyAction(false); }
+  };
 
   const tabsList = [
     { id: 'Projects', label: 'Projects', icon: (color) => <GridIcon size={18} color={color} /> },
@@ -211,7 +248,8 @@ const CreatorProfilePage = () => {
               <ShareIcon2 size={18} />
             </button>
             <button
-              onClick={() => alert('Options menu')}
+              onClick={openSafety}
+              aria-label="Creator safety options"
               style={{
                 width: 38,
                 height: 38,
@@ -272,6 +310,7 @@ const CreatorProfilePage = () => {
             </button>
             <button
               onClick={openDirectMessage}
+              disabled={isOpeningConversation || isBlocked}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -285,7 +324,8 @@ const CreatorProfilePage = () => {
                 color: '#FFFFFF',
                 fontSize: 13.5,
                 fontWeight: 600,
-                cursor: 'pointer',
+                cursor: isOpeningConversation || isBlocked ? 'not-allowed' : 'pointer',
+                opacity: isOpeningConversation || isBlocked ? .65 : 1,
                 transition: 'all 0.2s'
               }}
             >
@@ -293,10 +333,12 @@ const CreatorProfilePage = () => {
                 <line x1="22" y1="2" x2="11" y2="13" />
                 <polygon points="22 2 15 22 11 13 2 9 22 2" />
               </svg>
-              Message
+              {isOpeningConversation ? 'Opening…' : isBlocked ? 'Blocked' : 'Message'}
             </button>
           </div>
         </div>
+
+        {messageError ? <p role="alert" style={{ margin: '0 0 12px', color: '#ffad96', fontSize: 12.5, lineHeight: 1.45 }}>{messageError}</p> : null}
 
         {/* Identity Details */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
@@ -636,6 +678,16 @@ const CreatorProfilePage = () => {
           onDismiss={() => setToast(null)}
         />
       )}
+
+      <BottomSheet open={showSafetySheet} title="Safety options" onClose={() => { if (!isSafetyAction) setShowSafetySheet(false); }}>
+        {!moderationTargetId ? <p style={{ margin: '4px 0', color: '#A1A1AA', fontSize: 13, lineHeight: 1.5 }}>Safety actions need this profile’s creator account ID. This profile currently provides a username only, so no block or report request was sent.</p> : <div style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '4px 0' }}>
+          <p style={{ margin: 0, color: '#A1A1AA', fontSize: 13, lineHeight: 1.45 }}>Manage how you interact with @{currentCreator.username}, or report a concern to the moderation team.</p>
+          <button type="button" disabled={isSafetyAction} onClick={() => setShowBlockConfirm(true)} style={{ minHeight: 46, borderRadius: 12, border: '1px solid rgba(255,120,140,.3)', background: 'rgba(217,75,98,.1)', color: '#ff9cac', fontWeight: 800, cursor: 'pointer' }}>{isBlocked ? 'Unblock creator' : 'Block creator'}</button>
+          <label style={{ display: 'grid', gap: 7, color: '#E4E4E7', fontSize: 13, fontWeight: 700 }}>Report concern<textarea value={reportReason} maxLength={500} onChange={(event) => setReportReason(event.target.value)} placeholder="Tell us what happened (up to 500 characters)" style={{ minHeight: 96, boxSizing: 'border-box', resize: 'vertical', padding: 12, borderRadius: 12, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.12)', color: '#fff', font: 'inherit' }} /></label>
+          <button type="button" disabled={isSafetyAction || !reportReason.trim()} onClick={submitReport} style={{ minHeight: 46, borderRadius: 12, border: 'none', background: '#FF7A5C', color: '#fff', fontWeight: 800, cursor: 'pointer', opacity: isSafetyAction || !reportReason.trim() ? .6 : 1 }}>{isSafetyAction ? 'Submitting…' : 'Submit report'}</button>
+        </div>}
+      </BottomSheet>
+      <ConfirmDialog open={showBlockConfirm} title={isBlocked ? 'Unblock creator?' : 'Block creator?'} message={isBlocked ? 'You will be able to message and collaborate with this creator again.' : 'Blocking prevents new messages and collaboration requests between you and this creator.'} confirmLabel={isBlocked ? 'Unblock' : 'Block'} onConfirm={toggleBlock} onClose={() => setShowBlockConfirm(false)} />
     </div>
   );
 };
