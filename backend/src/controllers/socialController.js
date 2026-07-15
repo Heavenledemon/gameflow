@@ -4,6 +4,9 @@ import CollaborationRequest from '../models/CollaborationRequest.js'
 import Follow from '../models/Follow.js'
 import Project from '../models/Project.js'
 import ProjectMember from '../models/ProjectMember.js'
+import Conversation from '../models/Conversation.js'
+import ConversationParticipant from '../models/ConversationParticipant.js'
+import Message from '../models/Message.js'
 import User from '../models/User.js'
 import { canManageProject } from '../services/projectAccessService.js'
 
@@ -94,6 +97,29 @@ async function hasFollowRelationship(leftId, rightId) {
   return Boolean(await Follow.exists({ $or: [{ followerId: leftId, followingId: rightId }, { followerId: rightId, followingId: leftId }] }))
 }
 
+async function ensureRequestConversation(requestRecord, session = null) {
+  if (requestRecord.conversationId) return requestRecord.conversationId
+  const options = session ? { session } : {}
+  const conversation = await Conversation.create([{
+    kind: 'collaboration_request', participantIds: [requestRecord.requesterId, requestRecord.recipientId],
+    projectId: requestRecord.projectId, collaborationRequestId: requestRecord._id,
+    createdBy: requestRecord.requesterId, lastMessageAt: new Date(),
+    lastMessagePreview: requestRecord.message || 'Collaboration request created.',
+  }], options).then(([created]) => created)
+  await ConversationParticipant.insertMany([
+    { conversationId: conversation._id, userId: requestRecord.requesterId },
+    { conversationId: conversation._id, userId: requestRecord.recipientId },
+  ], options)
+  await Message.create([{
+    conversationId: conversation._id, senderId: requestRecord.requesterId,
+    body: requestRecord.message || 'Collaboration request created.', type: requestRecord.message ? 'text' : 'system',
+    clientMessageId: `request:${requestRecord._id}`,
+  }], options)
+  requestRecord.conversationId = conversation._id
+  await requestRecord.save(options)
+  return conversation._id
+}
+
 function readCursor(value) {
   if (!value) return null
   try {
@@ -145,13 +171,20 @@ export const createCollaborationRequest = asyncHandler(async (request, response)
     { requesterId, recipientId: targetRecipientId }, { requesterId: targetRecipientId, recipientId: requesterId },
   ] })
   if (duplicate) throw createError(409, 'A pending collaboration request already exists between these creators.')
-  let requestRecord = await CollaborationRequest.findOne({ projectId: project._id, requesterId, recipientId: targetRecipientId })
-  if (requestRecord) {
-    requestRecord.set({ initiatedBy, proposedRole, message: String(message).trim(), status: 'pending', resolvedBy: null, resolvedAt: null, resolutionEvent: '' })
-    await requestRecord.save()
-  } else {
-    requestRecord = await CollaborationRequest.create({ projectId: project._id, requesterId, recipientId: targetRecipientId, initiatedBy, proposedRole, message: String(message).trim() })
-  }
+  const session = await mongoose.startSession()
+  let requestRecord
+  try {
+    await session.withTransaction(async () => {
+      requestRecord = await CollaborationRequest.findOne({ projectId: project._id, requesterId, recipientId: targetRecipientId }).session(session)
+      if (requestRecord) {
+        requestRecord.set({ initiatedBy, proposedRole, message: String(message).trim(), status: 'pending', resolvedBy: null, resolvedAt: null, resolutionEvent: '' })
+        await requestRecord.save({ session })
+      } else {
+        requestRecord = await CollaborationRequest.create([{ projectId: project._id, requesterId, recipientId: targetRecipientId, initiatedBy, proposedRole, message: String(message).trim() }], { session }).then(([created]) => created)
+      }
+      await ensureRequestConversation(requestRecord, session)
+    })
+  } finally { await session.endSession() }
   const populated = await populateRequest(CollaborationRequest.findById(requestRecord._id)).lean()
   response.status(201).json({ request: requestDto(populated) })
 })
