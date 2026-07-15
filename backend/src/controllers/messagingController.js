@@ -4,6 +4,8 @@ import CollaborationRequest from '../models/CollaborationRequest.js'
 import Conversation from '../models/Conversation.js'
 import ConversationParticipant from '../models/ConversationParticipant.js'
 import Message from '../models/Message.js'
+import Follow from '../models/Follow.js'
+import User from '../models/User.js'
 
 function createError(statusCode, message) { const error = new Error(message); error.statusCode = statusCode; return error }
 function validId(value) { return mongoose.isValidObjectId(value) }
@@ -84,4 +86,25 @@ export const markConversationRead = asyncHandler(async (request, response) => {
   if (requestedId && !message) throw createError(400, 'Message does not belong to this conversation.')
   await ConversationParticipant.updateOne({ conversationId: conversation._id, userId: request.user._id }, { $set: { lastReadMessageId: message?._id || null, lastReadAt: new Date() } })
   response.json({ conversationId: String(conversation._id), lastReadMessageId: message ? String(message._id) : null })
+})
+
+export const createDirectConversation = asyncHandler(async (request, response) => {
+  const recipientInput = String(request.body?.recipientId || request.body?.username || '').trim()
+  if (!recipientInput) throw createError(400, 'A recipient is required.')
+  const recipient = validId(recipientInput)
+    ? await User.findById(recipientInput).select('_id username').lean()
+    : await User.findOne({ username: recipientInput.toLowerCase() }).select('_id username').lean()
+  if (!recipient) throw createError(404, 'Creator not found.')
+  if (String(recipient._id) === String(request.user._id)) throw createError(400, 'You cannot message yourself.')
+  const [followsRecipient, recipientFollows] = await Promise.all([
+    Follow.exists({ followerId: request.user._id, followingId: recipient._id }),
+    Follow.exists({ followerId: recipient._id, followingId: request.user._id }),
+  ])
+  if (!followsRecipient || !recipientFollows) throw createError(403, 'Direct messages are available only to mutually following creators.')
+  let conversation = await Conversation.findOne({ kind: 'direct', participantIds: { $all: [request.user._id, recipient._id], $size: 2 } })
+  if (!conversation) {
+    conversation = await Conversation.create({ kind: 'direct', participantIds: [request.user._id, recipient._id], createdBy: request.user._id, lastMessageAt: new Date() })
+    await ConversationParticipant.insertMany([{ conversationId: conversation._id, userId: request.user._id }, { conversationId: conversation._id, userId: recipient._id }])
+  }
+  response.status(201).json({ conversation: { id: String(conversation._id), kind: conversation.kind, recipient: { id: String(recipient._id), username: recipient.username } } })
 })
