@@ -737,6 +737,26 @@ const ProfilePage = () => {
     });
   }, [contentFeed]);
 
+  const clearLikedItems = async () => {
+    if (!likedItems.length || !window.confirm('Remove all liked items from your profile?')) return;
+    try {
+      await Promise.all(likedItems.map((item) => {
+        const contentType = item.kind === 'Project' ? 'project' : item.kind === 'Game' ? 'game' : 'asset';
+        const contentId = item._id || item.id || item.contentId;
+        return contentType === 'project'
+          ? togglePostLike(token, contentId)
+          : updateContentEngagement(token, contentType, contentId, { action: 'react' });
+      }));
+      setContentFeed((current) => ({
+        projects: current.projects.map((item) => ({ ...item, engagement: { ...(item.engagement || {}), viewerHasLiked: false, isLiked: false } })),
+        games: current.games.map((item) => ({ ...item, engagement: { ...(item.engagement || {}), viewerHasLiked: false, isLiked: false } })),
+        assets: current.assets.map((item) => ({ ...item, engagement: { ...(item.engagement || {}), viewerHasLiked: false, isLiked: false } })),
+      }));
+    } catch (error) {
+      setToastMsg(error.message || 'Unable to remove liked items.');
+    }
+  };
+
   const commentedItems = useMemo(() => {
     const makeItem = (item, kind) => ({
       ...item,
@@ -1454,8 +1474,10 @@ const ProfilePage = () => {
           {activeTab === 'Projects' &&
             renderGrid(userProjects, true, 'No projects published yet', 'Upload your WebGL builds, 3D files, or 2D artwork and showcase them on your profile.')}
           
-          {activeTab === 'Liked' &&
-            renderGrid(likedItems, false, 'No liked showcases yet', 'Projects you react to will be displayed here.')}
+          {activeTab === 'Liked' && <>
+            {likedItems.length > 0 && <button type="button" onClick={clearLikedItems} style={{ margin: '0 0 12px auto', display: 'block', padding: '8px 12px', borderRadius: 999, border: '1px solid rgba(255,122,89,.45)', background: 'transparent', color: '#FF9A7A', cursor: 'pointer' }}>Clear liked items</button>}
+            {renderGrid(likedItems, false, 'No liked showcases yet', 'Projects you react to will be displayed here.')}
+          </>}
           
           {activeTab === 'Comments' &&
             renderGrid(commentedItems, false, 'No commented showcases yet', 'Projects you leave responses on will appear here.')}

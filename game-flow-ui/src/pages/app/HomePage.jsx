@@ -240,10 +240,12 @@ function HomePage() {
   const [isSubmittingComment, setIsSubmittingComment] = useState(false)
   const [commentError, setCommentError] = useState('')
   const [replyTarget, setReplyTarget] = useState(null)
+  const [shareMenuTarget, setShareMenuTarget] = useState(null)
   const feedContainerRef = useRef(null)
   const reelNodesRef = useRef(new Map())
   const observerRef = useRef(null)
   const localIdRef = useRef(0)
+  const pendingEngagementRef = useRef(new Set())
 
   const nextLocalId = () => {
     localIdRef.current += 1
@@ -429,48 +431,66 @@ function HomePage() {
   const mutateEngagement = async (reel, action, payload = {}) => {
     const targetId = getReelKey(reel)
     const isBackendPost = reel.contentType && reel.contentType !== 'demo'
+    const mutationKey = `${reel.contentType}:${reel.contentId}:${action}`
 
-    if (isGuest && isBackendPost) {
-      setExpandedProj(reel)
-      return
+    // A reel can receive several pointer events before the first request returns.
+    // Serialize the same action so the server's toggle remains deterministic.
+    if (pendingEngagementRef.current.has(mutationKey)) return null
+    pendingEngagementRef.current.add(mutationKey)
+
+    try {
+      if (isGuest && isBackendPost) {
+        setExpandedProj(reel)
+        return null
+      }
+
+      if (!isBackendPost) {
+        const localComment =
+          action === 'comment'
+                ? {
+                    commentId: nextLocalId(),
+                    userId: user?.id || 'local',
+                    username: user?.username || 'guest',
+                    name: user?.name || 'Guest',
+                    avatar: user?.avatar || DEFAULT_AVATAR,
+                    text: payload.commentText || '',
+                    createdAt: new Date().toISOString(),
+                  }
+            : null
+
+        updateItemInState(targetId, (item) =>
+          applyLocalEngagement(item, action, { comment: localComment }),
+        )
+        return null
+      }
+
+      if (reel.contentType === 'project' && action === 'react') {
+        await mutateProjectToggle(reel, action, () => togglePostLike(token, reel.contentId))
+        return null
+      }
+
+      if (reel.contentType === 'project' && action === 'save') {
+        await mutateProjectToggle(reel, action, () => togglePostSave(token, reel.contentId))
+        return null
+      }
+
+      const result = await updateContentEngagement(token, reel.contentType, reel.contentId, {
+        action,
+        ...payload,
+      })
+
+      // updateContentEngagement returns contentType/contentId + engagement,
+      // not a feed-shaped `content` object. Reconcile by the canonical reel key.
+      if (result?.engagement) {
+        updateItemInState(`${result.contentType}:${result.contentId}`, (item) => ({
+          ...item,
+          engagement: { ...(item.engagement ?? {}), ...result.engagement },
+        }))
+      }
+      return result
+    } finally {
+      pendingEngagementRef.current.delete(mutationKey)
     }
-
-    if (!isBackendPost) {
-      const localComment =
-        action === 'comment'
-              ? {
-                  commentId: nextLocalId(),
-                  userId: user?.id || 'local',
-              username: user?.username || 'guest',
-              name: user?.name || 'Guest',
-              avatar: user?.avatar || DEFAULT_AVATAR,
-              text: payload.commentText || '',
-              createdAt: new Date().toISOString(),
-            }
-          : null
-
-      updateItemInState(targetId, (item) =>
-        applyLocalEngagement(item, action, { comment: localComment }),
-      )
-      return
-    }
-
-    if (reel.contentType === 'project' && action === 'react') {
-      await mutateProjectToggle(reel, action, () => togglePostLike(token, reel.contentId))
-      return
-    }
-
-    if (reel.contentType === 'project' && action === 'save') {
-      await mutateProjectToggle(reel, action, () => togglePostSave(token, reel.contentId))
-      return
-    }
-
-    const result = await updateContentEngagement(token, reel.contentType, reel.contentId, {
-      action,
-      ...payload,
-    })
-
-    syncEngagement(result.content)
   }
 
   const handleLike = async (reel) => {
@@ -511,18 +531,25 @@ function HomePage() {
     }
   }
 
-  const handleShare = async (reel) => {
+  const handleShare = async (reel, platform = '') => {
     const shareUrl =
       reel.contentType === 'project'
         ? `${window.location.origin}/app/project/${reel.contentId || reel.projectId || reel.id}`
         : window.location.href
 
+    const shareText = `${reel.projectTitle || 'CreativeVerse showcase'} on CreativeVerse`
     try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(shareUrl)
-      }
-    } catch {
-      window.prompt('Copy this link', shareUrl)
+      if (platform === 'copy' && navigator.clipboard?.writeText) await navigator.clipboard.writeText(shareUrl)
+      else if (!platform && navigator.share) await navigator.share({ title: reel.projectTitle, text: shareText, url: shareUrl })
+      else if (platform === 'whatsapp') window.open(`https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`, '_blank', 'noopener,noreferrer')
+      else if (platform === 'x') window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`, '_blank', 'noopener,noreferrer')
+      else if (platform === 'facebook') window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, '_blank', 'noopener,noreferrer')
+      else if (platform === 'linkedin') window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`, '_blank', 'noopener,noreferrer')
+      else if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(shareUrl)
+      else window.prompt('Copy this link', shareUrl)
+      setShareMenuTarget(null)
+    } catch (error) {
+      if (error?.name !== 'AbortError') window.prompt('Copy this link', shareUrl)
     }
 
     if (!isGuest && reel.contentType && reel.contentType !== 'demo') {
@@ -1058,7 +1085,7 @@ function HomePage() {
                 </button>
 
                 <button
-                  onClick={() => handleShare(reel)}
+                  onClick={() => (navigator.share ? handleShare(reel) : setShareMenuTarget((current) => current === getReelKey(reel) ? null : getReelKey(reel)))}
                   className="action-btn"
                 >
                   <ShareIcon size={18} />
@@ -1066,6 +1093,13 @@ function HomePage() {
                     {formatCount(engagement.sharesCount)}
                   </span>
                 </button>
+                {shareMenuTarget === getReelKey(reel) && <div className="share-menu" role="menu">
+                  <button onClick={() => handleShare(reel, 'copy')}>Copy link</button>
+                  <button onClick={() => handleShare(reel, 'whatsapp')}>WhatsApp</button>
+                  <button onClick={() => handleShare(reel, 'x')}>X</button>
+                  <button onClick={() => handleShare(reel, 'facebook')}>Facebook</button>
+                  <button onClick={() => handleShare(reel, 'linkedin')}>LinkedIn</button>
+                </div>}
               </div>
             </div>
           )

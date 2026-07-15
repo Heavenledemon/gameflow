@@ -1191,16 +1191,33 @@ async function mutateGeneralEngagement(request, contentType, contentId, action, 
   if (action === 'react' || action === 'save') {
     const field = action === 'react' ? 'liked' : 'saved'
     const counter = action === 'react' ? 'likesCount' : 'savesCount'
-    const toggleValues = action === 'react'
-      ? { liked: { $not: [{ $ifNull: ['$liked', false] }] }, saved: { $ifNull: ['$saved', false] } }
-      : { liked: { $ifNull: ['$liked', false] }, saved: { $not: [{ $ifNull: ['$saved', false] }] } }
-    const record = await PostEngagement.findOneAndUpdate(
-      { contentType, contentId: String(targetId), userId: request.user._id },
-      [{ $set: toggleValues }],
-      { upsert: true, returnDocument: 'after', updatePipeline: true },
-    )
+    // Read/update the engagement document explicitly. This is compatible with
+    // Mongo deployments that reject aggregation expressions in an upsert
+    // pipeline and keeps the first like (no existing row) deterministic.
+    let record = await PostEngagement.findOne({ contentType, contentId: String(targetId), userId: request.user._id })
+    if (!record) {
+      try {
+        record = await PostEngagement.create({
+          contentType,
+          contentId: String(targetId),
+          userId: request.user._id,
+          liked: action === 'react',
+          saved: action === 'save',
+        })
+      } catch (error) {
+        if (error?.code !== 11000) throw error
+        record = await PostEngagement.findOne({ contentType, contentId: String(targetId), userId: request.user._id })
+        record[field] = !Boolean(record[field])
+        await record.save()
+      }
+    } else {
+      record[field] = !Boolean(record[field])
+      await record.save()
+    }
     const delta = record[field] ? 1 : -1
-    await Model.updateOne({ _id: targetId }, [{ $set: { [`engagement.${counter}`]: { $max: [0, { $add: [{ $ifNull: [`$engagement.${counter}`, 0] }, delta] }] } } }])
+    await Model.updateOne({ _id: targetId }, { $inc: { [`engagement.${counter}`]: delta } })
+    // Guard legacy records whose counter may be missing or already below zero.
+    await Model.updateOne({ _id: targetId, [`engagement.${counter}`]: { $lt: 0 } }, { $set: { [`engagement.${counter}`]: 0 } })
     message = record[field] ? `${action === 'react' ? 'Liked' : 'Saved'}.` : `${action === 'react' ? 'Unliked' : 'Unsaved'}.`
   } else if (action === 'comment') {
     if (!text) throw createError(400, 'Comment text is required.')
