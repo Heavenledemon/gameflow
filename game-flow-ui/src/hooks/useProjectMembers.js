@@ -3,12 +3,12 @@ import { fetchProjectMembers } from '../lib/collaboration'
 
 const initialState = { items: [], status: 'loading', error: '' }
 
-export function useProjectMembers(token, projectId) {
+export function useProjectMembers(token, projectId, { enabled = true } = {}) {
   const controllerRef = useRef(null)
   const [state, setState] = useState(initialState)
 
   const load = useCallback(async () => {
-    if (!token || !projectId) { setState({ ...initialState, status: 'ready' }); return }
+    if (!enabled || !token || !projectId) { setState({ ...initialState, status: 'ready' }); return }
     controllerRef.current?.abort()
     const controller = new AbortController()
     controllerRef.current = controller
@@ -19,7 +19,7 @@ export function useProjectMembers(token, projectId) {
     } catch (error) {
       if (error?.name !== 'AbortError') setState((current) => ({ ...current, status: 'error', error: error.message || 'Unable to load project members.' }))
     }
-  }, [projectId, token])
+  }, [enabled, projectId, token])
 
   useEffect(() => {
     load()

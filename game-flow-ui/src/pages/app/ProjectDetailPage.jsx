@@ -2,6 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useProjectRealtime } from '../../hooks/useProjectRealtime';
+import { useProjectMembers } from '../../hooks/useProjectMembers';
+import { useConversations } from '../../hooks/useConversations';
+import { useInbox } from '../../hooks/useInbox';
+import { useToast } from '../../context/ToastContext';
 import {
   createCommentReply,
   createPostComment,
@@ -19,6 +23,7 @@ import GltfAssetViewer from '../../components/GltfAssetViewer';
 import WebGLGamePlayer from '../../components/WebGLGamePlayer';
 import GuestBanner from '../../components/layout/GuestBanner';
 import { BottomSheet, ConfirmDialog } from '../../components/ui/Overlay';
+import { removeProjectMember, updateProjectMember } from '../../lib/collaboration';
 import {
   ChevronLeftIcon, HeartIcon,
   CommentIcon, BookmarkIcon, ShareIcon, VerifiedIcon, DotsIcon
@@ -84,6 +89,7 @@ const ProjectDetailPage = () => {
   const navigate = useNavigate();
   const { projectId } = useParams();
   const { isGuest, user, token } = useAuth();
+  const { success: showSuccess, error: showError, info: showInfo } = useToast();
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -103,6 +109,25 @@ const ProjectDetailPage = () => {
   const [isLoadingCollaborators, setIsLoadingCollaborators] = useState(false);
   const [isSendingCollaborationRequest, setIsSendingCollaborationRequest] = useState(false);
   const [showGuestAuthSheet, setShowGuestAuthSheet] = useState(false);
+  const [showMembersSheet, setShowMembersSheet] = useState(false);
+  const [pendingRoleChange, setPendingRoleChange] = useState(null);
+  const [pendingRemoval, setPendingRemoval] = useState(null);
+  const [memberActionId, setMemberActionId] = useState('');
+  const [isOpeningWorkspace, setIsOpeningWorkspace] = useState(false);
+  const [localProjectRequest, setLocalProjectRequest] = useState(null);
+
+  const normalizedOwnerUsernameForRole = String(project?.ownerUsername || '').trim().toLowerCase();
+  const normalizedViewerUsernameForRole = String(user?.username || '').trim().toLowerCase();
+  const isOwner = Boolean(project && user && (
+    (project.ownerId && String(project.ownerId) === String(user.id || user._id)) ||
+    (normalizedOwnerUsernameForRole && normalizedOwnerUsernameForRole === normalizedViewerUsernameForRole)
+  ));
+  const viewerRole = project?.viewerRole || (isOwner ? 'owner' : '');
+  const isActiveMember = Boolean(viewerRole);
+  const canManageMembers = isOwner || ['owner', 'editor'].includes(viewerRole);
+  const members = useProjectMembers(token, projectId, { enabled: Boolean(token && isActiveMember) });
+  const conversations = useConversations(token, { enabled: Boolean(token && isActiveMember) });
+  const outgoingRequests = useInbox(token, 'outgoing');
 
   const localIdRef = useRef(0);
   const nextLocalId = () => {
@@ -265,15 +290,16 @@ const ProjectDetailPage = () => {
     setIsSendingCollaborationRequest(true);
     setCollaborationError('');
     try {
-      await createCollaborationRequest(token, projectId, {
+      const result = await createCollaborationRequest(token, projectId, {
         recipientId: selectedCollaborator.id,
         message: collaborationMessage.trim(),
       });
+      setLocalProjectRequest(result.request || null);
       const username = selectedCollaborator.username;
       setShowCollaborationSheet(false);
       setCollaborationMessage('');
       setSelectedCollaborator(null);
-      alert(`Collaboration request sent to @${username}.`);
+      showSuccess(`Invitation sent to @${username}.`);
     } catch (err) {
       setCollaborationError(err.message || 'Unable to send the collaboration request.');
     } finally {
@@ -284,10 +310,11 @@ const ProjectDetailPage = () => {
   const requestToCollaborate = async () => {
     setIsSendingCollaborationRequest(true);
     try {
-      await createCollaborationRequest(token, projectId, { proposedRole: 'contributor', message: '' });
-      alert('Collaboration request sent. You can track it in Inbox.');
+      const result = await createCollaborationRequest(token, projectId, { proposedRole: 'contributor', message: '' });
+      setLocalProjectRequest(result.request || null);
+      showSuccess('Collaboration request sent. You can track it in Inbox.');
     } catch (err) {
-      alert(err.message || 'Unable to send collaboration request.');
+      showError(err.message || 'Unable to send collaboration request.');
     } finally {
       setIsSendingCollaborationRequest(false);
     }
@@ -303,6 +330,58 @@ const ProjectDetailPage = () => {
     } catch (err) {
       setIsFollowing(previousValue);
       alert(err.message || 'Unable to update follow status.');
+    }
+  };
+
+  const projectRequest = localProjectRequest || outgoingRequests.items.find((request) => String(request.projectId) === String(projectId));
+  const workspaceConversation = conversations.items.find((conversation) => conversation.kind === 'project' && String(conversation.projectId) === String(projectId));
+
+  const openWorkspace = async () => {
+    if (!isActiveMember) return;
+    setIsOpeningWorkspace(true);
+    try {
+      const conversation = workspaceConversation || await conversations.findProjectConversation(projectId);
+      if (!conversation) {
+        showInfo('Your workspace is still being prepared. You can find it in Inbox when it is ready.');
+        return;
+      }
+      navigate(`/app/inbox/${conversation.id}`, { state: { conversation } });
+    } catch (workspaceError) {
+      showError(workspaceError.message || 'Unable to open the project workspace.');
+    } finally {
+      setIsOpeningWorkspace(false);
+    }
+  };
+
+  const applyRoleChange = async () => {
+    const change = pendingRoleChange;
+    if (!change) return;
+    setMemberActionId(change.member.userId);
+    try {
+      const result = await updateProjectMember(token, projectId, change.member.userId, change.role);
+      members.setItems((items) => items.map((member) => member.userId === change.member.userId ? result.member : member));
+      showSuccess(`@${change.member.username || 'member'} is now a ${change.role}.`);
+    } catch (memberError) {
+      showError(memberError.message || 'Unable to update this member role.');
+    } finally {
+      setMemberActionId('');
+      setPendingRoleChange(null);
+    }
+  };
+
+  const removeMember = async () => {
+    const member = pendingRemoval;
+    if (!member) return;
+    setMemberActionId(member.userId);
+    try {
+      await removeProjectMember(token, projectId, member.userId);
+      members.setItems((items) => items.filter((item) => item.userId !== member.userId));
+      showSuccess(`@${member.username || 'member'} was removed from this project.`);
+    } catch (memberError) {
+      showError(memberError.message || 'Unable to remove this member.');
+    } finally {
+      setMemberActionId('');
+      setPendingRemoval(null);
     }
   };
 
@@ -402,13 +481,6 @@ const ProjectDetailPage = () => {
 
   const imageSrc = project.previewUrl || project.imageUrl || BANNER;
   const creatorRole = project.type === 'game' ? 'Game Developer' : project.type === '3d' ? '3D Artist' : '2D Artist';
-  const normalizedOwnerUsername = String(project.ownerUsername || '').trim().toLowerCase();
-  const normalizedViewerUsername = String(user?.username || '').trim().toLowerCase();
-  const isOwner = Boolean(user && (
-    (project.ownerId && String(project.ownerId) === String(user.id || user._id)) ||
-    (normalizedOwnerUsername && normalizedOwnerUsername === normalizedViewerUsername)
-  ));
-
   return (
     <div
       className="mobile-frame"
@@ -674,8 +746,11 @@ const ProjectDetailPage = () => {
               },
               {
                 icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
-                label: isOwner ? 'Invite' : 'Request',
-                onClick: guard(isOwner ? openCollaborationPicker : requestToCollaborate),
+                label: isActiveMember ? 'Chat' : (isOwner ? 'Invite' : projectRequest ? 'Sent' : 'Request'),
+                onClick: isActiveMember ? openWorkspace : guard(isOwner ? openCollaborationPicker : () => {
+                  if (projectRequest?.conversationId) navigate(`/app/inbox/${projectRequest.conversationId}`, { state: { conversation: { id: projectRequest.conversationId, kind: 'collaboration_request', projectId, collaborationRequestId: projectRequest.id }, request: projectRequest } });
+                  else requestToCollaborate();
+                }),
               },
               {
                 icon: <ShareIcon size={22} />,
@@ -701,6 +776,14 @@ const ProjectDetailPage = () => {
               </button>
             ))}
           </div>
+
+          {isActiveMember ? <div style={{ background: 'linear-gradient(135deg, rgba(255,122,92,.1), rgba(168,85,247,.06))', border: `1px solid rgba(255,122,92,.2)`, borderRadius: 20, padding: 18, display: 'flex', flexDirection: 'column', gap: 13 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <div><h3 style={{ margin: 0, fontSize: 16 }}>Team workspace</h3><p style={{ margin: '4px 0 0', color: C.textSecondary, fontSize: 12.5, lineHeight: 1.4 }}>Your role: <strong style={{ color: C.text, textTransform: 'capitalize' }}>{viewerRole}</strong></p></div>
+              <button onClick={() => setShowMembersSheet(true)} style={{ minHeight: 40, padding: '0 12px', borderRadius: 10, background: 'rgba(255,255,255,.07)', border: `1px solid ${C.borderGlass}`, color: C.text, fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>Team {members.status === 'ready' ? `(${members.items.length})` : ''}</button>
+            </div>
+            <button onClick={openWorkspace} disabled={isOpeningWorkspace} style={{ width: '100%', minHeight: 46, border: 'none', borderRadius: 12, background: C.accentGrad, color: '#fff', fontWeight: 800, fontSize: 13, cursor: isOpeningWorkspace ? 'wait' : 'pointer', opacity: isOpeningWorkspace ? .72 : 1 }}>{isOpeningWorkspace ? 'Opening workspace…' : 'Open project chat'}</button>
+          </div> : null}
 
           {/* ── PROJECT STATS GLASS CARD ── */}
           {!isOwner ? <div style={{
@@ -955,6 +1038,23 @@ const ProjectDetailPage = () => {
         </div>
       </BottomSheet>
 
+      <BottomSheet open={showMembersSheet} title="Project team" onClose={() => setShowMembersSheet(false)}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '4px 0' }}>
+          <p style={{ margin: 0, color: C.textSecondary, fontSize: 13, lineHeight: 1.45 }}>{canManageMembers ? 'Manage member roles and project access.' : 'People currently collaborating on this project.'}</p>
+          {members.status === 'loading' ? <p style={{ margin: '14px 0', color: C.textSecondary, fontSize: 13, textAlign: 'center' }}>Loading project team…</p> : null}
+          {members.status === 'error' ? <div style={{ display: 'flex', flexDirection: 'column', gap: 10, color: '#ff9a82', fontSize: 13 }}><span>{members.error}</span><button type="button" onClick={members.reload} style={{ minHeight: 42, borderRadius: 10, border: `1px solid ${C.borderGlass}`, background: 'transparent', color: C.text, fontWeight: 700 }}>Try again</button></div> : null}
+          {members.status === 'ready' && !members.items.length ? <p style={{ margin: '14px 0', color: C.textSecondary, fontSize: 13, textAlign: 'center' }}>No active members were found.</p> : null}
+          {members.items.map((member) => {
+            const canEditMember = canManageMembers && member.role !== 'owner' && !(String(member.userId) === String(user?.id || user?._id) && !isOwner);
+            const isWorking = memberActionId === member.userId;
+            return <article key={member.userId} style={{ padding: 12, borderRadius: 14, background: 'rgba(255,255,255,.035)', border: `1px solid ${C.borderGlass}`, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}><img src={member.avatar || AVATAR} alt="" style={{ width: 38, height: 38, borderRadius: '50%', objectFit: 'cover' }} /><div style={{ minWidth: 0, flex: 1 }}><strong style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 13 }}>{member.name || member.username || 'Creator'}</strong><span style={{ color: C.textSecondary, fontSize: 12 }}>@{member.username || 'creator'} · Joined {member.joinedAt ? new Date(member.joinedAt).toLocaleDateString() : 'recently'}</span></div><span style={{ color: member.role === 'owner' ? '#ffb09b' : C.textSecondary, fontSize: 12, fontWeight: 700, textTransform: 'capitalize' }}>{member.role}</span></div>
+              {canEditMember ? <div style={{ display: 'flex', gap: 8 }}><select aria-label={`Change ${member.username || 'member'} role`} value={member.role} disabled={isWorking} onChange={(event) => { if (event.target.value !== member.role) setPendingRoleChange({ member, role: event.target.value }); }} style={{ minHeight: 40, flex: 1, borderRadius: 10, padding: '0 8px', background: 'rgba(255,255,255,.07)', border: `1px solid ${C.borderGlass}`, color: C.text, fontSize: 12 }}><option value="editor">Editor</option><option value="contributor">Contributor</option><option value="viewer">Viewer</option></select><button type="button" disabled={isWorking} onClick={() => setPendingRemoval(member)} style={{ minHeight: 40, padding: '0 11px', borderRadius: 10, background: 'rgba(217,75,98,.1)', border: '1px solid rgba(217,75,98,.25)', color: '#ff8b9b', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>{isWorking ? 'Working…' : 'Remove'}</button></div> : null}
+            </article>;
+          })}
+        </div>
+      </BottomSheet>
+
       <BottomSheet open={showGuestAuthSheet} title="Access Protected Action" onClose={() => setShowGuestAuthSheet(false)}>
         <div style={{ textAlign: 'center', padding: '16px 0', display: 'flex', flexDirection: 'column', gap: 16 }}>
           <p style={{ color: C.textSecondary, fontSize: 14, lineHeight: 1.5, margin: 0 }}>
@@ -1031,6 +1131,24 @@ const ProjectDetailPage = () => {
       </BottomSheet>
 
       {/* ── DELETE DIALOG ── */}
+      <ConfirmDialog
+        open={Boolean(pendingRoleChange)}
+        title="Change member role?"
+        confirmLabel="Change role"
+        onConfirm={applyRoleChange}
+        onClose={() => setPendingRoleChange(null)}
+        message={pendingRoleChange ? `Make @${pendingRoleChange.member.username || 'this member'} a ${pendingRoleChange.role}?` : ''}
+      />
+
+      <ConfirmDialog
+        open={Boolean(pendingRemoval)}
+        title="Remove collaborator?"
+        confirmLabel="Remove member"
+        onConfirm={removeMember}
+        onClose={() => setPendingRemoval(null)}
+        message={pendingRemoval ? `Remove @${pendingRemoval.username || 'this member'} from this project and its private workspace?` : ''}
+      />
+
       <ConfirmDialog
         open={showDeleteDialog}
         title="Confirm Deletion"
