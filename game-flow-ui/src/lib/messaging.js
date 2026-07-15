@@ -1,7 +1,40 @@
 import { authHeaders, request } from './api'
 
 const mutationHeaders = (token) => ({ ...authHeaders(token), 'Idempotency-Key': crypto.randomUUID() })
-export const fetchConversationMessages = (token, conversationId, before = '') => request(`/conversations/${encodeURIComponent(conversationId)}/messages${before ? `?before=${encodeURIComponent(before)}` : ''}`, { headers: authHeaders(token) })
-export const sendMessage = (token, conversationId, payload) => request(`/conversations/${encodeURIComponent(conversationId)}/messages`, { method: 'POST', headers: mutationHeaders(token), body: payload })
+
+export function normalizeConversation(record) {
+  if (!record) return null
+  return { ...record, id: record.id || record._id || '', projectId: record.projectId || null, collaborationRequestId: record.collaborationRequestId || null }
+}
+
+export function normalizeMessage(record) {
+  if (!record) return null
+  return { ...record, id: record.id || record._id || '', conversationId: record.conversationId || '' }
+}
+
+/** Fetches cursor-paginated direct, request, and project conversations. */
+export async function fetchConversations(token, { cursor = '', limit = 30, signal } = {}) {
+  const params = new URLSearchParams({ limit: String(limit) })
+  if (cursor) params.set('cursor', cursor)
+  const data = await request(`/conversations?${params.toString()}`, { signal, headers: authHeaders(token) })
+  return { ...data, items: (data.items || []).map(normalizeConversation), nextCursor: data.nextCursor || null }
+}
+
+export async function fetchConversationMessages(token, conversationId, { before = '', limit = 50, signal } = {}) {
+  const params = new URLSearchParams({ limit: String(limit) })
+  if (before) params.set('before', before)
+  const data = await request(`/conversations/${encodeURIComponent(conversationId)}/messages?${params.toString()}`, { signal, headers: authHeaders(token) })
+  return { ...data, conversation: normalizeConversation(data.conversation), items: (data.items || []).map(normalizeMessage), nextCursor: data.nextCursor || null }
+}
+
+export async function sendMessage(token, conversationId, payload) {
+  const data = await request(`/conversations/${encodeURIComponent(conversationId)}/messages`, { method: 'POST', headers: mutationHeaders(token), body: payload })
+  return { ...data, message: normalizeMessage(data.message) }
+}
+
 export const markConversationRead = (token, conversationId, messageId) => request(`/conversations/${encodeURIComponent(conversationId)}/read`, { method: 'POST', headers: mutationHeaders(token), body: messageId ? { messageId } : {} })
-export const createDirectConversation = (token, recipientId) => request('/conversations/direct', { method: 'POST', headers: mutationHeaders(token), body: { recipientId } })
+
+export async function createDirectConversation(token, recipientId) {
+  const data = await request('/conversations/direct', { method: 'POST', headers: mutationHeaders(token), body: { recipientId } })
+  return { ...data, conversation: normalizeConversation(data.conversation) }
+}

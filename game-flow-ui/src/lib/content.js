@@ -1,4 +1,5 @@
 import { authHeaders, request } from './api'
+import { createCollaborationRequest as createCollaborationRequestApi } from './collaboration'
 import { flags } from './flags'
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api'
 const mutationHeaders = (token) => ({ Authorization: `Bearer ${token}`, 'Idempotency-Key': crypto.randomUUID() })
@@ -180,7 +181,5 @@ export async function toggleUserFollow(token, userId) {
 }
 
 export async function createCollaborationRequest(token, projectId, payload) {
-  return request(`/projects/${encodeURIComponent(projectId)}/collaboration-requests`, {
-    method: 'POST', headers: mutationHeaders(token), body: payload,
-  })
+  return createCollaborationRequestApi(token, projectId, payload)
 }
