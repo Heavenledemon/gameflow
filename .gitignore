@@ -5,16 +5,6 @@
 # Logs
 logs
 *.log
-backend_log/
-frontend_log/
-backend_log.txt
-frontend_log.txt
-**/backend_log/
-**/frontend_log/
-**/backend_log.txt
-**/frontend_log.txt
-**/.env
-**/.env.*
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -70,6 +60,20 @@ game-flow-ui/.env.test.local
 game-flow-ui/.env.production.local
 game-flow-ui/*.local
 
+# =========================================================================
+# Game Flow Web Subproject (game-flow-web/)
+# =========================================================================
+game-flow-web/node_modules/
+game-flow-web/dist/
+game-flow-web/dist-ssr/
+game-flow-web/build/
+game-flow-web/.env
+game-flow-web/.env.local
+game-flow-web/.env.development.local
+game-flow-web/.env.test.local
+game-flow-web/.env.production.local
+game-flow-web/*.local
+
 
 # =========================================================================
 # Gameflow Subproject (gameflow/)
@@ -90,7 +94,22 @@ implementation-priority-prompt.md
 STAGING-VERIFICATION.md
 system.md
 OPERATIONS.md
-frontend-polish-and-component-plan.md
-frontend-polish-implementation-prompt.md
 
-*.md
+/backend/node_modules/
+/backend/src/graphify-out/cache/ast/
+
+/graphify-out/cache/ast/
+
+# Graphify generated reports and caches
+graphify-out*/
+**/graphify-out*/
+graphify*.json
+**/graphify*.json
+graphify*.html
+**/graphify*.html
+
+# Python virtual environments
+.venv/
+**/.venv/
+
+

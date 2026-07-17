@@ -13,7 +13,7 @@
     "purge:messaging": "node src/scripts/purgeExpiredMessagingData.js",
     "worker": "node src/worker.js",
     "test": "node --test test/*.test.js",
-    "check": "node --check src/server.js && node --check src/app.js && node --check src/controllers/contentController.js && node --check src/realtime/socketServer.js"
+    "check": "node --check src/server.js && node --check src/app.js && node --check src/middlewares/deviceMiddleware.js && node --check src/controllers/contentController.js && node --check src/realtime/socketServer.js"
   },
   "dependencies": {
     "@socket.io/redis-adapter": "^8.3.0",
