@@ -97,6 +97,7 @@ app.use('/api', socialRoutes)
 app.use('/api', messagingRoutes)
 
 function setFrontendAssetHeaders(response, filePath) {
+  setUploadHeaders(response, filePath)
   const isHtml = filePath.endsWith('.html')
   const isHashedAsset = /[\\/]assets[\\/].*-[a-zA-Z0-9_-]{8,}\./.test(filePath)
 

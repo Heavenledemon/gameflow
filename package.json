@@ -4,6 +4,7 @@
   "scripts": {
     "build:mobile": "npm --prefix game-flow-ui run build",
     "build:web": "npm --prefix game-flow-web run build",
-    "build:clients": "npm run build:mobile && npm run build:web"
+    "build:clients": "npm run build:mobile && npm run build:web",
+    "test:routes": "npm run build:clients && npm --prefix backend test"
   }
 }

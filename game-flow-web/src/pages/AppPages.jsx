@@ -8,7 +8,8 @@ import { useMessagingRealtime } from '../hooks/useMessagingRealtime.js'
 
 const titleFor = (item) => item.title || item.projectTitle || 'Untitled project'
 const creatorFor = (item) => item.creator?.name || item.creator?.username || item.owner?.name || 'GameFlow creator'
-const idFor = (item) => item.id || item._id || item.projectId || item.feedId
+const idFor = (item) => item.id || item._id || item.projectId || (item.feedId?.includes(':') ? item.feedId.split(':').at(-1) : item.feedId)
+const resolveClientAssetUrl = (url) => (!url || !url.startsWith('/') || !/^\/(games|3dAssets)\//.test(url) ? url : `${import.meta.env.BASE_URL.replace(/\/$/, '')}${url}`)
 
 function PageHeading({ eyebrow, title, action }) { return <div className="page-heading"><div><small>{eyebrow}</small><h1>{title}</h1></div>{action}</div> }
 function Loading({ label = 'Loading…' }) { return <div className="empty-state">{label}</div> }
@@ -31,7 +32,7 @@ export function ProjectDetailPage() {
   const { token } = useAuth(); const { projectId } = useParams(); const toast = useToast(); const [project, setProject] = useState(null); const [busy, setBusy] = useState(false)
   useEffect(() => { fetchProject(token, projectId).then((data) => setProject(data.project || data)).catch((error) => toast.error(error.message)) }, [token, projectId, toast])
   if (!project) return <main className="page"><Loading /></main>
-  const media = project.media || {}; const viewer = media.manifestUrl ? <iframe title={titleFor(project)} src={media.manifestUrl} /> : media.imageUrl || media.posterUrl ? <img src={media.imageUrl || media.posterUrl} alt={titleFor(project)} /> : <div className="project-visual large">{titleFor(project).slice(0, 1)}</div>
+  const media = project.media || {}; const gameUrl = media.manifestUrl || project.gameUrl; const viewer = gameUrl ? <iframe title={titleFor(project)} src={resolveClientAssetUrl(gameUrl)} allowFullScreen /> : media.imageUrl || media.posterUrl || project.imageUrl ? <img src={media.imageUrl || media.posterUrl || project.imageUrl} alt={titleFor(project)} /> : <div className="project-visual large">{titleFor(project).slice(0, 1)}</div>
   const react = async () => { setBusy(true); try { await updateEngagement(token, 'project', idFor(project), { action: 'react' }); toast.success('Reaction saved.') } catch (error) { toast.error(error.message) } finally { setBusy(false) } }
   return <main className="page"><Link className="back-link" to="/app/explore">← Back to explore</Link><div className="detail-layout"><section><div className="media-viewer">{viewer}</div><small>{project.type || media.kind || 'Project'}</small><h1>{titleFor(project)}</h1><p className="description">{project.description || 'No description added yet.'}</p><button onClick={react} disabled={busy}>{busy ? 'Saving…' : 'Appreciate this work'}</button></section><aside className="detail-sidebar"><h3>Created by</h3><b>{creatorFor(project)}</b><p>{project.creator?.headline || 'GameFlow creator'}</p><h3>Tools</h3><div className="tag-list">{(project.software || project.tags || []).map((tag) => <span key={tag}>{tag}</span>) || <span>Independent work</span>}</div></aside></div></main>
 }

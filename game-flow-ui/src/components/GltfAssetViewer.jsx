@@ -13,13 +13,17 @@ function GltfAssetViewer({
   textures = null,
   isActive = true,
 }) {
+  const resolveClientAssetUrl = (url) => {
+    if (!url || !url.startsWith('/') || !/^\/(games|3dAssets)\//.test(url)) return url
+    return `${import.meta.env.BASE_URL.replace(/\/$/, '')}${url}`
+  }
   const containerRef = useRef(null)
   const mountRef = useRef(null)
   const normalizedAssets =
     Array.isArray(assets) && assets.length
       ? assets.filter((asset) => asset?.modelUrl)
       : modelUrl
-        ? [{ modelUrl, title, background, textures }]
+        ? [{ modelUrl: resolveClientAssetUrl(modelUrl), title, background, textures: textures ? Object.fromEntries(Object.entries(textures).map(([key, url]) => [key, resolveClientAssetUrl(url)])) : textures }]
         : []
   const activeAsset = normalizedAssets[0] ?? null
   const activeModelUrl = activeAsset?.modelUrl ?? ''

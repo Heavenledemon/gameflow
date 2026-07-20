@@ -4,6 +4,7 @@ import { useAuth } from './context/AuthContext.jsx'
 import { useToast } from './context/ToastContext.jsx'
 import DesktopLayout from './layouts/DesktopLayout.jsx'
 import { ExplorePage, HomePage, InboxPage, ProfilePage, ProjectDetailPage, UploadPage } from './pages/AppPages.jsx'
+import LandingPage from './pages/LandingPage.jsx'
 
 
 function AuthPage({ mode }) {
@@ -36,7 +37,7 @@ function ProtectedRoute({ children }) {
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/app/home" replace />} />
+      <Route path="/" element={<LandingPage />} />
       <Route path="/signin" element={<AuthPage mode="signin" />} />
       <Route path="/signup" element={<AuthPage mode="signup" />} />
       <Route element={<ProtectedRoute><DesktopLayout /></ProtectedRoute>}>

@@ -6,6 +6,12 @@ const DEFAULT_ASPECT_RATIOS = {
   landscape: '16 / 9',
 };
 
+function resolveClientAssetUrl(url) {
+  if (!url || !url.startsWith('/')) return url;
+  if (!/^\/(games|3dAssets)\//.test(url)) return url;
+  return `${import.meta.env.BASE_URL.replace(/\/$/, '')}${url}`;
+}
+
 function getViewportState() {
   return {
     width: window.innerWidth,
@@ -61,7 +67,8 @@ function WebGLGamePlayer({
   const resolvedGameplayAspectRatio = aspectRatio ?? DEFAULT_ASPECT_RATIOS[mode] ?? DEFAULT_ASPECT_RATIOS.landscape;
   const aspectRatioValue = parseAspectRatio(resolvedGameplayAspectRatio) ?? (mode === 'portrait' ? 9 / 16 : 16 / 9);
   const shouldRotateFullscreen = isFullscreen && isPortraitViewport && mode === 'landscape';
-  const resolvedLoadingScreenUrl = loadingScreenUrl ?? getDefaultLoadingScreenUrl(gameUrl);
+  const resolvedGameUrl = resolveClientAssetUrl(gameUrl);
+  const resolvedLoadingScreenUrl = resolveClientAssetUrl(loadingScreenUrl ?? getDefaultLoadingScreenUrl(gameUrl));
   const frameStyle = {};
 
   if (isFullscreen) {
@@ -184,7 +191,7 @@ function WebGLGamePlayer({
       {hasStarted && (
         <iframe
           className="webgl-game-player__frame"
-          src={gameUrl}
+          src={resolvedGameUrl}
           title={title}
           scrolling="no"
           allowFullScreen
