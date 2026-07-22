@@ -18,7 +18,7 @@ function ProjectGridSkeleton() {
   )
 }
 
-export default function ProjectGrid({ projects, loading = false, onOpenProject }) {
+export default function ProjectGrid({ projects, loading = false, onOpenProject, renderActions }) {
   if (loading) return <ProjectGridSkeleton />
 
   return (
@@ -29,6 +29,7 @@ export default function ProjectGrid({ projects, loading = false, onOpenProject }
             key={`${project.contentType}:${project.contentId ?? project.id}`}
             project={project}
             onOpen={project.routeTarget && onOpenProject ? () => onOpenProject(project) : undefined}
+            actions={renderActions?.(project) || null}
           />
         ))}
       </div>
