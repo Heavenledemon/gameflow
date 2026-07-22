@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import WebGLGamePlayer from '../../components/WebGLGamePlayer'
-import GltfAssetViewer from '../../components/GltfAssetViewer'
+import ProjectMedia from '../../features/project/components/ProjectMedia'
 import wavingVideo from '../../assets/wave.mp4'
 import logoImg from '../../assets/logo.jpg'
 import {
@@ -16,6 +15,7 @@ import {
   updateContentEngagement,
 } from '../../lib/content'
 import { useReelFeed } from '../../hooks/useReelFeed'
+import { fromFeedItem } from '../../features/project/model/projectCardModel'
 import {
   PlusIcon,
   HeartIcon,
@@ -177,47 +177,54 @@ function formatCount(value) {
   return String(value)
 }
 
-function getEngagement(item) {
-  const engagement = item?.engagement ?? {}
-
+function mapFeedItemToReel(item) {
+  const model = fromFeedItem(item)
+  const kind = model.media.kind === 'webgl' ? 'game' : model.media.kind === 'gltf' ? '3d' : model.media.kind
   return {
-    likesCount: engagement.likesCount ?? item.likesCount ?? 0,
-    commentsCount: engagement.commentsCount ?? item.commentsCount ?? 0,
-    savesCount: engagement.savesCount ?? item.savesCount ?? 0,
-    sharesCount: engagement.sharesCount ?? item.sharesCount ?? 0,
-    viewerHasLiked: Boolean(engagement.viewerHasLiked),
-    viewerHasSaved: Boolean(engagement.viewerHasSaved),
-    comments: Array.isArray(engagement.comments) ? engagement.comments : [],
+    id: model.id,
+    feedKey: model.rawIds.feedId,
+    contentType: model.contentType,
+    contentId: model.contentId,
+    projectId: model.projectId,
+    creatorName: model.creator.username || model.creator.name || 'creativeverse',
+    discipline: kind === 'game' ? 'Game Developer' : kind === '3d' ? '3D Artist' : 'Creator',
+    avatar: model.creator.avatarUrl || DEFAULT_AVATAR,
+    type: kind,
+    gameUrl: model.media.gameUrl,
+    modelUrl: model.media.modelUrl,
+    image: model.media.imageUrl || model.media.posterUrl,
+    loadingScreenUrl: model.media.posterUrl,
+    mode: model.media.mode,
+    thumbnailMode: model.media.thumbnailMode,
+    aspectRatio: model.media.aspectRatio,
+    background: model.media.background || '#101820',
+    textures: model.media.textures,
+    engagement: model.engagement,
+    projectTitle: model.title,
+    description: model.summary,
+    software: model.tools,
+    tags: model.tags,
+    projectModel: model,
+    sourceLabel: 'Live feed',
   }
 }
 
-function mapFeedItemToReel(item) {
-  const media = item.media ?? {}
-  const creator = item.creator ?? {}
-  const kind = media.kind === '2d' ? 'image' : media.kind === 'asset' ? '3d' : media.kind
+function getReelMedia(reel) {
+  if (reel.projectModel?.media) return reel.projectModel.media
+  const kind = reel.type === 'game' ? 'webgl' : reel.type === '3d' ? 'gltf' : reel.video ? 'video' : reel.image ? 'image' : 'unknown'
   return {
-    id: item.feedId,
-    feedKey: item.feedId,
-    contentType: item.type,
-    contentId: item.feedId?.split(':')[1] ?? item.feedId,
-    projectId: item.type === 'project' ? item.feedId?.split(':')[1] : null,
-    creatorName: creator.username || creator.name || 'creativeverse',
-    discipline: kind === 'game' ? 'Game Developer' : kind === '3d' ? '3D Artist' : 'Creator',
-    avatar: creator.avatarUrl || DEFAULT_AVATAR,
-    type: kind,
-    gameUrl: media.manifestUrl,
-    modelUrl: media.modelUrl,
-    image: media.imageUrl || media.posterUrl,
-    loadingScreenUrl: media.posterUrl,
-    mode: item.mode ?? 'landscape',
-    thumbnailMode: item.mode ?? 'landscape',
-    background: media.background || '#101820',
-    engagement: getEngagement(item),
-    projectTitle: item.title ?? 'Untitled project',
-    description: item.description ?? '',
-    software: Array.isArray(item.software) ? item.software : [],
-    tags: Array.isArray(item.tags) ? item.tags : [],
-    sourceLabel: 'Live feed',
+    kind,
+    posterUrl: reel.loadingScreenUrl || (kind === 'image' ? reel.image : null),
+    imageUrl: reel.image || null,
+    videoUrl: reel.video || null,
+    gameUrl: reel.gameUrl || null,
+    modelUrl: reel.modelUrl || null,
+    assets: [],
+    textures: reel.textures || null,
+    mode: reel.mode || 'landscape',
+    thumbnailMode: reel.thumbnailMode || reel.mode || 'landscape',
+    aspectRatio: reel.aspectRatio || null,
+    background: reel.background || null,
   }
 }
 
@@ -934,6 +941,7 @@ function HomePage() {
           const engagement = getCounts(reel)
           const isLiked = engagement.viewerHasLiked
           const isSaved = engagement.viewerHasSaved
+          const reelMedia = getReelMedia(reel)
 
           const isCurrentUserReel = user && (reel.creatorName === user.username);
           const displayAvatar = isCurrentUserReel && user.avatar ? user.avatar : reel.avatar;
@@ -941,68 +949,15 @@ function HomePage() {
 
           return (
             <div key={reel.id} ref={(node) => setReelNode(index, node)} data-reel-index={index} className="reel-card">
-              {reel.type === 'game' ? (
-                <div
-                  onDoubleClick={() => handleMediaDoubleClick(reel)}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    pointerEvents: index === safeActiveIdx ? 'auto' : 'none',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <WebGLGamePlayer
-                    gameUrl={reel.gameUrl}
-                    title={reel.projectTitle}
-                    mode={reel.mode}
-                    thumbnailMode={reel.thumbnailMode}
-                    aspectRatio={reel.aspectRatio}
-                    loadingScreenUrl={reel.loadingScreenUrl}
-                    isActive={index === safeActiveIdx}
-                  />
-                </div>
-              ) : reel.type === '3d' ? (
-                <div
-                  onDoubleClick={() => handleMediaDoubleClick(reel)}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    pointerEvents: index === safeActiveIdx ? 'auto' : 'none',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <GltfAssetViewer
-                    modelUrl={reel.modelUrl}
-                    title={reel.projectTitle}
-                    mode={reel.mode ?? 'portrait'}
-                    background={reel.background}
-                    textures={reel.textures}
-                    isActive={index === safeActiveIdx}
-                  />
-                </div>
-              ) : reel.video ? (
-                <video
-                  src={reel.video}
-                  onDoubleClick={() => handleMediaDoubleClick(reel)}
-                  autoPlay={index === safeActiveIdx}
-                  muted
-                  loop
-                  playsInline
-                  preload={index === safeActiveIdx ? 'auto' : 'metadata'}
-                  className="reel-media"
-                />
-              ) : (
-                <img
-                  src={reel.image}
-                  alt={reel.projectTitle}
-                  className="reel-media"
-                  onDoubleClick={() => handleMediaDoubleClick(reel)}
-                />
-              )}
+              <ProjectMedia
+                media={reelMedia}
+                title={reel.projectTitle}
+                active={index === safeActiveIdx}
+                interactive
+                allowAutoPreview={reelMedia.kind === 'video'}
+                className="project-media--reel"
+                onDoubleClick={['image', 'video'].includes(reelMedia.kind) ? () => handleMediaDoubleClick(reel) : undefined}
+              />
 
               <div className="dark-overlay" />
 

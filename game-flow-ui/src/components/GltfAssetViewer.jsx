@@ -4,6 +4,26 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import './GltfAssetViewer.css'
 
+function disposeMaterial(material, disposedTextures) {
+  if (!material) return
+  Object.values(material).forEach((value) => {
+    if (value?.isTexture && !disposedTextures.has(value)) {
+      disposedTextures.add(value)
+      value.dispose()
+    }
+  })
+  material.dispose?.()
+}
+
+function disposeObject3D(object, disposedTextures = new Set()) {
+  object?.traverse((child) => {
+    child.geometry?.dispose?.()
+    if (Array.isArray(child.material)) child.material.forEach((material) => disposeMaterial(material, disposedTextures))
+    else disposeMaterial(child.material, disposedTextures)
+  })
+  return disposedTextures
+}
+
 function GltfAssetViewer({
   modelUrl,
   title = '3D Asset Viewer',
@@ -12,6 +32,8 @@ function GltfAssetViewer({
   assets = [],
   textures = null,
   isActive = true,
+  onError,
+  onFullscreenChange,
 }) {
   const resolveClientAssetUrl = (url) => {
     if (!url || !url.startsWith('/') || !/^\/(games|3dAssets)\//.test(url)) return url
@@ -40,16 +62,20 @@ function GltfAssetViewer({
   const aspectRatio = isPortrait ? '9 / 16' : '16 / 9'
 
   useEffect(() => {
+    const container = containerRef.current
     const handleFullscreenChange = () => {
-      setIsFullscreen(document.fullscreenElement === containerRef.current)
+      const fullscreen = document.fullscreenElement === container
+      setIsFullscreen(fullscreen)
+      onFullscreenChange?.(fullscreen)
     }
 
     document.addEventListener('fullscreenchange', handleFullscreenChange)
 
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange)
+      if (document.fullscreenElement === container) document.exitFullscreen?.()?.catch?.(() => {})
     }
-  }, [])
+  }, [onFullscreenChange])
 
   useEffect(() => {
     const mountNode = mountRef.current
@@ -135,6 +161,7 @@ function GltfAssetViewer({
       activeModelUrl,
       (gltf) => {
         if (disposed) {
+          disposeObject3D(gltf.scene)
           return
         }
 
@@ -214,6 +241,7 @@ function GltfAssetViewer({
         setError('Unable to load this 3D asset.')
         setProgress(0)
         setStatus('error')
+        onError?.(loadError)
         window.dispatchEvent(new CustomEvent('gameflow:client-error', { detail: { message: loadError?.message || '3D asset load failed', mediaType: 'gltf', modelUrl: activeModelUrl, release: import.meta.env.VITE_RELEASE_VERSION || 'development' } }))
       },
     )
@@ -237,29 +265,24 @@ function GltfAssetViewer({
       resizeObserver.disconnect()
       controls.dispose()
 
+      const disposedTextures = new Set()
       if (loadedModel) {
         scene.remove(loadedModel)
-        loadedModel.traverse((child) => {
-          if (child.geometry) {
-            child.geometry.dispose()
-          }
-
-          if (Array.isArray(child.material)) {
-            child.material.forEach((material) => material.dispose())
-          } else if (child.material) {
-            child.material.dispose()
-          }
-        })
+        disposeObject3D(loadedModel, disposedTextures)
       }
 
+      renderer.renderLists?.dispose?.()
       renderer.dispose()
-      loadedTextures.forEach((texture) => texture.dispose())
+      renderer.forceContextLoss?.()
+      loadedTextures.forEach((texture) => {
+        if (!disposedTextures.has(texture)) texture.dispose()
+      })
 
       if (mountNode.contains(renderer.domElement)) {
         mountNode.removeChild(renderer.domElement)
       }
     }
-  }, [activeAsset?.textures, activeBackground, activeModelUrl, isActive])
+  }, [activeAsset?.textures, activeBackground, activeModelUrl, isActive, onError])
 
   return (
     <section

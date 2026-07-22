@@ -20,8 +20,8 @@ import {
   fetchCollaborationCandidates,
   toggleUserFollow,
 } from '../../lib/content';
-import GltfAssetViewer from '../../components/GltfAssetViewer';
-import WebGLGamePlayer from '../../components/WebGLGamePlayer';
+import ProjectMedia from '../../features/project/components/ProjectMedia';
+import { fromProject } from '../../features/project/model/projectCardModel';
 import GuestBanner from '../../components/layout/GuestBanner';
 import { BottomSheet, ConfirmDialog } from '../../components/ui/Overlay';
 import { removeProjectMember, updateProjectMember } from '../../lib/collaboration';
@@ -51,7 +51,6 @@ const formatCount = (value = 0) => {
 };
 
 const AVATAR = 'https://image.qwenlm.ai/public_source/581c980c-93ea-4473-a881-d706c334af84/19f781f2a-1e76-4c62-8f73-55c5248d45ab.png';
-const BANNER = 'https://image.qwenlm.ai/public_source/581c980c-93ea-4473-a881-d706c334af84/1bd8db8c4-7446-4905-bbe6-106a3bce5dc2.png';
 
 const GlassBadge = ({ children }) => (
   <span style={{
@@ -498,7 +497,7 @@ const ProjectDetailPage = () => {
     );
   }
 
-  const imageSrc = project.previewUrl || project.imageUrl || BANNER;
+  const projectModel = fromProject(project);
   const creatorRole = project.type === 'game' ? 'Game Developer' : project.type === '3d' ? '3D Artist' : '2D Artist';
   return (
     <div
@@ -631,36 +630,13 @@ const ProjectDetailPage = () => {
           overflow: 'hidden',
           borderBottom: `1px solid ${C.borderGlass}`,
         }}>
-          {project.type === '3d' && project.modelUrl ? (
-            <GltfAssetViewer
-              modelUrl={project.modelUrl}
-              title={project.title}
-              mode={project.mode || 'landscape'}
-            />
-          ) : project.type === 'game' && project.gameUrl ? (
-            <WebGLGamePlayer
-              gameUrl={project.gameUrl}
-              title={project.title}
-              mode={project.mode || 'landscape'}
-              loadingScreenUrl={project.previewUrl}
-            />
-          ) : (
-            <img
-              src={imageSrc}
-              alt={project.title}
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'contain',
-              }}
-            />
-          )}
+          <ProjectMedia media={projectModel.media} title={projectModel.title} active interactive />
 
           <div style={{ position: 'absolute', top: 16, right: 16, zIndex: 5 }}>
             <GlassBadge>{project.category || project.type}</GlassBadge>
           </div>
 
-          {project.type === '3d' && (
+          {projectModel.media.kind === 'gltf' && (
             <div style={{
               position: 'absolute', bottom: 16,
               background: 'rgba(9, 9, 9, 0.65)',

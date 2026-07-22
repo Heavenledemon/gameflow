@@ -28,6 +28,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.55rem;
+  min-height: 44px;
   padding: 0.5rem 1.15rem 0.5rem 0.7rem;
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 999px;

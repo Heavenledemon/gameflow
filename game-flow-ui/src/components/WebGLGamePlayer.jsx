@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import './WebGLGamePlayer.css';
 
 const DEFAULT_ASPECT_RATIOS = {
@@ -54,6 +54,9 @@ function WebGLGamePlayer({
   aspectRatio,
   loadingScreenUrl,
   isActive = true,
+  stopSignal = 0,
+  onPlaybackChange,
+  onFullscreenChange,
 }) {
   const containerRef = useRef(null);
   const hasStartedRef = useRef(false);
@@ -100,25 +103,34 @@ function WebGLGamePlayer({
     isMobileLikeRef.current = viewportSize.isMobileLike;
   }, [viewportSize.isMobileLike]);
 
-  function stopGame() {
+  const stopGame = useCallback(() => {
+    const wasStarted = hasStartedRef.current;
+    hasStartedRef.current = false;
     setHasStarted(false);
     setIsFullscreen(false);
-  }
+    if (wasStarted) onPlaybackChange?.(false);
+  }, [onPlaybackChange]);
 
   useEffect(() => {
     if (!isActive) {
       queueMicrotask(stopGame);
     }
-  }, [isActive]);
+  }, [isActive, stopGame]);
 
   useEffect(() => {
+    if (stopSignal > 0) queueMicrotask(stopGame);
+  }, [stopGame, stopSignal]);
+
+  useEffect(() => {
+    const container = containerRef.current;
     function updateViewportOrientation() {
       setViewportSize(getViewportState());
     }
 
     function handleFullscreenChange() {
-      const isContainerFullscreen = document.fullscreenElement === containerRef.current;
+      const isContainerFullscreen = document.fullscreenElement === container;
       setIsFullscreen(isContainerFullscreen);
+      onFullscreenChange?.(isContainerFullscreen);
 
       if (!isContainerFullscreen) {
         window.screen.orientation?.unlock?.();
@@ -135,8 +147,14 @@ function WebGLGamePlayer({
     return () => {
       window.removeEventListener('resize', updateViewportOrientation);
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      window.screen.orientation?.unlock?.();
+      if (document.fullscreenElement === container) document.exitFullscreen?.()?.catch?.(() => {});
+      if (hasStartedRef.current) {
+        hasStartedRef.current = false;
+        onPlaybackChange?.(false);
+      }
     };
-  }, []);
+  }, [onFullscreenChange, onPlaybackChange, stopGame]);
 
   async function startGame() {
     const container = containerRef.current;
@@ -145,7 +163,9 @@ function WebGLGamePlayer({
       return;
     }
 
+    hasStartedRef.current = true;
     setHasStarted(true);
+    onPlaybackChange?.(true);
 
     try {
       await container.requestFullscreen?.();
