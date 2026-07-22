@@ -4,7 +4,16 @@ const mutationHeaders = (token) => ({ ...authHeaders(token), 'Idempotency-Key': 
 
 export function normalizeConversation(record) {
   if (!record) return null
-  return { ...record, id: record.id || record._id || '', projectId: record.projectId || null, collaborationRequestId: record.collaborationRequestId || null }
+  const parsedUnreadCount = record.unreadCount === null || record.unreadCount === undefined ? Number.NaN : Number(record.unreadCount)
+  const unreadCount = Number.isFinite(parsedUnreadCount) && parsedUnreadCount >= 0 ? parsedUnreadCount : null
+  return {
+    ...record,
+    id: record.id || record._id || '',
+    projectId: record.projectId || null,
+    collaborationRequestId: record.collaborationRequestId || null,
+    unreadCount,
+    isUnread: unreadCount !== null ? unreadCount > 0 : record.isUnread === true,
+  }
 }
 
 export function normalizeMessage(record) {

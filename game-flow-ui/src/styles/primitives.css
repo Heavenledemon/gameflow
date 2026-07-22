@@ -184,6 +184,18 @@
 .gf-feedback__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--gf-space-2); }
 .gf-feedback--error .gf-feedback__icon { color: var(--gf-danger); }
 
+.gf-route-loading {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  background: var(--gf-shell-surface);
+  color: var(--gf-shell-text);
+}
+
+.gf-route-loading--viewport { min-height: 100dvh; }
+
 .gf-overlay { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; padding: var(--gf-space-4); background: var(--gf-backdrop); }
 .gf-dialog,
 .gf-sheet { width: min(100%, 560px); max-height: min(90dvh, 720px); display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--gf-border); border-radius: var(--gf-radius-lg); background: var(--gf-surface); color: var(--gf-text); box-shadow: var(--gf-shadow-modal); outline: none; }

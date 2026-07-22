@@ -448,9 +448,23 @@ export default function FeedPage() {
   }
 
   const safeActiveIndex = Math.min(activeIndex, Math.max(projects.length - 1, 0))
+  const nextProject = projects[safeActiveIndex + 1]
+  const nextPosterUrl = nextProject?.media.kind === 'image'
+    ? nextProject.media.imageUrl || nextProject.media.posterUrl
+    : nextProject?.media.kind === 'video'
+      ? nextProject.media.posterUrl
+      : null
   const showInitialLoading = feedStatus === 'loading' && projects.length === 0
   const showInitialError = feedStatus === 'error' && projects.length === 0
   const showEmpty = feedStatus === 'ready' && projects.length === 0
+
+  useEffect(() => {
+    if (!nextPosterUrl) return undefined
+    const poster = new Image()
+    poster.decoding = 'async'
+    poster.src = nextPosterUrl
+    return () => { poster.src = '' }
+  }, [nextPosterUrl])
 
   return (
     <main className={`feed-page ${interactiveProjectId ? 'feed-page--interactive' : ''}`}>

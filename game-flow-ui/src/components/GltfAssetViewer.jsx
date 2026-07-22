@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
@@ -41,11 +41,14 @@ function GltfAssetViewer({
   }
   const containerRef = useRef(null)
   const mountRef = useRef(null)
+  const resolvedTextures = useMemo(() => textures ? Object.fromEntries(
+    Object.entries(textures).map(([key, url]) => [key, resolveClientAssetUrl(url)]),
+  ) : textures, [textures])
   const normalizedAssets =
     Array.isArray(assets) && assets.length
       ? assets.filter((asset) => asset?.modelUrl)
       : modelUrl
-        ? [{ modelUrl: resolveClientAssetUrl(modelUrl), title, background, textures: textures ? Object.fromEntries(Object.entries(textures).map(([key, url]) => [key, resolveClientAssetUrl(url)])) : textures }]
+        ? [{ modelUrl: resolveClientAssetUrl(modelUrl), title, background, textures: resolvedTextures }]
         : []
   const activeAsset = normalizedAssets[0] ?? null
   const activeModelUrl = activeAsset?.modelUrl ?? ''

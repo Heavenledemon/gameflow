@@ -3,6 +3,20 @@ import { fetchConversations } from '../lib/messaging'
 
 const initialState = { items: [], status: 'loading', error: '', nextCursor: null }
 
+function mergeConversations(current, incoming) {
+  const merged = [...current]
+  const indexes = new Map(merged.map((item, index) => [String(item.id), index]))
+  incoming.forEach((item) => {
+    const key = String(item.id)
+    if (indexes.has(key)) merged[indexes.get(key)] = item
+    else {
+      indexes.set(key, merged.length)
+      merged.push(item)
+    }
+  })
+  return merged
+}
+
 export function useConversations(token, { limit = 30, enabled = true } = {}) {
   const controllerRef = useRef(null)
   const [state, setState] = useState(initialState)
@@ -16,7 +30,7 @@ export function useConversations(token, { limit = 30, enabled = true } = {}) {
     try {
       const data = await fetchConversations(token, { cursor, limit, signal: controller.signal })
       if (controller.signal.aborted) return
-      setState((current) => ({ items: append ? [...current.items, ...data.items] : data.items, status: 'ready', error: '', nextCursor: data.nextCursor }))
+      setState((current) => ({ items: append ? mergeConversations(current.items, data.items) : data.items, status: 'ready', error: '', nextCursor: data.nextCursor }))
     } catch (error) {
       if (error?.name === 'AbortError') return
       setState((current) => ({ ...current, status: 'error', error: error.message || 'Unable to load conversations.' }))

@@ -57,6 +57,7 @@ function WebGLGamePlayer({
   stopSignal = 0,
   onPlaybackChange,
   onFullscreenChange,
+  onError,
 }) {
   const containerRef = useRef(null);
   const hasStartedRef = useRef(false);
@@ -216,6 +217,7 @@ function WebGLGamePlayer({
           scrolling="no"
           allowFullScreen
           style={frameStyle}
+          onError={() => onError?.(new Error('Playable preview failed to load.'))}
         />
       )}
       {hasStarted && shouldRotateFullscreen && (

@@ -1,11 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import GltfAssetViewer from '../../../components/GltfAssetViewer'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { Button } from '../../../components/ui/Button'
-import { ErrorState } from '../../../components/ui/Feedback'
+import { ErrorState, LoadingState } from '../../../components/ui/Feedback'
 import { MediaFrame } from '../../../components/ui/MediaComponents'
-import WebGLGamePlayer from '../../../components/WebGLGamePlayer'
 import { useMediaVisibility } from '../../../hooks/useMediaVisibility'
 import './ProjectMedia.css'
+
+const GltfAssetViewer = lazy(() => import('../../../components/GltfAssetViewer'))
+const WebGLGamePlayer = lazy(() => import('../../../components/WebGLGamePlayer'))
 
 function usePrefersReducedMotion() {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(() => (
@@ -94,6 +95,11 @@ export default function ProjectMedia({
   const webglStopSignal = webglSession.identity === identity ? webglSession.stopSignal : 0
   const canUseInteractiveMedia = Boolean(active && isVisible && interactive)
   const shouldAutoPreview = Boolean(allowAutoPreview && active && isVisible && !prefersReducedMotion)
+  const heavyMediaFallback = (
+    <MediaFrame aspectRatio={normalizedMedia.aspectRatio || (normalizedMedia.mode === 'portrait' ? '9 / 16' : '16 / 9')} className="project-media__frame">
+      <LoadingState label={`Loading ${normalizedMedia.kind === 'gltf' ? '3D viewer' : 'playable preview'}`} />
+    </MediaFrame>
+  )
 
   const reportError = useCallback((message, error) => {
     setFailure({ identity, message })
@@ -200,18 +206,21 @@ export default function ProjectMedia({
     ) : <MediaPoster media={normalizedMedia} title={title} fallback={fallback} />
   } else if (normalizedMedia.kind === 'webgl') {
     content = isActivated && canUseInteractiveMedia && normalizedMedia.gameUrl ? (
-      <WebGLGamePlayer
-        gameUrl={normalizedMedia.gameUrl}
-        title={title}
-        mode={normalizedMedia.mode}
-        thumbnailMode={normalizedMedia.thumbnailMode}
-        aspectRatio={normalizedMedia.aspectRatio}
-        loadingScreenUrl={normalizedMedia.posterUrl}
-        isActive={active && isVisible}
-        stopSignal={webglStopSignal}
-        onPlaybackChange={handleWebGLPlaybackChange}
-        onFullscreenChange={onFullscreenChange}
-      />
+      <Suspense fallback={heavyMediaFallback}>
+        <WebGLGamePlayer
+          gameUrl={normalizedMedia.gameUrl}
+          title={title}
+          mode={normalizedMedia.mode}
+          thumbnailMode={normalizedMedia.thumbnailMode}
+          aspectRatio={normalizedMedia.aspectRatio}
+          loadingScreenUrl={normalizedMedia.posterUrl}
+          isActive={active && isVisible}
+          stopSignal={webglStopSignal}
+          onPlaybackChange={handleWebGLPlaybackChange}
+          onFullscreenChange={onFullscreenChange}
+          onError={(error) => reportError('The playable preview could not be loaded.', error)}
+        />
+      </Suspense>
     ) : (
       <div className="project-media__poster-focus">
         <MediaPoster
@@ -227,17 +236,19 @@ export default function ProjectMedia({
   } else if (normalizedMedia.kind === 'gltf') {
     content = isActivated && canUseInteractiveMedia && normalizedMedia.modelUrl ? (
       <>
-        <GltfAssetViewer
-          modelUrl={normalizedMedia.modelUrl}
-          assets={normalizedMedia.assets}
-          textures={normalizedMedia.textures}
-          title={title}
-          mode={normalizedMedia.mode}
-          background={normalizedMedia.background || '#101820'}
-          isActive={active && isVisible}
-          onError={handleGltfError}
-          onFullscreenChange={onFullscreenChange}
-        />
+        <Suspense fallback={heavyMediaFallback}>
+          <GltfAssetViewer
+            modelUrl={normalizedMedia.modelUrl}
+            assets={normalizedMedia.assets}
+            textures={normalizedMedia.textures}
+            title={title}
+            mode={normalizedMedia.mode}
+            background={normalizedMedia.background || '#101820'}
+            isActive={active && isVisible}
+            onError={handleGltfError}
+            onFullscreenChange={onFullscreenChange}
+          />
+        </Suspense>
         <button type="button" className="project-media__exit" onClick={deactivate}>Exit 3D controls</button>
       </>
     ) : (
