@@ -77,6 +77,7 @@ export default function ProjectMedia({
   onError,
   onFullscreenChange,
   onDoubleClick,
+  activationRequested = false,
 }) {
   const normalizedMedia = media ?? { kind: 'unknown' }
   const identity = mediaIdentity(normalizedMedia)
@@ -87,7 +88,7 @@ export default function ProjectMedia({
   const videoRef = useRef(null)
   const { ref: visibilityRef, isVisible } = useMediaVisibility({ threshold: 0.15 })
   const prefersReducedMotion = usePrefersReducedMotion()
-  const isActivated = activation.identity === identity && activation.active
+  const isActivated = activationRequested || (activation.identity === identity && activation.active)
   const errorMessage = failure.identity === identity ? failure.message : ''
   const webglPlaying = webglSession.identity === identity && webglSession.playing
   const webglStopSignal = webglSession.identity === identity ? webglSession.stopSignal : 0
@@ -112,12 +113,14 @@ export default function ProjectMedia({
   }, [identity, onActivate, onDeactivate])
 
   const exitWebGLControls = () => {
+    setActivation({ identity, active: false })
     setWebglSession((current) => ({
       identity,
       playing: false,
       stopSignal: current.identity === identity ? current.stopSignal + 1 : 1,
     }))
-    window.requestAnimationFrame(() => visibilityRef.current?.querySelector('.webgl-game-player__fullscreen-toggle')?.focus())
+    onDeactivate?.()
+    window.requestAnimationFrame(() => activationButtonRef.current?.focus())
   }
 
   const activate = () => {
@@ -196,7 +199,7 @@ export default function ProjectMedia({
       </MediaFrame>
     ) : <MediaPoster media={normalizedMedia} title={title} fallback={fallback} />
   } else if (normalizedMedia.kind === 'webgl') {
-    content = canUseInteractiveMedia && normalizedMedia.gameUrl ? (
+    content = isActivated && canUseInteractiveMedia && normalizedMedia.gameUrl ? (
       <WebGLGamePlayer
         gameUrl={normalizedMedia.gameUrl}
         title={title}
@@ -210,7 +213,16 @@ export default function ProjectMedia({
         onFullscreenChange={onFullscreenChange}
       />
     ) : (
-      <MediaPoster media={normalizedMedia} title={title} fallback={normalizedMedia.gameUrl ? 'Playable preview paused.' : fallback} />
+      <div className="project-media__poster-focus">
+        <MediaPoster
+          media={normalizedMedia}
+          title={title}
+          fallback={normalizedMedia.gameUrl ? 'Open the playable preview when ready.' : fallback}
+          actionLabel="Open playable preview"
+          buttonRef={activationButtonRef}
+          onActivate={normalizedMedia.gameUrl && canUseInteractiveMedia ? activate : undefined}
+        />
+      </div>
     )
   } else if (normalizedMedia.kind === 'gltf') {
     content = isActivated && canUseInteractiveMedia && normalizedMedia.modelUrl ? (
@@ -254,7 +266,7 @@ export default function ProjectMedia({
       onDoubleClick={onDoubleClick}
     >
       {content}
-      {normalizedMedia.kind === 'webgl' && webglPlaying && canUseInteractiveMedia ? <button type="button" className="project-media__exit" onClick={exitWebGLControls}>Exit game controls</button> : null}
+      {normalizedMedia.kind === 'webgl' && isActivated && canUseInteractiveMedia ? <button type="button" className="project-media__exit" onClick={exitWebGLControls}>{webglPlaying ? 'Exit game controls' : 'Close playable preview'}</button> : null}
       {overlay ? <div className="project-media__overlay">{overlay}</div> : null}
     </section>
   )
