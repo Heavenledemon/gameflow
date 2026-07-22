@@ -27,6 +27,9 @@ function mediaIdentity(media) {
 }
 
 function MediaPoster({ media, title, actionLabel, onActivate, buttonRef, fallback }) {
+  const posterUrl = media.posterUrl || media.imageUrl
+  const [failedPosterUrl, setFailedPosterUrl] = useState('')
+  const showPoster = Boolean(posterUrl && failedPosterUrl !== posterUrl)
   const action = onActivate ? (
     <div className="project-media__poster-action">
       <Button ref={buttonRef} onClick={onActivate}>{actionLabel}</Button>
@@ -37,12 +40,20 @@ function MediaPoster({ media, title, actionLabel, onActivate, buttonRef, fallbac
     <MediaFrame
       aspectRatio={media.aspectRatio || (media.mode === 'portrait' ? '9 / 16' : '16 / 9')}
       fit="contain"
-      poster={media.posterUrl || media.imageUrl}
-      posterAlt={media.posterUrl || media.imageUrl ? `${title} preview` : ''}
-      fallback={fallback}
       overlay={action}
       className="project-media__frame"
-    />
+    >
+      {showPoster ? (
+        <img
+          className="project-media__asset"
+          src={posterUrl}
+          alt={`${title} preview`}
+          loading="lazy"
+          decoding="async"
+          onError={() => setFailedPosterUrl(posterUrl)}
+        />
+      ) : <div className="gf-media-frame__fallback">{fallback}</div>}
+    </MediaFrame>
   )
 }
 
@@ -57,6 +68,7 @@ export default function ProjectMedia({
   active = true,
   interactive = true,
   allowAutoPreview = false,
+  posterOnly = false,
   overlay,
   fallback = 'A preview is not available for this project.',
   className = '',
@@ -134,7 +146,9 @@ export default function ProjectMedia({
   }, [identity, shouldAutoPreview])
 
   let content
-  if (errorMessage) {
+  if (posterOnly) {
+    content = <MediaPoster media={normalizedMedia} title={title} fallback={fallback} />
+  } else if (errorMessage) {
     content = (
       <MediaFrame aspectRatio={normalizedMedia.aspectRatio || '16 / 9'} className="project-media__frame">
         <ErrorState

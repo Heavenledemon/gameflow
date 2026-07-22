@@ -1,0 +1,24 @@
+.project-grid-shell {
+  container-type: inline-size;
+}
+
+.project-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--gf-space-3);
+}
+
+.project-grid__skeleton {
+  min-width: 0;
+  display: grid;
+  gap: var(--gf-space-2);
+}
+
+.project-grid__skeleton-media {
+  aspect-ratio: 1;
+  border-radius: var(--gf-radius-md);
+}
+
+@container (min-width: 350px) {
+  .project-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
