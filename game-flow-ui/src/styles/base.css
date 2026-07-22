@@ -16,8 +16,9 @@ body {
 
 button, input, textarea, select { font: inherit; }
 button { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
 a { color: inherit; text-decoration: none; }
-img, video, canvas { max-width: 100%; }
+img, video, canvas { display: block; max-width: 100%; }
 
 :focus-visible {
   outline: 3px solid var(--gf-focus);

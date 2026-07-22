@@ -1,0 +1,31 @@
+export const gameData = [
+  {
+    id: 'game-1',
+    title: 'Cyberpulse 2077',
+    tagline: 'High-octane cyberpunk action RPG set in a neon metropolis.',
+    description: 'Immerse yourself in a vast futuristic city where every choice shapes your narrative path. Master hacking, custom cyberware, and intense tactical combat.',
+    coverImage: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80',
+    thumbnail: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=400&q=80',
+    genre: 'Cyberpunk RPG',
+    tags: ['Action', 'RPG', 'Cyberpunk', 'Singleplayer', 'Sci-Fi'],
+    rating: 4.8,
+    reviewsCount: 1420,
+    developer: 'NeonByte Studios',
+    publisher: 'GameFlow Originals',
+    releaseDate: '2026-03-15',
+    price: '$49.99',
+    discountPrice: '$34.99',
+    isTrending: true,
+    isFeatured: true,
+    stats: {
+      activePlayers: '45.2K',
+      totalDownloads: '1.2M',
+      likes: '98.4K',
+    },
+    author: {
+      name: 'Elena Rostova',
+      avatar: 'https://i.pravatar.cc/150?img=49',
+      handle: '@elena_dev',
+    },
+  },
+];

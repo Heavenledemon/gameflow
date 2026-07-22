@@ -1,29 +1,30 @@
+import { useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
+import MobileAppShell from '../components/layout/MobileAppShell';
 import BottomNav from '../components/navigation/BottomNav';
+import { useAppShell } from '../context/AppShellContext';
 
 const AppLayout = () => {
   const { pathname } = useLocation();
-  const hideBottomNav = pathname.startsWith('/app/upload');
+  const { topBar, clearTopBar, immersiveMode, exitImmersiveMode } = useAppShell();
+  const hideBottomNavForRoute = pathname.startsWith('/app/upload');
+
+  useEffect(() => {
+    return () => {
+      clearTopBar();
+      exitImmersiveMode();
+    };
+  }, [pathname, clearTopBar, exitImmersiveMode]);
 
   return (
-    <div
-      className="mobile-frame"
-      style={{
-        position: 'relative',
-        width: '100%',
-        height: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-        background: '#0B0D12',
-      }}
+    <MobileAppShell
+      topBar={topBar}
+      bottomNavigation={<BottomNav />}
+      showBottomNavigation={!hideBottomNavForRoute && !immersiveMode}
+      immersive={immersiveMode}
     >
-      <div style={{ flex: 1, height: '100%', width: '100%', position: 'relative', overflow: 'hidden' }}>
-        <Outlet />
-      </div>
-
-      {!hideBottomNav && <BottomNav />}
-    </div>
+      <Outlet />
+    </MobileAppShell>
   );
 };
 

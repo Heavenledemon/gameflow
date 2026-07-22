@@ -1,68 +1,64 @@
-import { NavLink } from 'react-router-dom';
-import { HomeIcon, ExploreIcon, BellIcon, ProfileIcon, PlusIcon } from '../icons/Icons';
-import { useAuth } from '../../context/AuthContext';
-import { useInbox } from '../../hooks/useInbox';
-import { useMessagingRealtime } from '../../hooks/useMessagingRealtime';
-import './BottomNav.css';
+import { NavLink } from 'react-router-dom'
+import { HomeIcon, ExploreIcon, BellIcon, ProfileIcon, PlusIcon } from '../icons/Icons'
+import { useAuth } from '../../context/AuthContext'
+import { useInbox } from '../../hooks/useInbox'
+import { useMessagingRealtime } from '../../hooks/useMessagingRealtime'
+import './BottomNav.css'
+
+const destinations = [
+  { key: 'home', label: 'Home', Icon: HomeIcon, target: '/app/home' },
+  { key: 'explore', label: 'Discover', Icon: ExploreIcon, target: '/app/explore' },
+  { key: 'publish', label: 'Publish', Icon: PlusIcon, target: '/app/upload', isPrimary: true },
+  { key: 'inbox', label: 'Inbox', Icon: BellIcon, target: '/app/inbox' },
+  { key: 'profile', label: 'Profile', Icon: ProfileIcon, target: '/app/profile' },
+]
 
 const BottomNav = () => {
-  const { user, token } = useAuth();
-  const { items: incomingRequests, reload: reloadIncomingRequests } = useInbox(token, 'incoming');
-  useMessagingRealtime(token, { onEvent: (eventName) => { if (eventName.startsWith('collaboration.request')) reloadIncomingRequests() }, onReady: reloadIncomingRequests })
-  const items = [
-    { key: 'home',          label: 'Home',          Icon: HomeIcon,        target: '/app/home' },
-    { key: 'explore',       label: 'Explore',       Icon: ExploreIcon,     target: '/app/explore' },
-    { key: 'notifications', label: 'Inbox',         Icon: BellIcon,        target: '/app/inbox' },
-    { key: 'profile',       label: 'Profile',       Icon: ProfileIcon,     target: '/app/profile' },
-  ];
+  const { user, token } = useAuth()
+  const { items: incomingRequests, reload: reloadIncomingRequests } = useInbox(token, 'incoming')
+
+  useMessagingRealtime(token, {
+    onEvent: (eventName) => {
+      if (eventName.startsWith('collaboration.request')) reloadIncomingRequests()
+    },
+    onReady: reloadIncomingRequests,
+  })
+
+  const inboxCount = incomingRequests.length
 
   return (
-    <nav className="bottom-nav">
-      {items.map((item, idx) => {
-        // Insert FAB between Explore and Notifications
-        const fab = idx === 2 ? (
-          <NavLink
-            key="fab"
-            to="/app/upload"
-            className={({ isActive }) => `fab-btn ${isActive ? 'fab-btn--active' : ''}`}
-            onMouseDown={e => e.currentTarget.style.transform = 'scale(0.95)'}
-            onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
-          >
-            <PlusIcon size={22} />
-          </NavLink>
-        ) : null;
+    <nav className="bottom-nav" aria-label="Primary navigation">
+      {destinations.map(({ key, label, Icon, target, isPrimary }) => {
+        const accessibleLabel = key === 'inbox' && inboxCount > 0
+          ? `${label}, ${inboxCount} pending collaboration ${inboxCount === 1 ? 'request' : 'requests'}`
+          : label
 
         return (
-          <div key={item.key} style={{ display: 'contents' }}>
-            {idx === 2 && fab}
-            <NavLink
-              to={item.target}
-              className={({ isActive }) => `nav-item ${isActive ? 'nav-item--active' : ''}`}
-              onMouseDown={e => e.currentTarget.style.transform = 'scale(0.92)'}
-              onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
-            >
-              {item.key === 'profile' && user?.avatar ? (
-                <img
-                  src={user.avatar}
-                  alt="Profile"
-                  style={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: '50%',
-                    border: '1.5px solid currentColor',
-                    objectFit: 'cover',
-                  }}
-                />
+          <NavLink
+            key={key}
+            to={target}
+            aria-label={accessibleLabel}
+            className={({ isActive }) => [
+              isPrimary ? 'bottom-nav__item bottom-nav__item--publish' : 'bottom-nav__item',
+              isActive ? 'bottom-nav__item--active' : '',
+            ].filter(Boolean).join(' ')}
+          >
+            <span className="bottom-nav__icon" aria-hidden="true">
+              {key === 'profile' && user?.avatar ? (
+                <img className="bottom-nav__avatar" src={user.avatar} alt="" />
               ) : (
-                <item.Icon size={22} />
+                <Icon size={22} />
               )}
-              {item.key === 'notifications' && incomingRequests.length > 0 && <span style={{ position: 'absolute', top: 4, right: 12, minWidth: 15, height: 15, padding: '0 3px', borderRadius: 9, background: '#FF7A59', color: '#fff', fontSize: 9, fontWeight: 800, display: 'grid', placeItems: 'center' }}>{incomingRequests.length > 9 ? '9+' : incomingRequests.length}</span>}
-            </NavLink>
-          </div>
-        );
+              {key === 'inbox' && inboxCount > 0 ? (
+                <span className="bottom-nav__badge">{inboxCount > 9 ? '9+' : inboxCount}</span>
+              ) : null}
+            </span>
+            <span className="bottom-nav__label">{label}</span>
+          </NavLink>
+        )
       })}
     </nav>
-  );
-};
+  )
+}
 
-export default BottomNav;
+export default BottomNav

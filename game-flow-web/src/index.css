@@ -60,6 +60,15 @@
   background: #2f2f2f;
 }
 
+/* Hide scrollbar utility */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Preserved GameFlow App styles */
 .desktop-shell { display: grid; grid-template-columns: 230px minmax(0, 1fr) 260px; min-height: 100vh; background: #0b1018; }
 .side-nav { position: sticky; top: 0; height: 100vh; padding: 28px 18px; border-right: 1px solid #202a3a; display: flex; flex-direction: column; background: #101722; }

@@ -18,10 +18,13 @@ function compressedUnityAssets() {
 }
 
 // https://vite.dev/config/
-export default defineConfig({
-  base: '/m/',
+export default defineConfig(({ mode }) => ({
+  base: mode === 'development' ? '/' : '/m/',
   plugins: [react(), compressedUnityAssets()],
   server: {
+    fs: {
+      allow: ['..']
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:4000',
@@ -29,4 +32,4 @@ export default defineConfig({
       },
     },
   },
-})
+}))

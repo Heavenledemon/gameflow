@@ -20,10 +20,8 @@ const App = () => {
           <ErrorReportingBoundary>
             <BrowserRouter>
               <div className="app-shell">
-              <div style={{ width: '100%', maxWidth: 430 }}>
                 <AppRoutes />
-              </div>
-              <AppToastViewport />
+                <AppToastViewport />
               </div>
             </BrowserRouter>
           </ErrorReportingBoundary>
