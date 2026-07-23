@@ -1,4 +1,13 @@
 import { useId, useRef } from 'react'
+import { GridIcon, PlayIcon, BookmarkOutlineIcon, HeartOutlineIcon, CollabIcon } from '../../../components/icons/Icons'
+
+const TAB_ICONS = {
+  projects: GridIcon,
+  games: PlayIcon,
+  saved: BookmarkOutlineIcon,
+  liked: HeartOutlineIcon,
+  collaborations: CollabIcon,
+}
 
 export default function PortfolioTabs({ tabs = [], selected, onSelect, panelId }) {
   const generatedId = useId()
@@ -25,6 +34,7 @@ export default function PortfolioTabs({ tabs = [], selected, onSelect, panelId }
       {visibleTabs.map((tab, index) => {
         const tabId = `${generatedId}-${tab.id}`
         const isSelected = selected === tab.id
+        const IconComponent = TAB_ICONS[tab.id] || GridIcon
 
         return (
           <button
@@ -41,11 +51,9 @@ export default function PortfolioTabs({ tabs = [], selected, onSelect, panelId }
             className={`portfolio-tabs__tab ${isSelected ? 'portfolio-tabs__tab--active' : ''}`}
             onClick={() => onSelect(tab.id)}
             onKeyDown={(event) => moveFocus(event, index)}
+            aria-label={tab.label}
           >
-            <span className="portfolio-tabs__label">{tab.label}</span>
-            {typeof tab.count === 'number' ? (
-              <span className="portfolio-tabs__count">{tab.count}</span>
-            ) : null}
+            <IconComponent size={22} className="portfolio-tabs__icon" />
           </button>
         )
       })}

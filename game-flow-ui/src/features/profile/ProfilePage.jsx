@@ -115,7 +115,7 @@ export default function ProfilePage() {
   const creator = {
     id: userId, name: user?.name || (isGuest ? 'Guest' : null), username: user?.username, avatar: user?.avatar,
     banner: user?.banner, verified: Boolean(user?.isVerified), role: user?.creatorType, headline: user?.headline,
-    location: user?.location, bio: user?.bio, website: user?.website, skills: user?.skills || [],
+    location: user?.location, bio: user?.bio, description: user?.description, website: user?.website, skills: user?.skills || [],
     tools: [...new Set([...(user?.tools || []), ...projects.flatMap((project) => project.tools)])], platforms: user?.platforms || [], collaborationOpen: typeof user?.collaborationOpen === 'boolean' ? user.collaborationOpen : null,
     socialLinks: [
       ['GitHub', user?.github], ['Itch.io', user?.itchio], ['Behance', user?.behance], ['ArtStation', user?.artstation], ['Instagram', user?.instagram], ['LinkedIn', user?.linkedin],
@@ -123,9 +123,8 @@ export default function ProfilePage() {
   }
   const stats = [
     { label: 'Projects', value: projects.length },
-    { label: 'Followers', value: user?.followersCount ?? null },
-    { label: 'Following', value: user?.followingCount ?? null },
-    { label: 'Views', value: user?.viewsCount ?? null },
+    { label: 'Followers', value: user?.followersCount ?? 0 },
+    { label: 'Following', value: user?.followingCount ?? 0 },
   ]
 
   const shareProfile = async () => {

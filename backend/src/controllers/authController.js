@@ -22,6 +22,7 @@ function sanitizeUser(user) {
     banner: user.banner,
     isVerified: user.isVerified,
     bio: user.bio || '',
+    description: user.description || '',
     location: user.location || '',
     website: user.website || '',
     creatorType: user.creatorType || 'Game Developer',
@@ -127,7 +128,7 @@ export const getCurrentUser = asyncHandler(async (request, response) => {
 
 export const updateCurrentUserProfile = asyncHandler(async (request, response) => {
   const {
-    email, username, name, headline, skills, avatar, banner, bio, location, website,
+    email, username, name, headline, skills, avatar, banner, bio, description, location, website,
     creatorType, github, itchio, behance, artstation, instagram, linkedin
   } = request.body ?? {}
 
@@ -193,6 +194,7 @@ export const updateCurrentUserProfile = asyncHandler(async (request, response) =
   if (avatar !== undefined) user.avatar = String(avatar)
   if (banner !== undefined) user.banner = String(banner)
   if (bio !== undefined) user.bio = String(bio).trim()
+  if (description !== undefined) user.description = String(description).trim()
   if (location !== undefined) user.location = String(location).trim()
   if (website !== undefined) user.website = String(website).trim()
   if (creatorType !== undefined) user.creatorType = String(creatorType).trim()

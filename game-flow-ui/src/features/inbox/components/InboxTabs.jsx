@@ -3,7 +3,7 @@ import SegmentedControl from '../../../components/ui/SegmentedControl'
 const PRIMARY_OPTIONS = [
   { value: 'requests', label: 'Requests', panelId: 'inbox-panel-requests' },
   { value: 'projects', label: 'Project chats', panelId: 'inbox-panel-projects' },
-  { value: 'messages', label: 'Messages', panelId: 'inbox-panel-messages' },
+  // { value: 'messages', label: 'Messages', panelId: 'inbox-panel-messages' },
 ]
 
 const REQUEST_OPTIONS = [

@@ -68,6 +68,11 @@ const userSchema = new mongoose.Schema(
       default: '',
       trim: true,
     },
+    description: {
+      type: String,
+      default: '',
+      trim: true,
+    },
     location: {
       type: String,
       default: '',

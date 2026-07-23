@@ -5,17 +5,16 @@ function formatCount(value) {
 }
 
 export default function CreatorStats({ stats = [] }) {
-  const visible = stats.filter((stat) => stat.value !== null && stat.value !== undefined && stat.value !== '')
-  if (!visible.length) return null
+  if (!stats.length) return null
 
   return (
-    <dl className="creator-stats" aria-label="Creator statistics">
-      {visible.map((stat) => (
+    <div className="creator-stats" aria-label="Creator statistics">
+      {stats.map((stat) => (
         <div key={stat.label} className="creator-stats__item">
-          <dt className="creator-stats__label">{stat.label}</dt>
-          <dd className="creator-stats__value">{formatCount(stat.value)}</dd>
+          <span className="creator-stats__value">{formatCount(stat.value)}</span>
+          <span className="creator-stats__label">{stat.label}</span>
         </div>
       ))}
-    </dl>
+    </div>
   )
 }

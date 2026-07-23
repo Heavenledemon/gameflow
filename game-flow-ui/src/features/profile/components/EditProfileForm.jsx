@@ -5,7 +5,7 @@ import { Dialog } from '../../../components/ui/Overlay'
 import { Avatar } from '../../../components/ui/Surface'
 import { safeExternalUrl } from '../profileAdapters'
 
-const FIELDS = ['email', 'username', 'name', 'headline', 'location', 'bio', 'creatorType', 'website', 'github', 'itchio', 'behance', 'artstation', 'instagram', 'linkedin', 'skills', 'avatar', 'banner']
+const FIELDS = ['email', 'username', 'name', 'headline', 'location', 'bio', 'description', 'creatorType', 'website', 'github', 'itchio', 'behance', 'artstation', 'instagram', 'linkedin', 'skills', 'avatar', 'banner']
 
 function initialValues(user) {
   return Object.fromEntries(FIELDS.map((field) => [field, field === 'skills' ? (user?.skills || []).join(', ') : user?.[field] || (field === 'creatorType' ? 'Game Developer' : '')]))
@@ -52,6 +52,7 @@ export default function EditProfileForm({ open, user, saving, onClose, onSave })
         <Field label="Creator category"><Select value={values.creatorType} onChange={update('creatorType')}><option>Web Developer</option><option>Game Developer</option><option>2D Artist</option><option>3D Artist</option></Select></Field>
       </div>
       <Field label="Bio"><Textarea value={values.bio} onChange={update('bio')} /></Field>
+      <Field label="Description"><Textarea value={values.description} onChange={update('description')} placeholder="Detail your experience, projects, or full story..." /></Field>
       <Field label="Skills" help="Separate skills with commas."><Input value={values.skills} onChange={update('skills')} /></Field>
       <Field label="Personal website"><Input value={values.website} onChange={update('website')} placeholder="https://example.com" /></Field>
       <div className="profile-form__grid">

@@ -15,7 +15,7 @@ export function ProfileActions({
   if (capability === 'self') {
     return (
       <div className="profile-actions">
-        <Button onClick={onEdit}>Edit Profile</Button>
+        <Button variant="secondary" onClick={onEdit}>Edit Profile</Button>
       </div>
     )
   }

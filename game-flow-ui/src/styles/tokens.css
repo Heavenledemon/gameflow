@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   /* ═══════════════════════════════════════════════════════════
      LEGACY TOKENS — kept intact; consumed by existing components.
      Do not remove these without migrating all consumers.
@@ -166,7 +166,7 @@
   /* ═══════════════════════════════════════════════════════════
      DESIGN GUIDE TOKENS — Section 3: Typography
   ═══════════════════════════════════════════════════════════ */
-  --gf-font-family:    'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --gf-font-family:    'Instagram Sans Regular', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --gf-font-mono:      'JetBrains Mono', 'Fira Code', monospace;
 
   /* Size scale (fluid 360px → 430px) */
