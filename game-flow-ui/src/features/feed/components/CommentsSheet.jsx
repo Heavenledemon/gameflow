@@ -19,12 +19,19 @@ function relativeTime(createdAt) {
   return `${Math.floor(hours / 24)}d`
 }
 
+function countAllReplies(replies = []) {
+  return replies.reduce((total, reply) => total + 1 + countAllReplies(reply.replies || []), 0)
+}
+
 function CommentThread({ comment, depth = 0, viewer, canReply, onReply, onReact }) {
   const [reactionsOpen, setReactionsOpen] = useState(false)
+  const [repliesOpen, setRepliesOpen] = useState(false)
   const commentId = comment.commentId || comment._id
   const author = comment.username || comment.name || 'member'
   const avatar = viewer && comment.username === viewer.username && viewer.avatar ? viewer.avatar : comment.avatar
   const reactionCounts = Object.entries(comment.reactions || {}).filter(([, count]) => count > 0)
+  const replies = comment.replies || []
+  const totalReplyCount = countAllReplies(replies)
 
   return (
     <li className={depth ? 'comments-sheet__reply' : ''}>
@@ -70,12 +77,25 @@ function CommentThread({ comment, depth = 0, viewer, canReply, onReply, onReact 
               ))}
             </div>
           ) : null}
+
+          {replies.length ? (
+            <button
+              type="button"
+              className="comments-sheet__replies-toggle"
+              aria-expanded={repliesOpen}
+              aria-controls={`comment-replies-${commentId}`}
+              onClick={() => setRepliesOpen((current) => !current)}
+            >
+              <span aria-hidden="true" />
+              {repliesOpen ? `Hide ${totalReplyCount} ${totalReplyCount === 1 ? 'reply' : 'replies'}` : `View ${totalReplyCount} ${totalReplyCount === 1 ? 'reply' : 'replies'}`}
+            </button>
+          ) : null}
         </div>
       </div>
 
-      {(comment.replies || []).length ? (
-        <ul className="comments-sheet__thread">
-          {comment.replies.map((reply) => (
+      {repliesOpen && replies.length ? (
+        <ul id={`comment-replies-${commentId}`} className="comments-sheet__thread comments-sheet__replies">
+          {replies.map((reply) => (
             <CommentThread
               key={reply.commentId || reply._id}
               comment={reply}

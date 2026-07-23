@@ -134,6 +134,81 @@
   backdrop-filter: blur(10px);
 }
 
+.webgl-game-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: 100vw;
+  height: 100dvh;
+  overflow: hidden;
+  background: #000;
+  color: #fff;
+}
+
+.webgl-game-modal__header {
+  min-height: calc(56px + env(safe-area-inset-top, 0px));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: env(safe-area-inset-top, 0px) 12px 0 16px;
+  border-bottom: 1px solid rgb(255 255 255 / 12%);
+  background: rgb(9 9 15 / 96%);
+}
+
+.webgl-game-modal__header strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.webgl-game-modal__exit {
+  min-width: 76px;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 14px;
+  border: 1px solid rgb(255 255 255 / 24%);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 10%);
+  color: #fff;
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.webgl-game-modal__exit span { font-size: 1.35rem; line-height: 1; }
+
+.webgl-game-modal__stage {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: #000;
+}
+
+.webgl-game-modal__frame {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border: 0;
+  background: #000;
+}
+
+@media (orientation: portrait) {
+  .webgl-game-modal__stage--landscape .webgl-game-modal__frame {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+  }
+}
+
 .webgl-game-player:fullscreen {
   width: 100vw;
   max-width: none;

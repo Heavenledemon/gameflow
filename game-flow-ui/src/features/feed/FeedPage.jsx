@@ -509,8 +509,6 @@ export default function FeedPage() {
         ) : null}
 
         {projects.map((project, index) => {
-          const isMounted = Math.abs(index - safeActiveIndex) <= 2
-          if (!isMounted) return <div key={project.id} className="project-reel-card project-reel-card--spacer" aria-hidden="true" />
           return (
             <ProjectReelCard
               key={project.id}

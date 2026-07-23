@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import './WebGLGamePlayer.css';
 
 const DEFAULT_ASPECT_RATIOS = {
@@ -109,8 +110,11 @@ function WebGLGamePlayer({
     hasStartedRef.current = false;
     setHasStarted(false);
     setIsFullscreen(false);
-    if (wasStarted) onPlaybackChange?.(false);
-  }, [onPlaybackChange]);
+    if (wasStarted) {
+      onPlaybackChange?.(false);
+      onFullscreenChange?.(false);
+    }
+  }, [onFullscreenChange, onPlaybackChange]);
 
   useEffect(() => {
     if (!isActive) {
@@ -157,31 +161,27 @@ function WebGLGamePlayer({
     };
   }, [onFullscreenChange, onPlaybackChange, stopGame]);
 
-  async function startGame() {
-    const container = containerRef.current;
-
-    if (!container) {
-      return;
-    }
-
+  function startGame() {
     hasStartedRef.current = true;
     setHasStarted(true);
+    setIsFullscreen(true);
     onPlaybackChange?.(true);
-
-    try {
-      await container.requestFullscreen?.();
-
-      if (window.screen.orientation?.lock) {
-        try {
-          await window.screen.orientation.lock(mode === 'portrait' ? 'portrait' : 'landscape');
-        } catch {
-          // Some browsers only allow rotation guidance via CSS.
-        }
-      }
-    } catch {
-      // Ignore fullscreen rejections caused by browser permissions or user settings.
-    }
+    onFullscreenChange?.(true);
   }
+
+  useEffect(() => {
+    if (!hasStarted) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') stopGame();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [hasStarted, stopGame]);
 
   return (
     <section
@@ -209,21 +209,26 @@ function WebGLGamePlayer({
           <span className="webgl-game-player__fullscreen-label">Play Now</span>
         </button>
       )}
-      {hasStarted && (
-        <iframe
-          className="webgl-game-player__frame"
-          src={resolvedGameUrl}
-          title={title}
-          scrolling="no"
-          allowFullScreen
-          style={frameStyle}
-          onError={() => onError?.(new Error('Playable preview failed to load.'))}
-        />
-      )}
-      {hasStarted && shouldRotateFullscreen && (
-        <p className="webgl-game-player__fullscreen-hint">
-          Rotated for portrait screens.
-        </p>
+      {hasStarted && createPortal(
+        <div className="webgl-game-modal" role="dialog" aria-modal="true" aria-label={`${title} game player`}>
+          <header className="webgl-game-modal__header">
+            <strong>{title}</strong>
+            <button type="button" className="webgl-game-modal__exit" onClick={stopGame} aria-label={`Exit ${title}`}>
+              <span aria-hidden="true">&times;</span> Exit
+            </button>
+          </header>
+          <div className={`webgl-game-modal__stage webgl-game-modal__stage--${mode}`}>
+            <iframe
+              className="webgl-game-modal__frame"
+              src={resolvedGameUrl}
+              title={title}
+              scrolling="no"
+              allowFullScreen
+              onError={() => onError?.(new Error('Playable preview failed to load.'))}
+            />
+          </div>
+        </div>,
+        document.body,
       )}
     </section>
   );

@@ -6,6 +6,10 @@ export default function MediaFrame({
   aspectRatio = '4/5',
   poster,
   alt = '',
+  posterAlt,
+  fit = 'cover',
+  fallback = 'Preview unavailable',
+  overlay = null,
   mediaKind = 'unknown',
   onActivate,
   loading = false,
@@ -24,7 +28,7 @@ export default function MediaFrame({
   return (
     <div
       className={`gf-media-frame ${className}`.trim()}
-      style={{ aspectRatio: resolvedRatio }}
+      style={{ aspectRatio: resolvedRatio, '--gf-media-fit': fit }}
       {...props}
     >
       {/* Badge top-right */}
@@ -73,15 +77,17 @@ export default function MediaFrame({
       {!loading && !error && (
         <>
           {poster ? (
-            <img src={poster} alt={alt} className="gf-media-frame__poster" />
+            <img src={poster} alt={posterAlt || alt} className="gf-media-frame__poster" />
           ) : (
             <div className="gf-media-frame__fallback">
-              <span className="gf-media-frame__fallback-text">Preview unavailable</span>
+              <span className="gf-media-frame__fallback-text">{fallback}</span>
             </div>
           )}
 
           {/* Children overlay slot (e.g. active renderers or UI overlays) */}
           {children && <div className="gf-media-frame__overlay">{children}</div>}
+
+          {overlay && <div className="gf-media-frame__overlay gf-media-frame__overlay--action">{overlay}</div>}
 
           {/* WebGL/GLTF Play button trigger overlay */}
           {isInteractiveMedia && onActivate && !children && (

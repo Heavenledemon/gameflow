@@ -45,9 +45,14 @@ export default function Sheet({
   const titleId = `${generatedId}-title`
   const descriptionId = description ? `${generatedId}-description` : undefined
   const modalIdRef = useRef(Symbol('gameflow-sheet'))
+  const onCloseRef = useRef(onClose)
 
   const [shouldRender, setShouldRender] = useState(open)
   const [active, setActive] = useState(open)
+
+  useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
 
   useEffect(() => {
     let frameId
@@ -92,7 +97,7 @@ export default function Sheet({
 
       if (event.key === 'Escape') {
         event.preventDefault()
-        onClose?.()
+        onCloseRef.current?.()
         return
       }
 
@@ -126,7 +131,7 @@ export default function Sheet({
         previousActive.focus()
       }
     }
-  }, [shouldRender, active, onClose])
+  }, [shouldRender, active])
 
   if (!shouldRender) return null
 
