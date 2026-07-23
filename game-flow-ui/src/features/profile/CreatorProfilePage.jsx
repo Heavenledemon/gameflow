@@ -5,11 +5,13 @@ import { useToast } from '../../context/ToastContext'
 import { fetchContent, toggleUserFollow } from '../../lib/content'
 import { createDirectConversation } from '../../lib/messaging'
 import { createModerationReport, toggleUserBlock } from '../../lib/moderation'
+import { fetchStories, getViewedStoryIds, markStoryViewed } from '../../lib/stories'
 import GuestToast from '../../components/layout/GuestToast'
 import { Button } from '../../components/ui/Button'
 import { ConfirmDialog, Sheet } from '../../components/ui/Overlay'
 import { EmptyState, ErrorState } from '../../components/ui/Feedback'
 import ProjectGrid from '../discovery/components/ProjectGrid'
+import StoryViewer from '../discovery/components/StoryViewer'
 import CreatorHeader from './components/CreatorHeader'
 import PortfolioTabs from './components/PortfolioTabs'
 import { ProfileActions } from './components/ProfileActions'
@@ -32,6 +34,10 @@ export default function CreatorProfilePage() {
   const [safetyOpen, setSafetyOpen] = useState(false)
   const [blockConfirm, setBlockConfirm] = useState(false)
   const [reportReason, setReportReason] = useState('')
+  const [activeStories, setActiveStories] = useState([])
+  const [storyOpen, setStoryOpen] = useState(false)
+  const [viewedStoryIds, setViewedStoryIds] = useState(getViewedStoryIds)
+  const activeStory = activeStories[0] || null
 
   const loadPortfolio = useCallback(async () => {
     try {
@@ -79,6 +85,18 @@ export default function CreatorProfilePage() {
   ]
   const selectedTab = tabs.find((tab) => tab.id === activeTab) || tabs[0]
   const targetId = creator.id || (/^[a-f\d]{24}$/i.test(String(creatorId || '')) ? creatorId : null)
+  useEffect(() => {
+    const controller = new AbortController()
+    fetchStories(token, { signal: controller.signal }).then((data) => {
+      if (controller.signal.aborted) return
+      const identity = String(creator.username || creatorId || '').toLowerCase()
+      setActiveStories((data.items || []).filter((story) => (
+        (targetId && String(story.creator?.id) === String(targetId))
+        || String(story.creator?.username || '').toLowerCase() === identity
+      )))
+    }).catch(() => { if (!controller.signal.aborted) setActiveStories([]) })
+    return () => controller.abort()
+  }, [creator.username, creatorId, targetId, token])
   const stats = [{ label: 'Portfolio', value: mappedEntries.length }, { label: 'Followers', value: creator.followersCount }, { label: 'Following', value: creator.followingCount }, { label: 'Views', value: creator.viewsCount }]
 
   const guestGate = (action, callback) => {
@@ -108,6 +126,11 @@ export default function CreatorProfilePage() {
     catch { window.prompt('Copy this profile link', window.location.href) }
   }
   const retryPortfolio = () => { setStatus('loading'); setLoadError(''); loadPortfolio() }
+  const openCreatorStory = () => {
+    if (!activeStory) return
+    setViewedStoryIds(markStoryViewed(activeStory.id))
+    setStoryOpen(true)
+  }
   const toggleBlock = async () => {
     if (!targetId || actionBusy) return
     setActionBusy(true)
@@ -130,12 +153,16 @@ export default function CreatorProfilePage() {
       creator={creator}
       stats={stats}
       capability="public"
+      hasActiveStory={Boolean(activeStory)}
+      storyViewed={Boolean(activeStory && viewedStoryIds.has(activeStory.id))}
+      onStoryOpen={activeStory ? openCreatorStory : undefined}
       onBack={() => navigate(-1)}
       onShare={shareProfile}
       onMore={() => guestGate('manage safety settings', () => setSafetyOpen(true))}
       moreLabel="Creator safety options"
       actions={<ProfileActions capability="public" following={following} blocked={blocked} busy={actionBusy} onFollow={targetId ? followCreator : undefined} onMessage={messageCreator} />}
     />
+    {storyOpen && activeStories.length ? <StoryViewer stories={activeStories} onClose={() => setStoryOpen(false)} /> : null}
     <section className="portfolio" aria-labelledby="portfolio-heading">
       <h2 id="portfolio-heading" className="gf-sr-only">Creator portfolio</h2>
       <PortfolioTabs tabs={tabs} selected={selectedTab.id} onSelect={setActiveTab} panelId="creator-portfolio-panel" />

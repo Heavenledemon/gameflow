@@ -200,6 +200,8 @@ export function toProjectCardModel(rawInput, options = {}) {
 
   // Build metadata
   const buildMetadata = firstValue(media.buildMetadata, raw.buildMetadata, media.build?.metadata, raw.build)
+  const resolvedMode = String(firstValue(media.mode, raw.mode, 'landscape')) === 'portrait' ? 'portrait' : 'landscape'
+  const resolvedAspectRatio = firstValue(media.aspectRatio, raw.aspectRatio)
 
   // Canonical route
   const canonicalRoute = `/app/project/${encodeURIComponent(String(projectId || id))}`
@@ -240,7 +242,7 @@ export function toProjectCardModel(rawInput, options = {}) {
 
     // Legacy fields for backward compatibility with existing features
     projectId,
-    contentType: projectType === 'game' ? 'game' : projectType === 'asset' ? 'asset' : 'project',
+    contentType: projectType === 'game' ? 'game' : ['asset', '3d-asset'].includes(projectType) ? 'asset' : 'project',
     routeTarget: canonicalRoute,
     media: {
       kind: mediaKind,
@@ -252,9 +254,9 @@ export function toProjectCardModel(rawInput, options = {}) {
       modelUrl,
       assets: Array.isArray(media.assets ?? raw.assets) ? (media.assets ?? raw.assets) : [],
       textures: firstValue(media.textures, raw.textures),
-      mode: String(firstValue(media.mode, raw.mode, 'landscape')),
+      mode: resolvedMode,
       thumbnailMode: String(firstValue(media.thumbnailMode, raw.thumbnailMode, media.mode, raw.mode, 'landscape')),
-      aspectRatio: firstValue(media.aspectRatio, raw.aspectRatio),
+      aspectRatio: resolvedAspectRatio,
       background: firstValue(media.background, raw.background),
       build: {
         entryUrl: gameUrl,

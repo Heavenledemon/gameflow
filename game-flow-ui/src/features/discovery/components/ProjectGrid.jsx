@@ -32,12 +32,14 @@ export default function ProjectGrid({
   return (
     <div className="project-grid-shell">
       <div className="project-grid" role="list">
-        {projectList.map((project) => (
+        {projectList.map((project, index) => (
           <ProjectTile
             key={`${project.contentType || 'project'}:${project.contentId ?? project.id}`}
             project={project}
             onOpen={onOpenProject ? () => onOpenProject(project) : undefined}
             actions={renderActions?.(project) || null}
+            variant="masonry"
+            fallbackAspectRatio={['3 / 4', '1 / 1', '4 / 5', '2 / 3'][index % 4]}
           />
         ))}
       </div>

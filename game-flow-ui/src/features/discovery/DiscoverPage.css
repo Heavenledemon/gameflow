@@ -55,20 +55,29 @@
 .discovery-search__control input::-webkit-search-cancel-button { display: none; }
 .discovery-search__control button { min-width: 54px; min-height: 44px; padding: 0 var(--gf-space-3); border: 0; color: var(--gf-brand); background: transparent; font-weight: 800; }
 
-.discovery-filters { display: grid; gap: var(--gf-space-3); padding: var(--gf-space-4); border-bottom: 1px solid var(--gf-border); background: var(--gf-surface); }
+.discovery-filters { position: relative; display: flex; justify-content: flex-end; padding: 0; }
 .discovery-filters h2 { margin: 0; font-size: var(--gf-text-body); }
+.discovery-filters__trigger { min-height: 42px; display: inline-flex; align-items: center; gap: 7px; padding: 8px 12px; border: 1px solid var(--gf-border); border-radius: 999px; color: var(--gf-text); background: var(--gf-surface); font: inherit; font-size: var(--gf-text-label); font-weight: 700; cursor: pointer; }
+.discovery-filters__trigger svg { width: 19px; height: 19px; }
+.discovery-filters__trigger:hover,
+.discovery-filters__trigger--active { border-color: var(--gf-brand); color: var(--gf-brand); background: color-mix(in srgb, var(--gf-brand) 8%, var(--gf-surface)); }
+.discovery-filters__trigger:focus-visible { outline: 3px solid var(--gf-focus); outline-offset: 2px; }
+.discovery-filters__active-label { max-width: 92px; overflow: hidden; padding-left: 7px; border-left: 1px solid currentColor; font-size: var(--gf-text-caption); text-overflow: ellipsis; white-space: nowrap; }
+.discovery-filters__menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 20; width: min(240px, calc(100vw - 32px)); display: grid; gap: var(--gf-space-4); padding: var(--gf-space-4); border: 1px solid var(--gf-border); border-radius: var(--gf-radius-lg); background: var(--gf-surface); box-shadow: var(--gf-shadow-lg); }
 .discovery-filters__group { min-width: 0; display: grid; gap: var(--gf-space-2); }
 .discovery-filters__group > span { color: var(--gf-text-muted); font-size: var(--gf-text-caption); font-weight: 700; }
-.discovery-filters__scroller { min-width: 0; display: flex; gap: var(--gf-space-2); overflow-x: auto; padding: 2px; scrollbar-width: none; scroll-padding-inline: var(--gf-space-2); }
+.discovery-filters__scroller { min-width: 0; display: flex; flex-direction: column; gap: 4px; padding: 2px; }
 .discovery-filters__scroller::-webkit-scrollbar { display: none; }
+.discovery-filters__scroller .gf-chip-wrapper { width: 100%; }
+.discovery-filters__scroller .gf-chip { width: 100%; height: 40px; justify-content: flex-start; padding-inline: var(--gf-space-3); border-radius: var(--gf-radius-md); }
 
 .discover-page__results { display: grid; gap: var(--gf-space-4); padding: var(--gf-space-4); }
-.discover-page__results-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--gf-space-3); }
+.discover-page__results-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--gf-space-3); }
 .discover-page__results-heading h2,
 .discover-page__results-heading p { margin: 0; }
 .discover-page__results-heading h2 { font-size: var(--gf-text-body); }
-.discover-page__results-heading > div p { margin-top: 2px; color: var(--gf-text-muted); font-size: var(--gf-text-caption); }
-.discover-page__result-count { max-width: 50%; color: var(--gf-text-muted); font-size: var(--gf-text-caption); text-align: right; }
+.discover-page__results-heading > div p { display: none; }
+.discover-page__result-count { display: none; }
 .discover-page__guidance { margin: 0; padding: var(--gf-space-3); border: 1px solid var(--gf-border); border-radius: var(--gf-radius-md); color: var(--gf-text-muted); background: var(--gf-surface); font-size: var(--gf-text-label); }
 
 .discovery-result-group { min-width: 0; display: grid; gap: var(--gf-space-3); }
@@ -82,11 +91,9 @@
 
 @media (min-width: 768px) {
   .discover-page__header,
-  .discovery-filters,
   .discover-page__results { padding-inline: var(--gf-space-5); }
 }
 
 @media (max-width: 370px) {
-  .discover-page__results-heading { align-items: flex-start; flex-direction: column; }
-  .discover-page__result-count { max-width: none; text-align: left; }
+  .discovery-filters__trigger { min-width: 44px; }
 }

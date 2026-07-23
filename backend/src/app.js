@@ -7,6 +7,7 @@ import env from './config/env.js'
 import contentRoutes from './routes/contentRoutes.js'
 import socialRoutes from './routes/socialRoutes.js'
 import messagingRoutes from './routes/messagingRoutes.js'
+import storyRoutes from './routes/storyRoutes.js'
 import { errorHandler, notFound } from './middlewares/errorMiddleware.js'
 import { getMetrics, observabilityMiddleware } from './middlewares/observabilityMiddleware.js'
 import { protect } from './middlewares/authMiddleware.js'
@@ -55,6 +56,9 @@ function getContentType(filePath) {
   if (basePath.endsWith('.webp')) return 'image/webp'
   if (basePath.endsWith('.gif')) return 'image/gif'
   if (basePath.endsWith('.avif')) return 'image/avif'
+  if (basePath.endsWith('.mp4')) return 'video/mp4'
+  if (basePath.endsWith('.webm')) return 'video/webm'
+  if (basePath.endsWith('.mov')) return 'video/quicktime'
   if (basePath.endsWith('.ico')) return 'image/x-icon'
 
   return 'application/octet-stream'
@@ -95,6 +99,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api', contentRoutes)
 app.use('/api', socialRoutes)
 app.use('/api', messagingRoutes)
+app.use('/api', storyRoutes)
 
 function setFrontendAssetHeaders(response, filePath) {
   setUploadHeaders(response, filePath)

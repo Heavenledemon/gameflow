@@ -28,6 +28,18 @@ const isImageFile = (file) => /\.(png|jpg|jpeg|webp|gif|avif)$/i.test(file?.name
 const isModelFile = (file) => /\.(glb|gltf)$/i.test(file?.name || '')
 const isHtmlFile = (file) => /\.html?$/i.test(file?.name || '')
 
+async function detectImageMode(file) {
+  if (!file || !isImageFile(file)) return null
+  try {
+    const bitmap = await createImageBitmap(file)
+    const mode = bitmap.height > bitmap.width ? 'portrait' : 'landscape'
+    bitmap.close()
+    return mode
+  } catch {
+    return null
+  }
+}
+
 function useObjectUrl(file) {
   const url = useMemo(() => file ? URL.createObjectURL(file) : '', [file])
   useEffect(() => { if (url) return () => URL.revokeObjectURL(url) }, [url])
@@ -123,19 +135,25 @@ export default function PublishPage() {
     setErrors({})
   }
 
-  const handleAssets = (event) => {
+  const handleAssets = async (event) => {
     const selected = Array.from(event.target.files || []).map((file) => ({ file, relativePath: (file.webkitRelativePath || file.name).replace(/\\/g, '/') }))
     invalidateServerDraft()
     setAssets(selected)
     setRecoveryVisible(false)
     setErrors((current) => { const next = { ...current }; delete next.assets; return next })
     event.target.value = ''
+    if (draft.type === '2d') {
+      const detectedMode = await detectImageMode(selected.find(({ file }) => isImageFile(file))?.file)
+      if (detectedMode) setDraft((current) => ({ ...current, mode: detectedMode }))
+    }
   }
 
-  const handleCover = (event) => {
+  const handleCover = async (event) => {
     const file = event.target.files?.[0]
     if (file) { invalidateServerDraft(); setCover({ file, relativePath: `cover/${file.name}` }); setRecoveryVisible(false) }
     event.target.value = ''
+    const detectedMode = await detectImageMode(file)
+    if (detectedMode) setDraft((current) => ({ ...current, mode: detectedMode }))
   }
 
   const removeAsset = (relativePath) => { invalidateServerDraft(); setAssets((current) => current.filter((item) => item.relativePath !== relativePath)) }

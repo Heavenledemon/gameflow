@@ -17,10 +17,32 @@
 
 .project-tile__media {
   width: 100%;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: var(--project-tile-aspect-ratio, 1 / 1);
   overflow: hidden;
   background-color: var(--gf-media-surface);
 }
+
+.project-tile--masonry {
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.project-tile--masonry .project-tile__media {
+  overflow: hidden;
+  border-radius: 14px;
+}
+
+.project-tile--masonry .project-tile__copy {
+  gap: 2px;
+  padding: 7px 28px 5px 4px;
+}
+
+.project-tile--masonry .project-tile__title { font-size: 12px; }
+.project-tile--masonry .project-tile__creator { display: none; }
+.project-tile__more { position: absolute; right: 4px; bottom: 5px; color: var(--gf-text); font-size: 14px; font-weight: 900; letter-spacing: 1px; }
 
 .project-tile__badge {
   display: inline-flex;
@@ -96,6 +118,7 @@
     transform: translateY(-2px);
     box-shadow: var(--gf-shadow-md);
   }
+  .project-tile--masonry:has(.project-tile__open:hover) { transform: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,0 +1,128 @@
+.instagram-stories {
+  min-width: 0;
+  border-bottom: 1px solid var(--gf-border);
+  background: var(--gf-surface);
+}
+
+.instagram-stories__scroller {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding: 12px var(--gf-space-4) 14px;
+  scrollbar-width: none;
+}
+
+.instagram-stories__scroller::-webkit-scrollbar { display: none; }
+
+.instagram-story {
+  position: relative;
+  width: 66px;
+  flex: 0 0 66px;
+  display: grid;
+  grid-template-rows: 64px auto;
+  justify-items: center;
+  align-items: start;
+  gap: 7px;
+  padding: 0;
+  border: 0;
+  color: var(--gf-text);
+  background: transparent;
+  cursor: pointer;
+}
+
+.instagram-story__ring {
+  position: relative;
+  box-sizing: border-box;
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  padding: 3px;
+  border-radius: 50%;
+  background: linear-gradient(45deg, #19d3a2, #00bfa6 28%, #00a8e8 58%, #2563eb 82%, #1649c5);
+}
+
+.instagram-story__ring::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 2px solid var(--gf-surface);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.instagram-story__ring--user { background: var(--gf-border-strong, #c8cbd3); }
+.instagram-story__ring--unviewed { background: linear-gradient(45deg, #19d3a2, #00bfa6 28%, #00a8e8 58%, #2563eb 82%, #1649c5); }
+.instagram-story__ring--viewed { background: color-mix(in srgb, var(--gf-border) 58%, transparent); }
+.instagram-story__ring img { box-sizing: border-box; width: 58px; height: 58px; border-radius: 50%; object-fit: cover; }
+.instagram-story__add { position: absolute; z-index: 2; top: 43px; right: 0; box-sizing: border-box; width: 22px; height: 22px; display: grid; place-items: center; border: 2px solid var(--gf-surface); border-radius: 50%; color: #fff; background: #1687f8; font-size: 17px; font-weight: 700; line-height: 1; }
+.instagram-story__username { width: 100%; min-height: 14px; overflow: hidden; color: var(--gf-text); font-size: 11px; line-height: 14px; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
+.instagram-story__main { width: 66px; display: grid; grid-template-rows: 64px auto; justify-items: center; align-items: start; gap: 7px; padding: 0; border: 0; color: inherit; background: transparent; cursor: pointer; }
+.instagram-story--owner > .instagram-story__add { cursor: pointer; }
+.instagram-story:focus-visible { outline: 3px solid var(--gf-focus); outline-offset: 3px; border-radius: 8px; }
+
+.story-upload { position: fixed; inset: 0; z-index: 1100; display: grid; place-items: end center; }
+.story-upload__backdrop { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: rgba(5, 7, 12, .68); backdrop-filter: blur(5px); }
+.story-upload__card { position: relative; width: min(100%, var(--gf-desktop-canvas-max)); max-height: 92dvh; display: grid; gap: 16px; overflow-y: auto; padding: 18px 18px calc(20px + env(safe-area-inset-bottom)); border-radius: 22px 22px 0 0; color: var(--gf-text); background: var(--gf-surface); box-shadow: 0 -18px 60px rgba(0,0,0,.3); }
+.story-upload__card header { display: flex; align-items: flex-start; gap: 12px; }
+.story-upload__card h2, .story-upload__card p { margin: 0; }
+.story-upload__card h2 { font-size: 18px; }
+.story-upload__card header p { margin-top: 3px; color: var(--gf-text-muted); font-size: 12px; }
+.story-upload__card header button { width: 40px; height: 40px; margin-left: auto; padding: 0; border: 0; border-radius: 50%; color: var(--gf-text); background: var(--gf-control); font-size: 27px; line-height: 1; }
+.story-upload__picker { position: relative; min-height: 260px; display: grid; place-items: center; align-content: center; gap: 7px; overflow: hidden; padding: 24px; border: 1.5px dashed var(--gf-border); border-radius: 18px; color: var(--gf-text-muted); background: var(--gf-control); text-align: center; cursor: pointer; }
+.story-upload__picker > span { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; color: #fff; background: var(--gf-brand); font-size: 28px; }
+.story-upload__picker strong { color: var(--gf-text); font-size: 14px; }
+.story-upload__picker small { max-width: 270px; font-size: 11px; line-height: 1.45; }
+.story-upload__picker input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.story-upload__picker--selected { padding: 0; border-style: solid; background: #080808; }
+.story-upload__picker img, .story-upload__picker video { width: 100%; height: min(50dvh, 420px); object-fit: contain; }
+.story-upload__caption { display: grid; gap: 7px; color: var(--gf-text); font-size: 12px; font-weight: 700; }
+.story-upload__caption > span { display: flex; justify-content: space-between; }
+.story-upload__caption small { color: var(--gf-text-muted); font-weight: 500; }
+.story-upload__caption textarea { min-height: 76px; resize: vertical; padding: 12px; border: 1px solid var(--gf-border); border-radius: 12px; color: var(--gf-text); background: var(--gf-control); font: inherit; font-weight: 400; }
+.story-upload__error { padding: 10px 12px; border-radius: 10px; color: #a2192e; background: #ffe9ed; font-size: 12px; }
+.story-upload__share { min-height: 48px; border: 0; border-radius: 999px; color: #fff; background: var(--gf-brand); font: inherit; font-weight: 800; cursor: pointer; }
+.story-upload__share:disabled { opacity: .5; cursor: not-allowed; }
+
+.story-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  width: min(100%, var(--gf-desktop-canvas-max));
+  margin-inline: auto;
+  overflow: hidden;
+  color: #fff;
+  background: #050505;
+}
+
+.story-viewer__progress { z-index: 3; grid-row: 1; height: 3px; margin: max(8px, env(safe-area-inset-top)) 8px 0; overflow: hidden; border-radius: 99px; background: rgba(255,255,255,.32); }
+.story-viewer__progress span { display: block; height: 100%; background: #fff; animation: story-progress 5s linear forwards; }
+.story-viewer__progress span.story-viewer__progress--video { width: 100%; animation: none; }
+@keyframes story-progress { from { width: 0; } to { width: 100%; } }
+
+.story-viewer__header { z-index: 3; grid-row: 2; display: flex; align-items: center; gap: 9px; padding: 11px 14px; background: linear-gradient(#0009, transparent); }
+.story-viewer__header img { width: 34px; height: 34px; border: 1px solid #ffffff66; border-radius: 50%; object-fit: cover; }
+.story-viewer__header strong { font-size: 13px; }
+.story-viewer__header > span { color: #d0d0d0; font-size: 12px; }
+.story-viewer__header button { width: 44px; height: 44px; margin-left: auto; padding: 0; border: 0; color: #fff; background: transparent; font-size: 32px; line-height: 1; cursor: pointer; }
+.story-viewer__image { grid-row: 1 / -1; grid-column: 1; width: 100%; height: 100%; object-fit: contain; }
+.story-viewer__caption { position: absolute; z-index: 3; right: 18px; bottom: 84px; left: 18px; margin: 0; padding: 9px 12px; border-radius: 10px; color: #fff; background: rgba(0,0,0,.55); font-size: 13px; text-align: center; }
+.story-viewer__progress, .story-viewer__header, .story-viewer__reply { grid-column: 1; }
+.story-viewer__tap { position: absolute; z-index: 2; top: 64px; bottom: 76px; width: 42%; border: 0; background: transparent; }
+.story-viewer__tap--previous { left: 0; }
+.story-viewer__tap--next { right: 0; }
+.story-viewer__tap:disabled { pointer-events: none; }
+.story-viewer__reply { z-index: 3; grid-row: 4; display: flex; align-items: center; gap: 8px; margin: 12px 14px calc(12px + env(safe-area-inset-bottom)); padding: 4px 5px 4px 15px; border: 1px solid #ffffff80; border-radius: 999px; background: #0005; }
+.story-viewer__reply input { min-width: 0; min-height: 36px; flex: 1; border: 0; outline: 0; color: #fff; background: transparent; }
+.story-viewer__reply input::placeholder { color: #ddd; }
+.story-viewer__reply button { width: 38px; height: 38px; border: 0; border-radius: 50%; color: #fff; background: transparent; font-size: 18px; }
+
+@media (min-width: 768px) {
+  .instagram-stories__scroller { padding-inline: var(--gf-space-5); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .story-viewer__progress span { animation: none; width: 100%; }
+}

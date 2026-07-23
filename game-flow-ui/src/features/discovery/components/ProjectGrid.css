@@ -3,10 +3,14 @@
 }
 
 .project-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--gf-space-3);
+  columns: 2;
+  column-gap: 8px;
   width: 100%;
+}
+
+.project-grid > * {
+  margin-bottom: 8px;
+  break-inside: avoid;
 }
 
 .project-grid__skeleton {
@@ -23,14 +27,10 @@
 
 /* Section 5.3 breakpoints: 2 cols at 360px, 3 cols at 600px, 4 cols at 768px */
 @media (min-width: 600px) {
-  .project-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
+  .project-grid { columns: 3; }
 }
 
 @media (min-width: 768px) {
-  .project-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: var(--gf-space-4);
-  }
+  .project-grid { columns: 4; column-gap: var(--gf-space-3); }
+  .project-grid > * { margin-bottom: var(--gf-space-3); }
 }

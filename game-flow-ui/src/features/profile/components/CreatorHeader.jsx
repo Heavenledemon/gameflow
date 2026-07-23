@@ -34,6 +34,9 @@ export default function CreatorHeader({
   onShare,
   onMore,
   moreLabel = 'More options',
+  hasActiveStory = false,
+  storyViewed = false,
+  onStoryOpen,
 }) {
   const [bioExpanded, setBioExpanded] = useState(false)
   const website = safeExternalUrl(creator.website)
@@ -81,7 +84,13 @@ export default function CreatorHeader({
       <section className="creator-header" aria-labelledby="creator-name">
         {/* Instagram Profile Top Row: Avatar on Left, Stats on Right */}
         <div className="creator-header__main-row">
-          <div className="creator-header__avatar-wrapper">
+          <button
+            type="button"
+            className={`creator-header__avatar-wrapper${hasActiveStory ? ` creator-header__avatar-wrapper--story${storyViewed ? ' creator-header__avatar-wrapper--story-viewed' : ''}` : ''}`}
+            onClick={onStoryOpen}
+            disabled={!onStoryOpen}
+            aria-label={hasActiveStory ? `View ${creator.name || creator.username || 'creator'}'s story` : undefined}
+          >
             <Avatar
               src={creator.avatar}
               alt={creator.name || creator.username || 'Creator'}
@@ -89,7 +98,7 @@ export default function CreatorHeader({
               size={avatarSize}
               className="creator-header__avatar"
             />
-          </div>
+          </button>
 
           <div className="creator-header__stats-wrapper">
             <CreatorStats stats={stats} />

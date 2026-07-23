@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { fetchContent, togglePostLike, updateContentEngagement, updateProject, deleteProject, uploadProjectFile } from '../../lib/content'
 import { fetchMyCollaborations } from '../../lib/collaboration'
+import { fetchStories, getViewedStoryIds, markStoryViewed } from '../../lib/stories'
 import { useMessagingRealtime } from '../../hooks/useMessagingRealtime'
 import GuestBanner from '../../components/layout/GuestBanner'
 import GuestToast from '../../components/layout/GuestToast'
@@ -12,6 +13,7 @@ import { ConfirmDialog } from '../../components/ui/Overlay'
 import { EmptyState, ErrorState } from '../../components/ui/Feedback'
 import ProjectGrid from '../discovery/components/ProjectGrid'
 import CreatorHeader from './components/CreatorHeader'
+import StoryViewer from '../discovery/components/StoryViewer'
 import PortfolioTabs from './components/PortfolioTabs'
 import { ProfileActions, ProjectManagementMenu } from './components/ProfileActions'
 import EditProfileForm from './components/EditProfileForm'
@@ -31,6 +33,7 @@ function commentedBy(item, username) {
 export default function ProfilePage() {
   const navigate = useNavigate()
   const { isGuest, logout, user, updateProfile, token } = useAuth()
+  const userId = user?.id || user?._id
   const { success, error: showError } = useToast()
   const [collection, setCollection] = useState(() => contentCollections())
   const [collaborations, setCollaborations] = useState([])
@@ -45,6 +48,10 @@ export default function ProfilePage() {
   const [deletingProject, setDeletingProject] = useState(null)
   const [deleting, setDeleting] = useState(false)
   const [logoutOpen, setLogoutOpen] = useState(false)
+  const [activeStories, setActiveStories] = useState([])
+  const [storyOpen, setStoryOpen] = useState(false)
+  const [viewedStoryIds, setViewedStoryIds] = useState(getViewedStoryIds)
+  const activeStory = activeStories[0] || null
 
   const loadContent = useCallback(async () => {
     if (isGuest || !user) return
@@ -81,10 +88,19 @@ export default function ProfilePage() {
     }).catch(() => {})
     return () => controller.abort()
   }, [isGuest, token, user])
+
+  useEffect(() => {
+    if (isGuest || !userId) return undefined
+    const controller = new AbortController()
+    fetchStories(token, { signal: controller.signal }).then((data) => {
+      if (controller.signal.aborted) return
+      setActiveStories((data.items || []).filter((story) => String(story.creator?.id) === String(userId)))
+    }).catch(() => { if (!controller.signal.aborted) setActiveStories([]) })
+    return () => controller.abort()
+  }, [isGuest, token, userId])
   const handleRealtime = useCallback((eventName) => { if (eventName.startsWith('project.member.')) loadCollaborations() }, [loadCollaborations])
   useMessagingRealtime(token, { onEvent: handleRealtime, onReady: loadCollaborations })
 
-  const userId = user?.id || user?._id
   const ownedRaw = useMemo(() => collection.projects.filter((project) => String(project.ownerId) === String(userId)), [collection.projects, userId])
   const projects = useMemo(() => mapPortfolioItems(ownedRaw), [ownedRaw])
   const games = useMemo(() => projects.filter((project) => project.media.kind === 'webgl' || String(project.projectType).toLowerCase() === 'game'), [projects])
@@ -130,6 +146,14 @@ export default function ProfilePage() {
   const shareProfile = async () => {
     try { await navigator.clipboard.writeText(window.location.href); success('Profile link copied.') }
     catch { window.prompt('Copy this profile link', window.location.href) }
+  }
+  const openActiveStory = () => {
+    if (!activeStory) return
+    setViewedStoryIds((current) => {
+      if (current.has(activeStory.id)) return current
+      return markStoryViewed(activeStory.id)
+    })
+    setStoryOpen(true)
   }
   const retryContent = () => { setStatus('loading'); setLoadError(''); loadContent() }
   const openEdit = () => isGuest ? setGuestAction('edit your profile') : setEditingProfile(true)
@@ -177,12 +201,16 @@ export default function ProfilePage() {
       creator={creator}
       stats={stats}
       capability="self"
+      hasActiveStory={Boolean(activeStory)}
+      storyViewed={Boolean(activeStory && viewedStoryIds.has(activeStory.id))}
+      onStoryOpen={activeStory ? openActiveStory : undefined}
       onBack={() => navigate('/app/home')}
       onShare={shareProfile}
       onMore={() => setLogoutOpen(true)}
       moreLabel="Log out"
       actions={<ProfileActions capability="self" onEdit={openEdit} />}
     />
+    {storyOpen && activeStories.length ? <StoryViewer stories={activeStories} onClose={() => setStoryOpen(false)} /> : null}
     <section className="portfolio" aria-labelledby="portfolio-heading">
       <h2 id="portfolio-heading" className="gf-sr-only">Creator portfolio</h2>
       <PortfolioTabs tabs={tabs} selected={selectedTab.id} onSelect={setActiveTab} panelId="profile-portfolio-panel" />

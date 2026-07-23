@@ -6,6 +6,7 @@ import EmptyState, { ErrorState } from '../../components/ui/EmptyState'
 import { useAuth } from '../../context/AuthContext'
 import DiscoveryFilters from './components/DiscoveryFilters'
 import DiscoverySearch from './components/DiscoverySearch'
+import InstagramStories from './components/InstagramStories'
 import ProjectGrid from './components/ProjectGrid'
 import { useDiscoveryCollection } from './hooks/useDiscoveryCollection'
 import { toProjectCardModelList } from '../project/model/projectCardModel'
@@ -90,8 +91,8 @@ export default function DiscoverPage() {
   const creatorResults = useMemo(() => {
     return normalizedQuery
       ? deriveCreators(facetItems).filter((creator) => (
-          [creator.name, creator.username, creator.handle].filter(Boolean).join(' ').toLowerCase().includes(normalizedQuery)
-        ))
+        [creator.name, creator.username, creator.handle].filter(Boolean).join(' ').toLowerCase().includes(normalizedQuery)
+      ))
       : []
   }, [normalizedQuery, facetItems])
 
@@ -125,36 +126,28 @@ export default function DiscoverPage() {
       <div className="discover-page__scroll">
         <header className="discover-page__header">
           <div className="discover-page__heading">
-            <p>Explore creative projects</p>
+            {/* <p>Explore creative projects</p> */}
             <h1>Discover</h1>
           </div>
           {/* Focus Order Step 1: Search Field */}
           <DiscoverySearch value={query} onChange={setQuery} onClear={() => setQuery('')} />
         </header>
 
-        {/* Focus Order Step 2: Filter Chips */}
-        <DiscoveryFilters
-          assetTypes={assetTypes}
-          selectedType={selectedType}
-          onTypeChange={setSelectedType}
-          collaborationSupported={collaborationSupported}
-          collaborationOnly={collaborationOnly}
-          onCollaborationChange={setCollaborationOnly}
-        />
+        <InstagramStories />
 
         {/* Focus Order Step 3: Results Grid & Sections */}
         <section className="discover-page__results" aria-labelledby="discover-results-title">
           <div className="discover-page__results-heading">
             <div>
               <h2 id="discover-results-title">
-                {normalizedQuery ? 'Search Results' : 'Discover Projects'}
+                {normalizedQuery ? 'Search Results' : 'Discover Work'}
               </h2>
               <p>
                 {normalizedQuery
                   ? `Matches for “${query.trim()}”`
                   : defaultSections.isFixture
                     ? `${DISCOVER_FIXTURE_LABEL} (GameFlow Curated)`
-                    : 'From current GameFlow collection'}
+                    : ''}
               </p>
             </div>
             {!loading && !error ? (
@@ -164,6 +157,14 @@ export default function DiscoverPage() {
                   : `${projectResults.length} projects`}
               </p>
             ) : null}
+            <DiscoveryFilters
+              assetTypes={assetTypes}
+              selectedType={selectedType}
+              onTypeChange={setSelectedType}
+              collaborationSupported={collaborationSupported}
+              collaborationOnly={collaborationOnly}
+              onCollaborationChange={setCollaborationOnly}
+            />
           </div>
 
           {error ? (
