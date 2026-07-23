@@ -1,0 +1,62 @@
+.gf-skeleton {
+  display: block;
+  width: 100%;
+  height: 20px;
+  border-radius: var(--gf-radius-sm);
+  background: linear-gradient(
+    90deg,
+    var(--gf-surface-sunken) 25%,
+    var(--gf-border-subtle) 50%,
+    var(--gf-surface-sunken) 75%
+  );
+  background-size: 200% 100%;
+  animation: gf-shimmer 1.4s ease infinite;
+}
+
+/* Preset Variants */
+.gf-skeleton--text {
+  height: 14px;
+  margin-block: var(--gf-space-1);
+}
+
+.gf-skeleton--avatar,
+.gf-skeleton--circle {
+  border-radius: var(--gf-radius-pill);
+  aspect-ratio: 1 / 1;
+}
+
+.gf-skeleton--media {
+  aspect-ratio: 4 / 5;
+  border-radius: var(--gf-radius-media);
+}
+
+.gf-skeleton--block {
+  height: 100px;
+}
+
+/* Shimmer animation keyframes */
+@keyframes gf-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Reduced Motion support — gentle opacity pulse, no sweep */
+@media (prefers-reduced-motion: reduce) {
+  .gf-skeleton {
+    background: var(--gf-surface-sunken);
+    animation: gf-skeleton-pulse 2s ease infinite;
+  }
+}
+
+@keyframes gf-skeleton-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}

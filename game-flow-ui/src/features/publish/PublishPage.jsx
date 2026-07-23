@@ -259,7 +259,17 @@ export default function PublishPage() {
   return <main className="publish-page" id="publish-form">
     <PublishStepper step={step} />
     <div className="publish-page__scroll">
-      {recoveryVisible ? <section className="publish-recovery" role="status"><div><strong>Draft details restored</strong><p>{restored?.hadFiles ? `File selections cannot be restored by the browser. Reselect ${restored.fileCount || 'your'} project file${restored.fileCount === 1 ? '' : 's'}${restored.hadCover ? ' and cover' : ''} before publishing.` : 'Your saved project details are ready to continue.'}</p></div><button type="button" onClick={() => setRecoveryVisible(false)}>Dismiss</button></section> : null}
+      {recoveryVisible ? (
+        <section className="publish-recovery" role="status">
+          <div>
+            <strong>Draft details restored</strong>
+            <p>
+              Your files were not saved — please reselect them before publishing.
+            </p>
+          </div>
+          <button type="button" onClick={() => setRecoveryVisible(false)}>Dismiss</button>
+        </section>
+      ) : null}
       <ErrorSummary errors={errors} summaryRef={errorSummaryRef} />
       {step < 5 ? <section className="publish-card"><header><h2>{STEP_COPY[step][0]}</h2><p>{STEP_COPY[step][1]}</p></header><div className="publish-card__body">
         {step === 1 ? <ProjectTypeStep type={draft.type} mode={draft.mode} error={errors.type} onTypeChange={selectType} onModeChange={(mode) => changeDraft('mode', mode)} /> : null}
@@ -268,7 +278,7 @@ export default function PublishPage() {
         {step === 4 ? <PublishPreview model={previewModel} draft={draft} assets={assets} cover={cover} statuses={fileStatuses} publishStatus={publishStatus} onRetry={publish} retrying={publishing} /> : null}
       </div></section> : <section className="publish-success"><span className="publish-success__icon" aria-hidden="true"><CheckIcon size={28} color="currentColor" /></span><h2>Project published</h2><p><strong>{published?.title || draft.title}</strong> is live and ready to view or play.</p><div className="publish-success__actions">{publishedId ? <Button onClick={() => navigate(`/app/project/${encodeURIComponent(String(publishedId))}`)}>View project</Button> : null}<Button variant="secondary" onClick={() => navigate('/app/home')}>Go to Feed</Button></div></section>}
     </div>
-    {step < 5 ? <footer className="publish-actions"><Button variant="secondary" disabled={publishing} onClick={previousStep}>Back</Button>{step < 4 ? <Button onClick={nextStep}>Continue</Button> : <Button id="publish-action" loading={publishing} onClick={publish}>{retryAvailable ? 'Retry publishing' : 'Publish project'}</Button>}</footer> : null}
+    {step < 5 ? <footer className="publish-actions"><Button variant="secondary" disabled={publishing} onClick={previousStep}>Back</Button>{step < 4 ? <Button onClick={nextStep}>Continue</Button> : <Button id="publish-action" className="gradient-brand" loading={publishing} onClick={publish}>{retryAvailable ? 'Retry Publishing' : 'Publish Project'}</Button>}</footer> : null}
     {guestPrompt ? <div className="publish-guest-prompt" role="status">Sign in to publish projects.<Button onClick={() => navigate('/signin')}>Sign in</Button></div> : null}
     <ConfirmDialog open={confirmDiscard} title="Discard this publish draft?" message="Your saved metadata and current file selections will be cleared. Server drafts already created during a failed attempt cannot be deleted from this screen." confirmLabel="Discard draft" onConfirm={discard} onClose={() => setConfirmDiscard(false)} />
   </main>

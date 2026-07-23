@@ -1,28 +1,110 @@
+import { useState } from 'react'
 import { Button, IconButton } from '../../../components/ui/Button'
 import { BookmarkIcon, CommentIcon, HeartIcon, ShareIcon } from '../../../components/icons/Icons'
 
-const formatCount = (value = 0) => value >= 1000 ? `${(value / 1000).toFixed(1)}k` : String(value)
-
-export function primaryActionLabel(model) {
-  if (model.media.kind === 'webgl') return 'Open playable preview'
-  if (model.media.kind === 'gltf') return 'Open 3D preview'
-  if (model.media.kind === 'video') return 'Open video preview'
-  return 'View project media'
+function formatCount(value = 0) {
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}m`
+  if (value >= 1_000) return `${(value / 1_000).toFixed(1)}k`
+  return String(value)
 }
 
-export default function ProjectActions({ model, liked, saved, collaborationLabel, collaborationAllowed, collaborationBusy, onPrimary, onLike, onComments, onSave, onCollaboration, onShare }) {
-  const engagement = model.engagement
+export function primaryActionLabel(model) {
+  if (model.media?.kind === 'webgl' || model.mediaKind === 'webgl') return '▶ Play'
+  if (model.media?.kind === 'gltf' || model.mediaKind === 'gltf') return '▶ Open 3D Preview'
+  if (model.media?.kind === 'video' || model.mediaKind === 'video') return '▶ Watch Video'
+  return 'View Project Media'
+}
+
+export default function ProjectActions({
+  model,
+  liked,
+  saved,
+  canViewFiles = false,
+  onViewFiles,
+  collaborationLabel,
+  collaborationAllowed,
+  collaborationBusy,
+  onPrimary,
+  onLike,
+  onComments,
+  onSave,
+  onCollaboration,
+  onShare,
+}) {
+  const [animateLike, setAnimateLike] = useState(false)
+  const engagement = model.engagementCounts || model.engagement || {}
+
+  const handleLikeClick = (e) => {
+    setAnimateLike(true)
+    setTimeout(() => setAnimateLike(false), 300)
+    onLike?.(e)
+  }
+
   return (
     <section className="project-actions" aria-label="Project actions">
+      {/* 1. Project Actions Hierarchy: Play CTA -> View Files -> Collaborate */}
       <div className="project-actions__primary">
-        <Button onClick={onPrimary}>{primaryActionLabel(model)}</Button>
-        {collaborationAllowed ? <Button variant="secondary" loading={collaborationBusy} disabled={collaborationBusy} onClick={onCollaboration}>{collaborationLabel}</Button> : null}
+        <Button className="project-actions__cta-btn gradient-brand" onClick={onPrimary}>
+          {primaryActionLabel(model)}
+        </Button>
+
+        {canViewFiles && onViewFiles ? (
+          <Button variant="secondary" onClick={onViewFiles}>
+            View Files
+          </Button>
+        ) : null}
+
+        {collaborationAllowed ? (
+          <Button
+            variant="secondary"
+            loading={collaborationBusy}
+            disabled={collaborationBusy}
+            onClick={onCollaboration}
+          >
+            {collaborationLabel}
+          </Button>
+        ) : null}
       </div>
-      <div className="project-actions__social" aria-label="Social actions">
-        <div><IconButton label={liked ? 'Unlike project' : 'Like project'} aria-pressed={liked} onClick={onLike}><HeartIcon filled={liked} size={22} /></IconButton><span>{formatCount(engagement.likesCount)}</span></div>
-        <div><IconButton label="Open comments" onClick={onComments}><CommentIcon size={22} /></IconButton><span>{formatCount(engagement.commentsCount)}</span></div>
-        <div><IconButton label={saved ? 'Remove saved project' : 'Save project'} aria-pressed={saved} onClick={onSave}><BookmarkIcon filled={saved} size={22} /></IconButton><span>{formatCount(engagement.savesCount)}</span></div>
-        <div><IconButton label="Share project" onClick={onShare}><ShareIcon size={22} /></IconButton><span>Share</span></div>
+
+      {/* 2. Social Actions Rail (Strictly BELOW Project Actions) */}
+      <div className="project-actions__social" role="group" aria-label="Social actions">
+        <div className="project-actions__social-item">
+          <IconButton
+            label={liked ? 'Unlike project' : 'Like project'}
+            aria-pressed={liked}
+            className={`feed-action--like ${liked ? 'feed-action--active' : ''} ${animateLike ? 'feed-action--animate' : ''}`}
+            onClick={handleLikeClick}
+          >
+            <HeartIcon filled={liked} size={22} />
+          </IconButton>
+          <span>{formatCount(engagement.likesCount || engagement.likes)}</span>
+        </div>
+
+        <div className="project-actions__social-item">
+          <IconButton label="Open comments" onClick={onComments}>
+            <CommentIcon size={22} />
+          </IconButton>
+          <span>{formatCount(engagement.commentsCount || engagement.comments)}</span>
+        </div>
+
+        <div className="project-actions__social-item">
+          <IconButton
+            label={saved ? 'Remove saved project' : 'Save project'}
+            aria-pressed={saved}
+            className={saved ? 'feed-action--active' : ''}
+            onClick={onSave}
+          >
+            <BookmarkIcon filled={saved} size={22} />
+          </IconButton>
+          <span>{formatCount(engagement.savesCount || engagement.saves)}</span>
+        </div>
+
+        <div className="project-actions__social-item">
+          <IconButton label="Share project" onClick={onShare}>
+            <ShareIcon size={22} />
+          </IconButton>
+          <span>Share</span>
+        </div>
       </div>
     </section>
   )

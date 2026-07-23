@@ -91,7 +91,6 @@ export default function ProjectMedia({
   const prefersReducedMotion = usePrefersReducedMotion()
   const isActivated = activationRequested || (activation.identity === identity && activation.active)
   const errorMessage = failure.identity === identity ? failure.message : ''
-  const webglPlaying = webglSession.identity === identity && webglSession.playing
   const webglStopSignal = webglSession.identity === identity ? webglSession.stopSignal : 0
   const canUseInteractiveMedia = Boolean(active && isVisible && interactive)
   const shouldAutoPreview = Boolean(allowAutoPreview && active && isVisible && !prefersReducedMotion)
@@ -249,7 +248,7 @@ export default function ProjectMedia({
             onFullscreenChange={onFullscreenChange}
           />
         </Suspense>
-        <button type="button" className="project-media__exit" onClick={deactivate}>Exit 3D controls</button>
+        <button type="button" className="project-media__exit" onClick={deactivate}>✕ Stop</button>
       </>
     ) : (
       <div className="project-media__poster-focus">
@@ -277,7 +276,7 @@ export default function ProjectMedia({
       onDoubleClick={onDoubleClick}
     >
       {content}
-      {normalizedMedia.kind === 'webgl' && isActivated && canUseInteractiveMedia ? <button type="button" className="project-media__exit" onClick={exitWebGLControls}>{webglPlaying ? 'Exit game controls' : 'Close playable preview'}</button> : null}
+      {normalizedMedia.kind === 'webgl' && isActivated && canUseInteractiveMedia ? <button type="button" className="project-media__exit" onClick={exitWebGLControls}>✕ Stop</button> : null}
       {overlay ? <div className="project-media__overlay">{overlay}</div> : null}
     </section>
   )

@@ -1,0 +1,53 @@
+.gf-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--gf-space-10) var(--gf-space-4);
+  max-width: 420px;
+  margin-inline: auto;
+  gap: var(--gf-space-3);
+  box-sizing: border-box;
+}
+
+.gf-empty-state__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  font-size: 48px;
+}
+
+/* Empty State colors: brand-tinted (coral) */
+.gf-empty-state--empty .gf-empty-state__icon {
+  color: var(--gf-brand-coral);
+}
+
+/* Error State colors: error-colored (error) */
+.gf-empty-state--error .gf-empty-state__icon {
+  color: var(--gf-error);
+}
+
+.gf-empty-state__title {
+  margin: 0;
+  font-size: var(--gf-text-md);
+  font-weight: var(--gf-weight-bold);
+  color: var(--gf-text-primary);
+  line-height: var(--gf-leading-snug);
+  letter-spacing: var(--gf-tracking-tight);
+}
+
+.gf-empty-state__description {
+  margin: 0;
+  font-size: var(--gf-text-base);
+  color: var(--gf-text-secondary);
+  line-height: var(--gf-leading-normal);
+}
+
+.gf-empty-state__actions {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--gf-space-2);
+}

@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import logoImg from '../../assets/logo.jpg'
-import { IconButton } from '../../components/ui/Button'
-import { EmptyState, ErrorState, LoadingState, Skeleton } from '../../components/ui/Feedback'
+import IconButton from '../../components/ui/IconButton'
+import EmptyState, { ErrorState } from '../../components/ui/EmptyState'
+import { LoadingState } from '../../components/ui/Feedback'
+import Skeleton from '../../components/ui/Skeleton'
 import { useAuth } from '../../context/AuthContext'
-import { fromFeedItem } from '../project/model/projectCardModel'
+import { toProjectCardModel } from '../project/model/projectCardModel'
 import { useReelFeed } from '../../hooks/useReelFeed'
 import {
   createCommentReply,
@@ -116,7 +118,7 @@ export default function FeedPage() {
     setProjects((current) => {
       const currentByKey = new Map(current.map((project) => [getProjectKey(project), project]))
       return feedItems.map((item) => {
-        const mapped = fromFeedItem(item)
+        const mapped = toProjectCardModel(item, { feedId: item?.feedId })
         const existing = currentByKey.get(getProjectKey(mapped))
         return existing ? { ...mapped, engagement: existing.engagement } : mapped
       })
@@ -282,6 +284,21 @@ export default function FeedPage() {
         window.alert(error.message || 'Failed to update share count.')
       }
     }
+  }
+
+  const handleFollow = (project) => {
+    if (isGuest) {
+      window.alert('Sign in to follow creators.')
+      return
+    }
+    const targetKey = getProjectKey(project)
+    updateProject(targetKey, (item) => {
+      const isFollowing = Boolean(item.viewerState?.following)
+      return {
+        ...item,
+        viewerState: { ...item.viewerState, following: !isFollowing },
+      }
+    })
   }
 
   const loadComments = useCallback(async (project) => {
@@ -500,10 +517,12 @@ export default function FeedPage() {
               project={project}
               index={index}
               active={index === safeActiveIndex && !commentTarget && !quickSheet}
+              mediaActivationRequested={interactiveProjectId === project.id}
               currentUser={user}
               setNode={setCardNode}
               onCreator={() => openCreator(project)}
               onProject={() => openProject(project)}
+              onFollow={() => handleFollow(project)}
               onLike={() => handleLike(project)}
               onComments={() => openComments(project)}
               onSave={() => handleSave(project)}

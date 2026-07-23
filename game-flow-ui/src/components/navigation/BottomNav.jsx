@@ -50,7 +50,7 @@ const BottomNav = () => {
                 <Icon size={22} />
               )}
               {key === 'inbox' && inboxCount > 0 ? (
-                <span className="bottom-nav__badge">{inboxCount > 9 ? '9+' : inboxCount}</span>
+                <span className="bottom-nav__badge">{inboxCount > 99 ? '99+' : inboxCount}</span>
               ) : null}
             </span>
             <span className="bottom-nav__label">{label}</span>

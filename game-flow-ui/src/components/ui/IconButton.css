@@ -1,0 +1,95 @@
+.gf-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: var(--gf-radius-pill);
+  border: none;
+  background: transparent;
+  color: var(--gf-text-secondary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  padding: 0;
+  transition: background-color var(--gf-duration-fast) var(--gf-ease-standard),
+              color var(--gf-duration-fast) var(--gf-ease-standard),
+              transform var(--gf-duration-fast) var(--gf-ease-standard);
+}
+
+/* Sizes */
+.gf-icon-button--sm {
+  width: 44px;
+  height: 44px;
+}
+
+.gf-icon-button--md {
+  width: 48px;
+  height: 48px;
+}
+
+.gf-icon-button--lg {
+  width: 56px;
+  height: 56px;
+}
+
+/* Hover state */
+@media (hover: hover) {
+  .gf-icon-button:not(:disabled):hover {
+    background-color: var(--gf-surface-sunken);
+    transform: translateY(-1px);
+  }
+}
+
+/* Active / Pressed state */
+.gf-icon-button:not(:disabled):active {
+  transform: scale(0.93);
+  background-color: var(--gf-border-subtle);
+}
+
+/* Focus Visible */
+.gf-icon-button:focus-visible {
+  outline: 2px solid var(--gf-brand-coral);
+  outline-offset: 2px;
+}
+
+/* Active/Toggled state */
+.gf-icon-button--active {
+  color: var(--gf-brand-coral) !important;
+}
+
+/* Disabled State */
+.gf-icon-button:disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* Variants */
+.gf-icon-button--soft {
+  background-color: var(--gf-surface-sunken);
+  color: var(--gf-text-primary);
+}
+
+.gf-icon-button--light {
+  color: var(--gf-text-inverse);
+  background-color: rgba(0, 0, 0, 0.42);
+}
+
+.gf-icon-button--danger {
+  color: var(--gf-error);
+  background-color: color-mix(in srgb, var(--gf-error) 12%, transparent);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .gf-icon-button {
+    transition: none;
+  }
+  @media (hover: hover) {
+    .gf-icon-button:not(:disabled):hover {
+      transform: none;
+    }
+  }
+  .gf-icon-button:not(:disabled):active {
+    transform: none;
+  }
+}

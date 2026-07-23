@@ -1,4 +1,4 @@
-import { SegmentedControl } from '../../../components/ui/ControlComponents'
+import SegmentedControl from '../../../components/ui/SegmentedControl'
 
 const PRIMARY_OPTIONS = [
   { value: 'requests', label: 'Requests', panelId: 'inbox-panel-requests' },
@@ -12,8 +12,26 @@ const REQUEST_OPTIONS = [
 ]
 
 export default function InboxTabs({ activeTab, onTabChange, requestBox, onRequestBoxChange }) {
-  return <div className="inbox-controls">
-    <SegmentedControl options={PRIMARY_OPTIONS} selected={activeTab} onSelect={onTabChange} semantics="tabs" label="Inbox sections" className="inbox-tabs" />
-    {activeTab === 'requests' ? <SegmentedControl options={REQUEST_OPTIONS} selected={requestBox} onSelect={onRequestBoxChange} semantics="tabs" label="Request direction" className="inbox-request-tabs" /> : null}
-  </div>
+  return (
+    <div className="inbox-controls">
+      <SegmentedControl
+        options={PRIMARY_OPTIONS}
+        selected={activeTab}
+        onSelect={onTabChange}
+        semantics="tabs"
+        label="Inbox sections"
+        className="inbox-tabs"
+      />
+      {activeTab === 'requests' ? (
+        <SegmentedControl
+          options={REQUEST_OPTIONS}
+          selected={requestBox}
+          onSelect={onRequestBoxChange}
+          semantics="tabs"
+          label="Request direction"
+          className="inbox-request-tabs"
+        />
+      ) : null}
+    </div>
+  )
 }

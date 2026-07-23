@@ -1,19 +1,8 @@
 import { ErrorState, Skeleton } from './Feedback'
+import MediaFrame from './MediaFrame'
 
 export { EmptyState, ErrorState, Skeleton } from './Feedback'
-
-export function MediaFrame({ aspectRatio = '1 / 1', fit = 'cover', radius = 'var(--gf-radius-md)', poster, posterAlt = '', fallback = 'Preview unavailable', overlay, className = '', children, ...props }) {
-  const style = {
-    '--gf-media-aspect-ratio': aspectRatio,
-    '--gf-media-fit': fit,
-    '--gf-media-radius': radius
-  }
-
-  return <div className={`gf-media-frame ${className}`.trim()} style={style} {...props}>
-    {children || (poster ? <img className="gf-media-frame__media" src={poster} alt={posterAlt} /> : <div className="gf-media-frame__fallback">{fallback}</div>)}
-    {overlay ? <div className="gf-media-frame__overlay">{overlay}</div> : null}
-  </div>
-}
+export { default as MediaFrame } from './MediaFrame'
 
 export function MediaStage({ type, src, poster, alt, loading, error, onRetry }) {
   if (error) {

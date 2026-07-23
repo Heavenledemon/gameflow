@@ -1,4 +1,3 @@
-import { useId, useRef } from 'react'
 
 export function SearchField({ value, onChange, placeholder = 'Search...', label = 'Search', onClear }) {
   return (
@@ -60,58 +59,7 @@ export function SearchField({ value, onChange, placeholder = 'Search...', label 
   )
 }
 
-export function SegmentedControl({ options = [], selected, onSelect, semantics = 'buttons', label = 'View options', className = '' }) {
-  const generatedId = useId()
-  const itemRefs = useRef([])
-  const isTabs = semantics === 'tabs'
-  const selectedIndex = options.findIndex((option) => option.value === selected && !option.disabled)
-  const firstEnabledIndex = options.findIndex((option) => !option.disabled)
-
-  const moveTabFocus = (event, currentIndex) => {
-    const enabledIndexes = options.map((option, index) => option.disabled ? null : index).filter((index) => index !== null)
-    if (!enabledIndexes.length) return
-
-    const currentPosition = enabledIndexes.indexOf(currentIndex)
-    let nextIndex
-    if (event.key === 'Home') nextIndex = enabledIndexes[0]
-    else if (event.key === 'End') nextIndex = enabledIndexes[enabledIndexes.length - 1]
-    else if (event.key === 'ArrowRight' || event.key === 'ArrowDown') nextIndex = enabledIndexes[(currentPosition + 1) % enabledIndexes.length]
-    else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') nextIndex = enabledIndexes[(currentPosition - 1 + enabledIndexes.length) % enabledIndexes.length]
-    else return
-
-    event.preventDefault()
-    itemRefs.current[nextIndex]?.focus()
-    onSelect?.(options[nextIndex].value)
-  }
-
-  return (
-    <div className={`gf-segmented-control ${className}`.trim()} role={isTabs ? 'tablist' : 'group'} aria-label={label} aria-orientation={isTabs ? 'horizontal' : undefined}>
-      {options.map((opt, index) => {
-        const isSelected = selected === opt.value
-        const tabId = `${generatedId}-tab-${index}`
-        return (
-          <button
-            key={opt.value}
-            ref={(node) => { itemRefs.current[index] = node }}
-            type="button"
-            role={isTabs ? 'tab' : undefined}
-            id={isTabs ? tabId : undefined}
-            aria-controls={isTabs ? opt.panelId : undefined}
-            aria-selected={isTabs ? isSelected : undefined}
-            aria-pressed={!isTabs ? isSelected : undefined}
-            tabIndex={isTabs ? (isSelected || (selectedIndex < 0 && index === firstEnabledIndex) ? 0 : -1) : undefined}
-            disabled={opt.disabled}
-            onClick={() => onSelect?.(opt.value)}
-            onKeyDown={isTabs ? (event) => moveTabFocus(event, index) : undefined}
-            className="gf-segmented-control__item"
-          >
-            {opt.label}
-          </button>
-        )
-      })}
-    </div>
-  )
-}
+export { default as SegmentedControl } from './SegmentedControl'
 
 export function FilterBar({ items = [], selected, onSelect }) {
   return (

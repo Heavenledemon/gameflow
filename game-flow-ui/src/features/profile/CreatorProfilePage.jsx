@@ -126,7 +126,16 @@ export default function CreatorProfilePage() {
   if (status === 'error') return <main className="profile-page profile-page--state"><ErrorState title="Creator unavailable" description={loadError} onRetry={retryPortfolio} /><Button variant="secondary" onClick={() => navigate(-1)}>Go back</Button></main>
 
   return <main className="profile-page">
-    <CreatorHeader creator={creator} stats={stats} onBack={() => navigate(-1)} onShare={shareProfile} onMore={() => guestGate('manage safety settings', () => setSafetyOpen(true))} moreLabel="Creator safety options" actions={<ProfileActions capability="public" following={following} blocked={blocked} busy={actionBusy} onFollow={targetId ? followCreator : undefined} onMessage={messageCreator} />} />
+    <CreatorHeader
+      creator={creator}
+      stats={stats}
+      capability="public"
+      onBack={() => navigate(-1)}
+      onShare={shareProfile}
+      onMore={() => guestGate('manage safety settings', () => setSafetyOpen(true))}
+      moreLabel="Creator safety options"
+      actions={<ProfileActions capability="public" following={following} blocked={blocked} busy={actionBusy} onFollow={targetId ? followCreator : undefined} onMessage={messageCreator} />}
+    />
     <section className="portfolio" aria-labelledby="portfolio-heading">
       <h2 id="portfolio-heading" className="gf-sr-only">Creator portfolio</h2>
       <PortfolioTabs tabs={tabs} selected={selectedTab.id} onSelect={setActiveTab} panelId="creator-portfolio-panel" />

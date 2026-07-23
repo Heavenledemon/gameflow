@@ -132,13 +132,8 @@ export function Dialog(props) {
   return <ModalFrame {...props} variant="dialog" />
 }
 
-export function Sheet(props) {
-  return <ModalFrame {...props} variant="sheet" />
-}
-
-export function BottomSheet(props) {
-  return <Sheet {...props} />
-}
+export { default as Sheet } from './Sheet'
+export { default as BottomSheet } from './Sheet'
 
 export function ConfirmDialog({ open, title, description, message, confirmLabel = 'Confirm', cancelLabel = 'Cancel', confirmVariant = 'danger', confirmLoading = false, onConfirm, onClose }) {
   const cancelRef = useRef(null)

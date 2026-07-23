@@ -174,7 +174,16 @@ export default function ProfilePage() {
 
   return <main className="profile-page">
     {isGuest ? <GuestBanner onSignIn={() => navigate('/signin')} /> : null}
-    <CreatorHeader creator={creator} stats={stats} onBack={() => navigate('/app/home')} onShare={shareProfile} onMore={() => setLogoutOpen(true)} moreLabel="Log out" actions={<ProfileActions capability="self" onEdit={openEdit} />} />
+    <CreatorHeader
+      creator={creator}
+      stats={stats}
+      capability="self"
+      onBack={() => navigate('/app/home')}
+      onShare={shareProfile}
+      onMore={() => setLogoutOpen(true)}
+      moreLabel="Log out"
+      actions={<ProfileActions capability="self" onEdit={openEdit} />}
+    />
     <section className="portfolio" aria-labelledby="portfolio-heading">
       <h2 id="portfolio-heading" className="gf-sr-only">Creator portfolio</h2>
       <PortfolioTabs tabs={tabs} selected={selectedTab.id} onSelect={setActiveTab} panelId="profile-portfolio-panel" />

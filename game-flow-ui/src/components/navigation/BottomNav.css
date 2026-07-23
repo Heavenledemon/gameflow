@@ -1,20 +1,29 @@
+﻿/* =========================================================
+   BottomNav — Design Guide §7.3
+   Fixed, glassmorphism pill floating above content.
+   Active: --gf-brand-coral. Inactive: --gf-text-secondary.
+   Labels hidden below 390px, visible at >= 390px.
+   Hides ONLY via immersive state — never by route name.
+   ========================================================= */
+
 .bottom-nav {
   display: grid;
   grid-template-columns: repeat(5, minmax(44px, 1fr));
   align-items: center;
   width: calc(100% - (var(--gf-space-4) * 2));
-  max-width: calc(var(--gf-shell-max-width) - (var(--gf-space-4) * 2));
-  height: var(--gf-shell-bottom-nav-height);
+  max-width: calc(var(--gf-app-max-width) - (var(--gf-space-4) * 2));
+  height: var(--gf-bottom-nav-height);
   margin-inline: auto;
   padding-inline: var(--gf-space-2);
   border: 1px solid var(--gf-shell-navigation-border);
   border-radius: var(--gf-radius-pill);
   background: var(--gf-shell-navigation-surface);
-  box-shadow: var(--gf-shadow-modal);
+  box-shadow: var(--gf-shadow-xl);
   backdrop-filter: blur(28px);
   -webkit-backdrop-filter: blur(28px);
 }
 
+/* ── Nav items ───────────────────────────────────── */
 .bottom-nav__item {
   position: relative;
   display: flex;
@@ -24,26 +33,34 @@
   justify-content: center;
   gap: var(--gf-space-1);
   border-radius: var(--gf-radius-pill);
-  color: var(--gf-shell-navigation-text);
-  transition: color var(--gf-motion-standard), transform var(--gf-motion-fast);
+  color: var(--gf-text-secondary);
+  transition:
+    color     var(--gf-duration-fast)   var(--gf-ease-standard),
+    transform var(--gf-duration-instant) var(--gf-ease-standard);
 }
 
+/* Active-dot indicator (mobile, no labels) */
 .bottom-nav__item::after {
   position: absolute;
   bottom: var(--gf-space-1);
   width: var(--gf-space-1);
   height: var(--gf-space-1);
   border-radius: 50%;
-  background: var(--gf-brand);
+  background: var(--gf-brand-coral);
   content: '';
   opacity: 0;
   transform: scale(0);
-  transition: opacity var(--gf-motion-standard), transform var(--gf-motion-standard);
+  transition:
+    opacity   var(--gf-duration-normal) var(--gf-ease-standard),
+    transform var(--gf-duration-normal) var(--gf-ease-spring);
 }
 
-.bottom-nav__item:hover,
+.bottom-nav__item:hover {
+  color: var(--gf-brand-coral);
+}
+
 .bottom-nav__item--active {
-  color: var(--gf-brand);
+  color: var(--gf-brand-coral);
 }
 
 .bottom-nav__item--active::after {
@@ -52,28 +69,40 @@
 }
 
 .bottom-nav__item:active {
-  transform: scale(.94);
+  transform: scale(0.93);
 }
 
+/* ── Publish (center elevated button) ────────────── */
 .bottom-nav__item--publish {
-  width: 48px;
-  height: 48px;
-  min-height: 48px;
+  min-width: 56px;
+  min-height: 56px;
+  width: 56px;
+  height: 56px;
   margin-inline: auto;
-  background: linear-gradient(135deg, var(--gf-brand), var(--gf-brand-end));
-  box-shadow: 0 6px 20px color-mix(in srgb, var(--gf-brand) 40%, transparent);
-  color: var(--gf-shell-text);
+  border-radius: var(--gf-radius-pill);
+  background: var(--gf-brand-gradient);
+  box-shadow: var(--gf-shadow-md);
+  color: var(--gf-text-inverse);
+  transition:
+    transform var(--gf-duration-fast) var(--gf-ease-spring),
+    box-shadow var(--gf-duration-fast) var(--gf-ease-standard);
 }
 
-.bottom-nav__item--publish:hover,
+.bottom-nav__item--publish:hover {
+  color: var(--gf-text-inverse);
+  transform: translateY(-1px);
+  box-shadow: var(--gf-shadow-lg);
+}
+
 .bottom-nav__item--publish.bottom-nav__item--active {
-  color: var(--gf-shell-text);
+  color: var(--gf-text-inverse);
 }
 
 .bottom-nav__item--publish::after {
   display: none;
 }
 
+/* ── Icon wrapper ─────────────────────────────────── */
 .bottom-nav__icon {
   position: relative;
   display: grid;
@@ -81,6 +110,7 @@
   place-items: center;
 }
 
+/* ── Avatar (profile item) ──────────────────────── */
 .bottom-nav__avatar {
   width: 24px;
   height: 24px;
@@ -89,6 +119,7 @@
   object-fit: cover;
 }
 
+/* ── Unread badge ────────────────────────────────── */
 .bottom-nav__badge {
   position: absolute;
   top: -7px;
@@ -99,13 +130,14 @@
   padding-inline: 3px;
   place-items: center;
   border-radius: var(--gf-radius-pill);
-  background: var(--gf-brand);
-  color: var(--gf-shell-text);
-  font-size: .5625rem;
-  font-weight: 800;
+  background: var(--gf-brand-coral);
+  color: var(--gf-text-inverse);
+  font-size: var(--gf-text-xs);
+  font-weight: var(--gf-weight-extrabold);
   line-height: 1;
 }
 
+/* ── Labels: sr-only by default (< 390px) ────────── */
 .bottom-nav__label {
   position: absolute;
   width: 1px;
@@ -118,7 +150,8 @@
   border: 0;
 }
 
-@media (min-width: 430px) {
+/* ── >= 390px: show labels ──────────────────────── */
+@media (min-width: 390px) {
   .bottom-nav {
     padding-inline: var(--gf-space-3);
   }
@@ -129,6 +162,7 @@
     padding-top: var(--gf-space-1);
   }
 
+  /* Hide dot indicator when labels are showing */
   .bottom-nav__item:not(.bottom-nav__item--publish)::after {
     display: none;
   }
@@ -141,11 +175,12 @@
     overflow: visible;
     clip: auto;
     white-space: normal;
-    font-size: .625rem;
-    font-weight: 700;
+    font-size: var(--gf-text-xs);
+    font-weight: var(--gf-weight-bold);
     line-height: 1;
   }
 
+  /* Publish label remains sr-only even at >= 390px */
   .bottom-nav__item--publish .bottom-nav__label {
     position: absolute;
     width: 1px;
@@ -157,6 +192,7 @@
   }
 }
 
+/* ── Reduced-transparency fallback ─────────────── */
 @media (prefers-reduced-transparency: reduce) {
   .bottom-nav {
     background: var(--gf-shell-surface);

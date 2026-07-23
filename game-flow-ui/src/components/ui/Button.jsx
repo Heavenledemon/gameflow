@@ -5,8 +5,4 @@ export function Button({ ref, variant = 'primary', loading = false, disabled = f
   </button>
 }
 
-export function IconButton({ label, variant = 'ghost', loading = false, disabled = false, className = '', children, ...props }) {
-  return <button type="button" aria-label={label} title={label} aria-busy={loading || undefined} disabled={disabled || loading} className={`gf-icon-button gf-icon-button--${variant} ${className}`.trim()} {...props}>
-    {loading ? <span aria-hidden="true" className="gf-spinner" /> : children}
-  </button>
-}
+export { default as IconButton } from './IconButton'

@@ -1,5 +1,10 @@
-:root {
-  /* Semantic GameFlow palette */
+﻿:root {
+  /* ═══════════════════════════════════════════════════════════
+     LEGACY TOKENS — kept intact; consumed by existing components.
+     Do not remove these without migrating all consumers.
+  ═══════════════════════════════════════════════════════════ */
+
+  /* Semantic GameFlow palette (legacy names) */
   --gf-bg: #f4f5fa;
   --gf-surface: #ffffff;
   --gf-surface-raised: #ffffff;
@@ -27,6 +32,7 @@
   --gf-skeleton-base: #e5e6ed;
   --gf-skeleton-highlight: #f7f7fa;
 
+  /* Spacing — legacy scale (consumed by primitives.css; do not change values) */
   --gf-space-1: 4px;
   --gf-space-2: 8px;
   --gf-space-3: 12px;
@@ -35,6 +41,7 @@
   --gf-space-6: 32px;
   --gf-space-7: 48px;
 
+  /* Typography — legacy scale (consumed by primitives.css; do not change) */
   --gf-text-display: 2.25rem;
   --gf-text-title: 1.5rem;
   --gf-text-body: 1rem;
@@ -43,18 +50,23 @@
   --gf-leading-tight: 1.2;
   --gf-leading-normal: 1.5;
 
+  /* Radius — legacy scale (consumed by primitives.css; do not change values) */
   --gf-radius-sm: 10px;
   --gf-radius-md: 16px;
   --gf-radius-lg: 24px;
   --gf-radius-pill: 999px;
+
+  /* Shadows — legacy names (consumed by primitives.css) */
   --gf-shadow-card: 0 2px 8px rgb(0 0 0 / 6%);
   --gf-shadow-floating: 0 4px 16px rgb(0 0 0 / 10%);
   --gf-shadow-modal: 0 16px 48px rgb(0 0 0 / 20%);
+
+  /* Motion — legacy compound tokens (consumed by primitives.css + BottomNav.css) */
   --gf-motion-fast: 150ms ease;
   --gf-motion-standard: 220ms ease;
   --gf-motion-sheet: 280ms cubic-bezier(.22, 1, .36, 1);
 
-  /* Responsive application shell */
+  /* Shell — legacy tokens (consumed by MobileAppShell.css + BottomNav.css) */
   --gf-shell-max-width: 430px;
   --gf-shell-top-bar-height: 56px;
   --gf-shell-bottom-nav-height: 72px;
@@ -73,10 +85,149 @@
   --gf-shell-navigation-layer: 100;
   --gf-shell-top-bar-layer: 90;
 
-  /* Compatibility alias for page styles that currently reserve nav space. */
+  /* Compatibility alias for page styles that currently reserve nav space */
   --nav-height: var(--gf-shell-bottom-nav-height);
+
+  /* ═══════════════════════════════════════════════════════════
+     DESIGN GUIDE TOKENS — Section 2: Core Brand
+     GameFlow Mobile-First UI Design Guide
+  ═══════════════════════════════════════════════════════════ */
+  --gf-brand-coral:        hsl(12, 90%, 58%);
+  --gf-brand-coral-light:  hsl(12, 90%, 70%);
+  --gf-brand-coral-dark:   hsl(12, 90%, 42%);
+  --gf-brand-orange:       hsl(28, 95%, 55%);
+  --gf-brand-gradient:     linear-gradient(135deg, hsl(12, 90%, 58%), hsl(28, 95%, 55%));
+
+  /* Section 2: Surfaces (Light Mode) */
+  --gf-surface-base:       hsl(0, 0%, 100%);
+  --gf-surface-sunken:     hsl(220, 14%, 96%);
+  --gf-surface-overlay:    hsla(0, 0%, 0%, 0.4);
+
+  /* Section 2: Surfaces (Immersive / Dark Media Mode) */
+  --gf-surface-immersive-glass: hsla(220, 20%, 12%, 0.75);
+  --gf-surface-immersive-card:  hsla(220, 20%, 15%, 0.9);
+
+  /* Section 2: Text */
+  --gf-text-primary:       hsl(220, 15%, 12%);
+  --gf-text-secondary:     hsl(220, 10%, 40%);
+  --gf-text-tertiary:      hsl(220, 8%, 60%);
+  --gf-text-disabled:      hsl(220, 6%, 75%);
+  --gf-text-inverse:       hsl(0, 0%, 100%);
+  --gf-text-link:          hsl(12, 90%, 48%);
+
+  /* Section 2: Borders & Dividers */
+  --gf-border-subtle:      hsl(220, 12%, 92%);
+  --gf-border-default:     hsl(220, 10%, 85%);
+  --gf-border-strong:      hsl(220, 10%, 70%);
+  --gf-border-brand:       var(--gf-brand-coral);
+
+  /* Section 2: Semantic Colors */
+  --gf-success-bg:         hsl(145, 60%, 95%);
+  --gf-warning-bg:         hsl(40, 90%, 95%);
+  --gf-error:              hsl(0, 72%, 52%);
+  --gf-error-bg:           hsl(0, 72%, 96%);
+  --gf-info:               hsl(210, 80%, 50%);
+  --gf-info-bg:            hsl(210, 80%, 95%);
+
+  /* Section 2: Shell Measurements */
+  --gf-top-bar-height:     56px;
+  --gf-bottom-nav-height:  64px;
+  --gf-content-top:        calc(var(--gf-top-bar-height) + var(--gf-safe-area-top));
+  --gf-content-bottom:     calc(var(--gf-bottom-nav-height) + var(--gf-safe-area-bottom));
+  --gf-app-max-width:      430px;
+  --gf-desktop-canvas-max: 430px;
+
+  /* Section 2: Shape / Radius
+     Note: --gf-radius-sm/md/lg kept at legacy values above (consumers depend on them).
+     New spec-accurate tokens added here for forward use. */
+  --gf-radius-xs:    4px;
+  --gf-radius-xl:    24px;
+  --gf-radius-sheet: 20px;
+  --gf-radius-media: 10px;
+
+  /* Section 2: Elevation / Shadows */
+  --gf-shadow-xs:  0 1px 2px  hsla(220, 20%, 10%, 0.06);
+  --gf-shadow-sm:  0 2px 6px  hsla(220, 20%, 10%, 0.10);
+  --gf-shadow-md:  0 4px 16px hsla(220, 20%, 10%, 0.12);
+  --gf-shadow-lg:  0 8px 32px hsla(220, 20%, 10%, 0.16);
+  --gf-shadow-xl:  0 16px 48px hsla(220, 20%, 10%, 0.20);
+
+  /* Section 2: Z-Index Scale */
+  --gf-z-base:       0;
+  --gf-z-raised:     10;
+  --gf-z-sticky:     100;
+  --gf-z-top-bar:    200;
+  --gf-z-bottom-nav: 200;
+  --gf-z-sheet:      300;
+  --gf-z-modal:      400;
+  --gf-z-toast:      500;
+  --gf-z-top:        999;
+
+  /* ═══════════════════════════════════════════════════════════
+     DESIGN GUIDE TOKENS — Section 3: Typography
+  ═══════════════════════════════════════════════════════════ */
+  --gf-font-family:    'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --gf-font-mono:      'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Size scale (fluid 360px → 430px) */
+  --gf-text-xs:     11px;
+  --gf-text-sm:     13px;
+  --gf-text-base:   15px;
+  --gf-text-md:     17px;
+  --gf-text-lg:     20px;
+  --gf-text-xl:     24px;
+  --gf-text-2xl:    28px;
+  --gf-text-3xl:    34px;
+
+  /* Weight */
+  --gf-weight-regular:   400;
+  --gf-weight-medium:    500;
+  --gf-weight-semibold:  600;
+  --gf-weight-bold:      700;
+  --gf-weight-extrabold: 800;
+
+  /* Line height */
+  --gf-leading-snug:    1.35;
+  --gf-leading-relaxed: 1.65;
+
+  /* Letter spacing */
+  --gf-tracking-tight:  -0.03em;
+  --gf-tracking-normal:  0;
+  --gf-tracking-wide:    0.05em;
+  --gf-tracking-wider:   0.08em;
+
+  /* ═══════════════════════════════════════════════════════════
+     DESIGN GUIDE TOKENS — Section 5: Spacing (Extended Scale)
+     Note: --gf-space-1 through --gf-space-7 preserved above.
+     Extended tokens use guide-spec values for new components.
+  ═══════════════════════════════════════════════════════════ */
+  --gf-space-8:  32px;
+  --gf-space-10: 40px;
+  --gf-space-12: 48px;
+  --gf-space-16: 64px;
+
+  /* ═══════════════════════════════════════════════════════════
+     DESIGN GUIDE TOKENS — Section 6: Motion
+  ═══════════════════════════════════════════════════════════ */
+
+  /* Duration scale */
+  --gf-duration-instant:  80ms;
+  --gf-duration-fast:    150ms;
+  --gf-duration-normal:  220ms;
+  --gf-duration-slow:    320ms;
+  --gf-duration-slower:  450ms;
+
+  /* Easing curves */
+  --gf-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --gf-ease-enter:    cubic-bezier(0.0, 0, 0.2, 1);
+  --gf-ease-exit:     cubic-bezier(0.4, 0, 1.0, 1);
+  --gf-ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
+  --gf-ease-bounce:   cubic-bezier(0.68, -0.6, 0.32, 1.6);
 }
 
+/* ═══════════════════════════════════════════════════════════
+   DARK THEME — legacy overrides kept intact (no regression)
+═══════════════════════════════════════════════════════════ */
 [data-theme='dark'] {
   --gf-bg: #11101c;
   --gf-surface: #1b1a2a;
@@ -96,6 +247,9 @@
   --gf-skeleton-highlight: #3a384d;
 }
 
+/* ═══════════════════════════════════════════════════════════
+   IMMERSIVE DATA-THEME — legacy overrides kept intact
+═══════════════════════════════════════════════════════════ */
 [data-theme='immersive'] {
   --gf-bg: var(--gf-surface-immersive);
   --gf-surface: rgb(20 16 34 / 88%);
@@ -112,4 +266,15 @@
   --gf-media-fallback: #15111f;
   --gf-skeleton-base: rgb(255 255 255 / 10%);
   --gf-skeleton-highlight: rgb(255 255 255 / 18%);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   IMMERSIVE BODY SCOPE (Design Guide §4.3)
+   Activates ONLY while a user is actively playing.
+   Must not persist to other routes (AppLayout clears on route change).
+═══════════════════════════════════════════════════════════ */
+body.immersive {
+  --gf-surface-base:   var(--gf-surface-immersive);
+  --gf-text-primary:   var(--gf-text-inverse);
+  --gf-text-secondary: hsla(0, 0%, 100%, 0.7);
 }

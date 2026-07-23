@@ -84,6 +84,16 @@ a {
   background: var(--gf-shell-outer-surface);
 }
 
+/* Desktop containment — Design Guide §9
+   At >= 768px the app canvas is centered; body gets a neutral gray background.
+   Applied by App.jsx or a resize observer. */
+body.desktop {
+  background: hsl(220, 15%, 94%);
+  display: grid;
+  place-items: start center;
+  min-height: 100dvh;
+}
+
 .mobile-frame {
   width: 100%;
   max-width: 430px;

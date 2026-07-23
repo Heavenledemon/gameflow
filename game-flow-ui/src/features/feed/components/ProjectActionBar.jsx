@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   BookmarkIcon,
   CommentIcon,
@@ -27,31 +28,49 @@ function ActionButton({ label, count, pressed, className = '', onClick, children
   )
 }
 
-export default function ProjectActionBar({ engagement, onLike, onComments, onSave, onShare }) {
+export default function ProjectActionBar({ engagement, viewerState, onLike, onComments, onSave, onShare }) {
+  const [animateLike, setAnimateLike] = useState(false)
+
+  const isLiked = viewerState?.liked ?? engagement?.viewerHasLiked
+  const isSaved = viewerState?.saved ?? engagement?.viewerHasSaved
+  const likesCount = engagement?.likes ?? engagement?.likesCount ?? 0
+  const commentsCount = engagement?.comments ?? engagement?.commentsCount ?? 0
+  const savesCount = engagement?.saves ?? engagement?.savesCount ?? 0
+  const sharesCount = engagement?.shares ?? engagement?.sharesCount ?? 0
+
+  const handleLikeClick = (e) => {
+    setAnimateLike(true)
+    setTimeout(() => setAnimateLike(false), 300)
+    onLike?.(e)
+  }
+
   return (
     <div className="project-action-bar" role="group" aria-label="Project engagement actions">
       <ActionButton
-        label={engagement.viewerHasLiked ? 'Unlike project' : 'Like project'}
-        count={engagement.likesCount}
-        pressed={engagement.viewerHasLiked}
-        className={engagement.viewerHasLiked ? 'feed-action--active' : ''}
-        onClick={onLike}
+        label={isLiked ? 'Unlike project' : 'Like project'}
+        count={likesCount}
+        pressed={isLiked}
+        className={`feed-action--like ${isLiked ? 'feed-action--active' : ''} ${animateLike ? 'feed-action--animate' : ''}`}
+        onClick={handleLikeClick}
       >
-        <HeartIcon filled={engagement.viewerHasLiked} size={20} />
+        <HeartIcon filled={isLiked} size={20} />
       </ActionButton>
-      <ActionButton label="View comments" count={engagement.commentsCount} onClick={onComments}>
+
+      <ActionButton label="View comments" count={commentsCount} onClick={onComments}>
         <CommentIcon size={20} />
       </ActionButton>
+
       <ActionButton
-        label={engagement.viewerHasSaved ? 'Remove saved project' : 'Save project'}
-        count={engagement.savesCount}
-        pressed={engagement.viewerHasSaved}
-        className={engagement.viewerHasSaved ? 'feed-action--active' : ''}
+        label={isSaved ? 'Remove saved project' : 'Save project'}
+        count={savesCount}
+        pressed={isSaved}
+        className={isSaved ? 'feed-action--active' : ''}
         onClick={onSave}
       >
-        <BookmarkIcon filled={engagement.viewerHasSaved} size={20} />
+        <BookmarkIcon filled={isSaved} size={20} />
       </ActionButton>
-      <ActionButton label="Share project" count={engagement.sharesCount} onClick={onShare}>
+
+      <ActionButton label="Share project" count={sharesCount} onClick={onShare}>
         <ShareIcon size={20} />
       </ActionButton>
     </div>

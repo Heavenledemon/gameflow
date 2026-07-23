@@ -351,9 +351,48 @@ export default function ProjectDetailPage() {
           <ProjectIdentity model={model} creatorRole={creatorRole} isOwner={isOwner} viewer={user} isFollowing={isFollowing} onBack={() => navigate(-1)} onCreator={creatorTarget} onFollow={guard(toggleFollowing)} onManage={() => setShowOwnerSheet(true)} />
           <div className="project-detail__content">
             <ProjectMeta model={model} project={project} expanded={metadataExpanded} onToggle={() => setMetadataExpanded((value) => !value)} />
-            <ProjectActions model={model} liked={liked} saved={saved} collaborationLabel={collaborationLabel} collaborationAllowed={collaborationAllowed} collaborationBusy={isSendingCollaborationRequest || isOpeningWorkspace} onPrimary={primaryMediaAction} onLike={() => mutateEngagement('react')} onComments={() => setShowComments(true)} onSave={() => mutateEngagement('save')} onCollaboration={guard(collaborationAction)} onShare={handleShare} />
-            <ProjectWorkspace open={showMembersSheet} viewerRole={viewerRole} members={members} canManageMembers={canManageMembers} viewerId={viewerId} isOwner={isOwner} memberActionId={memberActionId} openingWorkspace={isOpeningWorkspace} onOpen={() => setShowMembersSheet(true)} onClose={() => setShowMembersSheet(false)} onOpenWorkspace={openWorkspace} onRoleChange={(member, role) => setPendingRoleChange({ member, role })} onRemove={setPendingRemoval} />
-            {!isActiveMember ? <CollaborationPanel isOwner={isOwner} collaborationOpen={model.collaboration.open === true} request={projectRequest} busy={isSendingCollaborationRequest} onInvite={guard(openCollaborationPicker)} onRequest={guard(requestToCollaborate)} onOpenRequest={openRequest} /> : null}
+            <ProjectActions
+              model={model}
+              liked={liked}
+              saved={saved}
+              canViewFiles={isOwner || isActiveMember}
+              onViewFiles={isOwner || isActiveMember ? openWorkspace : undefined}
+              collaborationLabel={collaborationLabel}
+              collaborationAllowed={collaborationAllowed}
+              collaborationBusy={isSendingCollaborationRequest || isOpeningWorkspace}
+              onPrimary={primaryMediaAction}
+              onLike={() => mutateEngagement('react')}
+              onComments={() => setShowComments(true)}
+              onSave={() => mutateEngagement('save')}
+              onCollaboration={guard(collaborationAction)}
+              onShare={handleShare}
+            />
+            <ProjectWorkspace
+              open={showMembersSheet}
+              viewerRole={viewerRole}
+              members={members}
+              canManageMembers={canManageMembers}
+              viewerId={viewerId}
+              isOwner={isOwner}
+              memberActionId={memberActionId}
+              openingWorkspace={isOpeningWorkspace}
+              onOpen={() => setShowMembersSheet(true)}
+              onClose={() => setShowMembersSheet(false)}
+              onOpenWorkspace={openWorkspace}
+              onRoleChange={(member, role) => setPendingRoleChange({ member, role })}
+              onRemove={setPendingRemoval}
+            />
+            <CollaborationPanel
+              isOwner={isOwner}
+              collaborationOpen={model.collaboration.open === true}
+              request={projectRequest}
+              busy={isSendingCollaborationRequest}
+              members={members.items}
+              openRoles={project.roles || []}
+              onInvite={guard(openCollaborationPicker)}
+              onRequest={guard(requestToCollaborate)}
+              onOpenRequest={openRequest}
+            />
             {typeof project.viewsCount === 'number' ? <p className="project-detail__views">{project.viewsCount.toLocaleString()} views</p> : null}
           </div>
         </div>

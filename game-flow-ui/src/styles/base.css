@@ -1,3 +1,6 @@
+/* Google Fonts — Inter variable-weight (Design Guide §3) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300..800&display=swap');
+
 *, *::before, *::after { box-sizing: border-box; }
 
 html, body, #root { min-height: 100%; }
@@ -8,7 +11,7 @@ body {
   margin: 0;
   background: var(--gf-bg);
   color: var(--gf-text);
-  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--gf-font-family);
   line-height: var(--gf-leading-normal);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -25,11 +28,14 @@ img, video, canvas { display: block; max-width: 100%; }
   outline-offset: 3px;
 }
 
+/* prefers-reduced-motion — Design Guide §6.4
+   Collapses all animation/transition durations to near-zero.
+   Skeleton shimmer retains a slow opacity pulse (handled in primitives.css). */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
-    animation-duration: .01ms !important;
+    animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
-    transition-duration: .01ms !important;
+    transition-duration: 0.01ms !important;
   }
 }

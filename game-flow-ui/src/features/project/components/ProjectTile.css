@@ -2,32 +2,109 @@
   position: relative;
   min-width: 0;
   overflow: hidden;
-  border: 1px solid var(--gf-border);
+  border: 1px solid var(--gf-border-subtle);
   border-radius: var(--gf-radius-md);
-  background: var(--gf-surface);
-  box-shadow: var(--gf-shadow-card);
-  transition: border-color var(--gf-motion-fast), transform var(--gf-motion-fast), box-shadow var(--gf-motion-fast);
+  background-color: var(--gf-surface-raised);
+  box-shadow: var(--gf-shadow-xs);
+  transition: border-color var(--gf-duration-fast) var(--gf-ease-standard),
+              transform var(--gf-duration-fast) var(--gf-ease-standard),
+              box-shadow var(--gf-duration-fast) var(--gf-ease-standard);
 }
 
-.project-tile--selected { border-color: var(--gf-brand); }
-.project-tile__media { width: 100%; aspect-ratio: 1; overflow: hidden; background: var(--gf-media-surface); }
-.project-media--tile,
-.project-media--tile .project-media__frame,
-.project-media--tile .gf-media-frame { width: 100%; height: 100%; }
-.project-media--tile .project-media__asset { object-fit: cover; }
-.project-tile__badge { position: absolute; top: var(--gf-space-2); left: var(--gf-space-2); max-width: calc(100% - 16px); min-height: 26px; overflow: hidden; color: #fff; background: rgb(9 9 15 / 76%); border-color: rgb(255 255 255 / 16%); text-overflow: ellipsis; backdrop-filter: blur(8px); }
-.project-tile__copy { display: grid; gap: 2px; padding: var(--gf-space-3); }
-.project-tile__copy h3 { overflow: hidden; margin: 0; color: var(--gf-text); font-size: var(--gf-text-label); line-height: var(--gf-leading-tight); text-overflow: ellipsis; white-space: nowrap; }
-.project-tile__copy span { overflow: hidden; color: var(--gf-text-muted); font-size: var(--gf-text-caption); text-overflow: ellipsis; white-space: nowrap; }
-.project-tile__open { position: absolute; inset: 0; z-index: 2; width: 100%; min-height: 44px; padding: 0; border: 0; border-radius: inherit; background: transparent; }
-.project-tile__open:focus-visible { outline: 3px solid var(--gf-focus); outline-offset: -3px; }
-.project-tile__route-status { display: block; padding: 0 var(--gf-space-3) var(--gf-space-3); color: var(--gf-text-muted); font-size: .68rem; }
-.project-tile__actions { position: relative; z-index: 3; padding: 0 var(--gf-space-3) var(--gf-space-3); }
+.project-tile--selected {
+  border-color: var(--gf-brand-coral);
+}
+
+.project-tile__media {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background-color: var(--gf-media-surface);
+}
+
+.project-tile__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--gf-space-2);
+  font-size: var(--gf-text-xs);
+  font-weight: var(--gf-weight-bold);
+  color: var(--gf-text-inverse);
+  background-color: rgba(0, 0, 0, 0.72);
+  border-radius: var(--gf-radius-sm);
+  backdrop-filter: blur(4px);
+  max-width: calc(100% - 16px);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.project-tile__copy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gf-space-1);
+  padding: var(--gf-space-3);
+}
+
+.project-tile__title {
+  margin: 0;
+  font-size: var(--gf-text-sm);
+  font-weight: var(--gf-weight-bold);
+  color: var(--gf-text-primary);
+  line-height: var(--gf-leading-tight);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.project-tile__creator {
+  display: flex;
+  align-items: center;
+  gap: var(--gf-space-2);
+  min-width: 0;
+}
+
+.project-tile__creator-name {
+  font-size: var(--gf-text-xs);
+  color: var(--gf-text-secondary);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.project-tile__open {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  min-height: 44px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.project-tile__open:focus-visible {
+  outline: 2px solid var(--gf-brand-coral);
+  outline-offset: -2px;
+}
 
 @media (hover: hover) {
-  .project-tile:has(.project-tile__open:hover) { border-color: color-mix(in srgb, var(--gf-brand) 44%, var(--gf-border)); transform: translateY(-2px); box-shadow: var(--gf-shadow-floating); }
+  .project-tile:has(.project-tile__open:hover) {
+    border-color: var(--gf-brand-coral);
+    transform: translateY(-2px);
+    box-shadow: var(--gf-shadow-md);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .project-tile { transition: none; }
+  .project-tile {
+    transition: none;
+  }
+  @media (hover: hover) {
+    .project-tile:has(.project-tile__open:hover) {
+      transform: none;
+    }
+  }
 }

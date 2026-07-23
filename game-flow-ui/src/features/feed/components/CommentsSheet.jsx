@@ -1,8 +1,10 @@
 import { useState } from 'react'
-import { Avatar } from '../../../components/ui/Surface'
-import { Button, IconButton } from '../../../components/ui/Button'
-import { EmptyState, ErrorState, LoadingState } from '../../../components/ui/Feedback'
-import { Sheet } from '../../../components/ui/Overlay'
+import Avatar from '../../../components/ui/Avatar'
+import IconButton from '../../../components/ui/IconButton'
+import { Button } from '../../../components/ui/Button'
+import EmptyState, { ErrorState } from '../../../components/ui/EmptyState'
+import { LoadingState } from '../../../components/ui/Feedback'
+import Sheet from '../../../components/ui/Sheet'
 
 const COMMENT_REACTIONS = { heart: '❤️', laugh: '😂', wow: '😮', sad: '😢', fire: '🔥' }
 
@@ -113,7 +115,7 @@ export default function CommentsSheet({
   return (
     <Sheet
       open={open}
-      title="Comments"
+      title={comments.length ? `Comments (${comments.length})` : 'Comments'}
       description={project?.title}
       closeLabel="Close comments"
       onClose={onClose}

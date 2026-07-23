@@ -158,7 +158,43 @@
   background: rgb(255 255 255 / 7%);
 }
 
-.feed-action--active { color: var(--gf-brand); border-color: rgb(255 126 126 / 45%); background: rgb(255 126 126 / 10%); }
+.project-reel-card__follow-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 0 var(--gf-space-3);
+  border: 1px solid var(--gf-brand-coral);
+  border-radius: var(--gf-radius-pill);
+  background: transparent;
+  color: var(--gf-brand-coral);
+  font-size: var(--gf-text-xs);
+  font-weight: var(--gf-weight-semibold);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: all var(--gf-duration-fast) var(--gf-ease-standard);
+  margin-left: auto;
+  margin-right: var(--gf-space-2);
+}
+
+.project-reel-card__follow-btn.following {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+/* Like button micro-animation (Section 6.3) */
+@keyframes gf-like-bounce {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.4); }
+  100% { transform: scale(1); }
+}
+
+.feed-action--like.feed-action--animate svg {
+  animation: gf-like-bounce 220ms var(--gf-ease-spring);
+}
+
+.feed-action--active { color: var(--gf-brand-coral); border-color: rgb(255 126 126 / 45%); background: rgb(255 126 126 / 10%); }
 .feed-action__count { min-width: 1ch; font-size: .68rem; font-weight: 800; }
 
 .feed-page__state,

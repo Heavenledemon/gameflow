@@ -1,0 +1,113 @@
+.gf-media-frame {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: var(--gf-radius-media);
+  background-color: var(--gf-media-surface);
+  color: var(--gf-text-inverse);
+  isolation: isolate;
+  box-sizing: border-box;
+}
+
+.gf-media-frame__poster {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.gf-media-frame__fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background-color: var(--gf-media-fallback);
+  color: var(--gf-text-tertiary);
+  font-size: var(--gf-text-sm);
+  padding: var(--gf-space-4);
+  box-sizing: border-box;
+}
+
+/* Badge Slot top-right */
+.gf-media-frame__badge {
+  position: absolute;
+  top: var(--gf-space-3);
+  right: var(--gf-space-3);
+  z-index: 10;
+}
+
+/* Overlays */
+.gf-media-frame__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.gf-media-frame__overlay > * {
+  pointer-events: auto;
+}
+
+/* Play trigger for WebGL/GLTF */
+.gf-media-frame__play-trigger {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.25);
+  z-index: 3;
+}
+
+/* Loading & Skeletons */
+.gf-media-frame__loading {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+}
+
+/* Error layout */
+.gf-media-frame__error {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gf-space-2);
+  background-color: var(--gf-media-fallback);
+  color: var(--gf-error);
+  padding: var(--gf-space-4);
+  z-index: 5;
+  box-sizing: border-box;
+}
+
+.gf-media-frame__error-text {
+  font-size: var(--gf-text-sm);
+  font-weight: var(--gf-weight-semibold);
+  color: var(--gf-text-secondary);
+}
+
+.gf-media-frame__retry-btn {
+  margin-top: var(--gf-space-2);
+  min-height: 36px;
+  padding: 0 var(--gf-space-4);
+  background-color: var(--gf-error);
+  color: var(--gf-text-inverse);
+  border: none;
+  border-radius: var(--gf-radius-pill);
+  font-size: var(--gf-text-xs);
+  font-weight: var(--gf-weight-bold);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity var(--gf-duration-fast) var(--gf-ease-standard);
+}
+
+.gf-media-frame__retry-btn:hover {
+  opacity: 0.9;
+}
+
+.gf-media-frame__retry-btn:active {
+  opacity: 0.8;
+}

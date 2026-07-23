@@ -1,0 +1,63 @@
+/* =========================================================
+   TopBar — Design Guide §7.2
+   Fixed three-slot container: left | center | right.
+   Height: --gf-top-bar-height (56px) + safe-area-top.
+   z-index: --gf-z-top-bar (200).
+   Background: glass-morphism (shell top-bar surface).
+   ========================================================= */
+
+.top-bar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  padding-inline: var(--gf-space-2);
+  gap: var(--gf-space-2);
+  min-height: var(--gf-top-bar-height);
+}
+
+/* ── Slots ──────────────────────────────────────── */
+.top-bar__slot {
+  display: flex;
+  align-items: center;
+  min-height: var(--gf-top-bar-height);
+  min-width: 0;
+}
+
+.top-bar__slot--left {
+  justify-content: flex-start;
+}
+
+.top-bar__slot--center {
+  justify-content: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.top-bar__slot--right {
+  justify-content: flex-end;
+}
+
+/* ── Title text (when pages set a text center slot) */
+.top-bar__title {
+  font-size: var(--gf-text-md);
+  font-weight: var(--gf-weight-semibold);
+  color: var(--gf-shell-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  line-height: var(--gf-leading-tight);
+  letter-spacing: var(--gf-tracking-tight);
+}
+
+/* ── Wordmark (home route left slot) ────────────── */
+.top-bar__wordmark {
+  font-size: var(--gf-text-xl);
+  font-weight: var(--gf-weight-extrabold);
+  color: var(--gf-brand-coral);
+  letter-spacing: var(--gf-tracking-tight);
+  line-height: 1;
+  text-rendering: optimizeLegibility;
+}

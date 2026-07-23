@@ -1,0 +1,108 @@
+.gf-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--gf-z-sheet);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background-color: var(--gf-surface-overlay);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  opacity: 0;
+  transition: opacity var(--gf-duration-normal) var(--gf-ease-standard);
+  box-sizing: border-box;
+}
+
+.gf-sheet-backdrop--active {
+  opacity: 1;
+}
+
+.gf-sheet-panel {
+  position: relative;
+  width: min(100%, var(--gf-app-max-width));
+  max-height: 90dvh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--gf-surface-raised);
+  border-top-left-radius: var(--gf-radius-sheet);
+  border-top-right-radius: var(--gf-radius-sheet);
+  box-shadow: var(--gf-shadow-modal);
+  outline: none;
+  overflow: hidden;
+  box-sizing: border-box;
+  transform: translateY(100%);
+  transition: transform var(--gf-duration-normal) var(--gf-ease-exit);
+}
+
+.gf-sheet-backdrop--active .gf-sheet-panel--active {
+  transform: translateY(0);
+  transition: transform var(--gf-duration-slow) var(--gf-ease-enter);
+}
+
+/* Drag Handle */
+.gf-sheet__handle {
+  display: block;
+  width: 32px;
+  height: 4px;
+  background-color: var(--gf-border-default);
+  border-radius: var(--gf-radius-pill);
+  margin: 8px auto 0;
+  flex-shrink: 0;
+}
+
+/* Header */
+.gf-sheet__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--gf-space-3);
+  padding: var(--gf-space-4) var(--gf-space-4) var(--gf-space-2);
+  border-bottom: 1px solid var(--gf-border-subtle);
+  flex-shrink: 0;
+}
+
+.gf-sheet__heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.gf-sheet__title {
+  margin: 0;
+  font-size: var(--gf-text-md);
+  font-weight: var(--gf-weight-bold);
+  color: var(--gf-text-primary);
+  line-height: var(--gf-leading-snug);
+}
+
+.gf-sheet__description {
+  margin: var(--gf-space-1) 0 0;
+  font-size: var(--gf-text-sm);
+  color: var(--gf-text-secondary);
+}
+
+/* Content Area */
+.gf-sheet__content {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--gf-space-4);
+  /* Account for safe area in landscape / notched devices */
+  padding-bottom: calc(var(--gf-space-4) + var(--gf-safe-area-bottom));
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .gf-sheet-backdrop {
+    transition: opacity var(--gf-duration-normal) linear;
+  }
+  .gf-sheet-panel {
+    transform: none;
+    transition: none;
+    opacity: 0;
+  }
+  .gf-sheet-backdrop--active .gf-sheet-panel--active {
+    transform: none;
+    opacity: 1;
+    transition: opacity var(--gf-duration-normal) linear;
+  }
+}

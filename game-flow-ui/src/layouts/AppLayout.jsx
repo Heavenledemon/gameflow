@@ -7,7 +7,6 @@ import { useAppShell } from '../context/AppShellContext';
 const AppLayout = () => {
   const { pathname } = useLocation();
   const { topBar, clearTopBar, immersiveMode, exitImmersiveMode } = useAppShell();
-  const hideBottomNavForRoute = pathname.startsWith('/app/upload');
 
   useEffect(() => {
     return () => {
@@ -20,7 +19,7 @@ const AppLayout = () => {
     <MobileAppShell
       topBar={topBar}
       bottomNavigation={<BottomNav />}
-      showBottomNavigation={!hideBottomNavForRoute && !immersiveMode}
+      showBottomNavigation={!immersiveMode}
       immersive={immersiveMode}
     >
       <Outlet />

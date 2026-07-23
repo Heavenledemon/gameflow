@@ -1,0 +1,66 @@
+.gf-chip-wrapper {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px; /* Touch target minimum height */
+  vertical-align: middle;
+}
+
+.gf-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gf-space-1);
+  height: 28px;
+  padding: 0 var(--gf-space-3);
+  border-radius: var(--gf-radius-pill);
+  font-size: var(--gf-text-xs);
+  font-weight: var(--gf-weight-bold);
+  white-space: nowrap;
+  border: 1px solid var(--gf-border-default);
+  background-color: var(--gf-surface-raised);
+  color: var(--gf-text-secondary);
+  transition: background-color var(--gf-duration-fast) var(--gf-ease-standard),
+              border-color var(--gf-duration-fast) var(--gf-ease-standard),
+              color var(--gf-duration-fast) var(--gf-ease-standard);
+}
+
+.gf-chip--interactive {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Active / Selected state */
+.gf-chip--active,
+.gf-chip--selected {
+  background-color: var(--gf-brand-coral) !important;
+  border-color: var(--gf-brand-coral) !important;
+  color: var(--gf-text-on-brand) !important;
+}
+
+.gf-chip:disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* Icon layout inside chip */
+.gf-chip__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+}
+
+/* Focus indicator for interactive chip */
+.gf-chip--interactive:focus-visible {
+  outline: 2px solid var(--gf-brand-coral);
+  outline-offset: 2px;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .gf-chip {
+    transition: none;
+  }
+}

@@ -1,4 +1,4 @@
-import { Skeleton } from '../../../components/ui/Feedback'
+import Skeleton from '../../../components/ui/Skeleton'
 import ProjectTile from '../../project/components/ProjectTile'
 import './ProjectGrid.css'
 
@@ -8,9 +8,9 @@ function ProjectGridSkeleton() {
       <div className="project-grid project-grid--loading" role="status" aria-label="Loading projects">
         {Array.from({ length: 6 }, (_, index) => (
           <div className="project-grid__skeleton" key={index}>
-            <Skeleton className="project-grid__skeleton-media" width="100%" height="100%" />
-            <Skeleton width="78%" height={16} />
-            <Skeleton width="52%" height={12} />
+            <Skeleton variant="media" width="100%" height="100%" />
+            <Skeleton variant="text" width="78%" />
+            <Skeleton variant="text" width="52%" />
           </div>
         ))}
       </div>
@@ -18,17 +18,25 @@ function ProjectGridSkeleton() {
   )
 }
 
-export default function ProjectGrid({ projects, loading = false, onOpenProject, renderActions }) {
+export default function ProjectGrid({
+  items,
+  projects, // Backward compatibility alias
+  loading = false,
+  onOpenProject,
+  renderActions,
+}) {
+  const projectList = items || projects || []
+
   if (loading) return <ProjectGridSkeleton />
 
   return (
     <div className="project-grid-shell">
       <div className="project-grid" role="list">
-        {projects.map((project) => (
+        {projectList.map((project) => (
           <ProjectTile
-            key={`${project.contentType}:${project.contentId ?? project.id}`}
+            key={`${project.contentType || 'project'}:${project.contentId ?? project.id}`}
             project={project}
-            onOpen={project.routeTarget && onOpenProject ? () => onOpenProject(project) : undefined}
+            onOpen={onOpenProject ? () => onOpenProject(project) : undefined}
             actions={renderActions?.(project) || null}
           />
         ))}

@@ -1,55 +1,48 @@
-import { Badge } from '../../../components/ui/Surface'
-import ProjectMedia from './ProjectMedia'
+import Avatar from '../../../components/ui/Avatar'
+import MediaFrame from '../../../components/ui/MediaFrame'
 import './ProjectTile.css'
 
-const TYPE_LABELS = {
-  project: 'Project',
-  game: 'Game',
-  asset: '3D asset',
-  post: 'Post',
-  demo: 'Demo',
-  webgl: 'Playable game',
-  gltf: '3D asset',
-  '3d': '3D asset',
-  image: 'Visual project',
-  video: 'Video project',
-  unknown: 'Project',
-}
+export default function ProjectTile({ project, onOpen, selected = false }) {
+  const creatorName = project.creator?.name || project.creator?.handle || project.creator?.username || 'Creator'
+  const creatorHandle = project.creator?.handle || project.creator?.username || creatorName
+  const projectTypeLabel = (project.projectType || 'Project').toUpperCase()
+  const routeTarget = project.canonicalRoute || project.routeTarget
 
-function TileContents({ project }) {
-  const creator = project.creator.username || project.creator.name
-  const projectTypeKey = String(project.projectType || '').toLocaleLowerCase()
-  const typeLabel = TYPE_LABELS[projectTypeKey] || project.projectType || TYPE_LABELS[project.contentType] || TYPE_LABELS.unknown
+  const handleClick = () => {
+    if (onOpen) onOpen(project)
+  }
 
   return (
-    <>
+    <article
+      className={`project-tile ${selected ? 'project-tile--selected' : ''}`}
+      role="listitem"
+    >
       <div className="project-tile__media">
-        <ProjectMedia
-          media={project.media}
-          title={project.title}
-          active={false}
-          interactive={false}
-          posterOnly
-          className="project-media--tile"
-          overlay={<Badge className="project-tile__badge">{typeLabel}</Badge>}
+        <MediaFrame
+          aspectRatio="1/1"
+          poster={project.posterUrl || project.media?.posterUrl}
+          alt={project.title}
+          mediaKind={project.mediaKind || project.media?.kind}
+          badge={<span className="project-tile__badge">{projectTypeLabel}</span>}
         />
       </div>
-      <div className="project-tile__copy">
-        <h3>{project.title}</h3>
-        {creator ? <span>@{creator}</span> : <span>Creator unavailable</span>}
-      </div>
-    </>
-  )
-}
 
-export default function ProjectTile({ project, onOpen, actions = null, selected = false }) {
-  return (
-    <article className={`project-tile ${selected ? 'project-tile--selected' : ''}`} role="listitem">
-      <TileContents project={project} />
-      {onOpen ? <button type="button" className="project-tile__open" aria-label={`View ${project.title}`} onClick={onOpen} /> : (
-        <span className="project-tile__route-status">Project page unavailable</span>
+      <div className="project-tile__copy">
+        <h3 className="project-tile__title">{project.title}</h3>
+        <div className="project-tile__creator">
+          <Avatar src={project.creator?.avatarUrl} alt="" name={creatorName} size="xs" />
+          <span className="project-tile__creator-name">@{creatorHandle}</span>
+        </div>
+      </div>
+
+      {routeTarget && (
+        <button
+          type="button"
+          className="project-tile__open"
+          aria-label={`View project details for ${project.title} by ${creatorName}`}
+          onClick={handleClick}
+        />
       )}
-      {actions ? <div className="project-tile__actions">{actions}</div> : null}
     </article>
   )
 }
