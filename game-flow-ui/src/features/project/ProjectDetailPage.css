@@ -8,6 +8,8 @@
   background: var(--gf-bg);
   color: var(--gf-text);
   scrollbar-width: none;
+  --gf-media-surface: #eceef3;
+  --gf-media-fallback: #e7e9f0;
 }
 
 .project-detail::-webkit-scrollbar { display: none; }
@@ -15,12 +17,32 @@
 
 .project-detail__media {
   position: relative;
-  min-height: 260px;
+  width: 100%;
+  height: 80vh;
+  height: 80dvh;
+  min-height: 320px;
   background: var(--gf-media-surface);
 }
 
 .project-detail__media .project-media,
-.project-detail__media .gf-media-frame { min-height: 260px; border-radius: 0; }
+.project-detail__media .project-media__poster-focus,
+.project-detail__media .gf-media-frame {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  aspect-ratio: auto;
+  border-radius: 0;
+}
+
+.project-detail__media .project-media__asset {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.project-detail__media .gf-media-frame__fallback,
+.project-detail__media .project-media .gf-feedback__title,
+.project-detail__media .project-media .gf-feedback__description { color: var(--gf-text); }
+.project-detail__identity .gf-icon-button--light { color: var(--gf-text); background: var(--gf-control); }
 .project-detail__media-badge { position: absolute; z-index: 4; top: var(--gf-space-4); right: var(--gf-space-4); padding: 6px 12px; border: 1px solid rgb(255 255 255 / 20%); border-radius: var(--gf-radius-pill); color: #fff; background: rgb(0 0 0 / 58%); font-size: var(--gf-text-caption); font-weight: 800; }
 
 .project-detail__identity { position: sticky; z-index: 8; top: 0; min-height: 64px; display: flex; align-items: center; gap: var(--gf-space-2); padding: var(--gf-space-2) var(--gf-space-3); border-bottom: 1px solid var(--gf-border); background: color-mix(in srgb, var(--gf-bg) 92%, transparent); backdrop-filter: blur(14px); }
@@ -48,9 +70,10 @@
 }
 
 .project-detail__follow-btn.following {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
-  color: #ffffff;
+  background: #e8ebf2;
+  border-color: #c8cdd9;
+  color: #25283a;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 45%);
 }
 
 .project-detail__content { display: grid; gap: var(--gf-space-4); padding: var(--gf-space-5) var(--gf-space-4); }

@@ -21,6 +21,9 @@
 .inbox-request-tabs { max-width: 240px; margin-top: -2px; margin-inline: auto; width: 100%; }
 
 .inbox-list { display: flex; flex-direction: column; gap: 4px; }
+.inbox-following { margin-top: var(--gf-space-4); }
+.inbox-following h3 { margin: 0; padding: 0 var(--gf-space-4) var(--gf-space-2); color: var(--gf-text-subtle); font-size: .72rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.inbox-following .conversation-row:disabled { opacity: .7; }
 .inbox-list-skeleton { display: flex; gap: var(--gf-space-3); padding: var(--gf-space-4); border-bottom: 1px solid var(--gf-border); }
 .inbox-list-skeleton > span { min-width: 0; flex: 1; display: grid; gap: var(--gf-space-2); }
 
@@ -46,10 +49,10 @@
 .request-card__actions .gf-button--secondary { border-color: var(--gf-border); background: var(--gf-control); color: var(--gf-text); }
 
 /* Instagram direct message list */
-.conversation-row { position: relative; display: flex; width: 100%; min-width: 0; min-height: 72px; align-items: center; gap: var(--gf-space-3); box-sizing: border-box; padding: var(--gf-space-3) var(--gf-space-4); border: none; border-bottom: 1px solid var(--gf-border); background: transparent; color: var(--gf-text); cursor: pointer; font: inherit; text-align: left; transition: background-color 0.15s ease; }
+.conversation-row { position: relative; display: flex; width: 100%; min-width: 0; min-height: 80px; align-items: center; gap: 14px; box-sizing: border-box; padding: 14px var(--gf-space-4); border: none; border-bottom: 1px solid var(--gf-border); background: transparent; color: var(--gf-text); cursor: pointer; font: inherit; text-align: left; transition: background-color 0.15s ease; }
 .conversation-row:hover { background-color: color-mix(in srgb, var(--gf-border) 15%, transparent); }
 .conversation-row--unread::before { content: ''; position: absolute; left: 6px; top: 50%; transform: translateY(-50%); width: 8px; height: 8px; border-radius: 50%; background: var(--gf-brand); }
-.conversation-row__avatar { border: 1.5px solid var(--gf-border); padding: 1.5px; background: var(--gf-bg); }
+.conversation-row__avatar { border: 2px solid var(--gf-border, #e2e8f0); padding: 2px; background: #ffffff; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); }
 .conversation-row__content { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
 .conversation-row__heading { min-width: 0; display: flex; justify-content: space-between; align-items: baseline; }
 .conversation-row__heading strong { min-width: 0; overflow: hidden; font-size: 0.92rem; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; color: var(--gf-text); letter-spacing: -0.01em; }

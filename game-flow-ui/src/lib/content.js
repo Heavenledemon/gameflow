@@ -14,6 +14,27 @@ export async function fetchContent(token = '', options = {}) {
   })
 }
 
+export async function searchUsers(query, token = '', options = {}) {
+  return request(`/users/search?q=${encodeURIComponent(query)}`, {
+    ...options,
+    headers: { ...(options.headers ?? {}), ...authHeaders(token) },
+  })
+}
+
+export async function fetchPublicUser(identity, token = '', options = {}) {
+  return request(`/users/${encodeURIComponent(identity)}`, {
+    ...options,
+    headers: { ...(options.headers ?? {}), ...authHeaders(token) },
+  })
+}
+
+export async function fetchUserFollows(userId, kind, token = '', options = {}) {
+  return request(`/users/${encodeURIComponent(userId)}/${encodeURIComponent(kind)}`, {
+    ...options,
+    headers: { ...(options.headers ?? {}), ...authHeaders(token) },
+  })
+}
+
 export async function fetchFeed(token = '', { cursor = '', limit = 12, signal } = {}) {
   const params = new URLSearchParams({ limit: String(limit) })
   if (cursor) params.set('cursor', cursor)
@@ -128,6 +149,12 @@ export async function fetchPostEngagement(token, postId) {
   })
 }
 
+export async function fetchProjectLikes(token, postId) {
+  return request(`/posts/${encodeURIComponent(postId)}/likes`, {
+    headers: authHeaders(token),
+  })
+}
+
 export async function fetchPostComments(token, postId, { cursor = '', limit = 30 } = {}) {
   const params = new URLSearchParams({ limit: String(limit) })
   if (cursor) params.set('cursor', cursor)
@@ -175,9 +202,11 @@ export async function fetchCollaborationCandidates(token) {
 }
 
 export async function toggleUserFollow(token, userId) {
-  return request(`/auth/social/users/${encodeURIComponent(userId)}/follow`, {
+  const result = await request(`/auth/social/users/${encodeURIComponent(userId)}/follow`, {
     method: 'POST', headers: mutationHeaders(token),
   })
+  if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('gameflow:follow-changed', { detail: { userId: String(userId), ...result } }))
+  return result
 }
 
 export async function createCollaborationRequest(token, projectId, payload) {

@@ -1,6 +1,10 @@
 import User from '../models/User.js'
 import asyncHandler from '../middlewares/asyncHandler.js'
 import { generateToken } from '../utils/generateToken.js'
+import Follow from '../models/Follow.js'
+import Project from '../models/Project.js'
+import FeedItem from '../models/FeedItem.js'
+import PostComment from '../models/PostComment.js'
 
 const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 7
 
@@ -121,8 +125,12 @@ export const signinUser = asyncHandler(async (request, response) => {
 })
 
 export const getCurrentUser = asyncHandler(async (request, response) => {
+  const [followersCount, followingCount] = await Promise.all([
+    Follow.countDocuments({ followingId: request.user._id }),
+    Follow.countDocuments({ followerId: request.user._id }),
+  ])
   response.json({
-    user: sanitizeUser(request.user),
+    user: { ...sanitizeUser(request.user), followersCount, followingCount },
   })
 })
 
@@ -206,6 +214,14 @@ export const updateCurrentUserProfile = asyncHandler(async (request, response) =
   if (linkedin !== undefined) user.linkedin = String(linkedin).trim()
 
   await user.save()
+
+  // Keep legacy denormalized author snapshots consistent while all read APIs
+  // also hydrate from User as the authoritative profile source.
+  await Promise.all([
+    Project.updateMany({ ownerId: user._id }, { $set: { ownerUsername: user.username, ownerName: user.name, ownerAvatar: user.avatar || '' } }),
+    FeedItem.updateMany({ 'creator.id': String(user._id) }, { $set: { 'creator.username': user.username, 'creator.name': user.name, 'creator.avatarUrl': user.avatar || '' } }),
+    PostComment.updateMany({ userId: user._id }, { $set: { username: user.username, name: user.name, avatar: user.avatar || '' } }),
+  ])
 
   response.json({
     message: 'Profile updated successfully',

@@ -25,7 +25,7 @@ export default function ConversationListItem({ conversation, onOpen }) {
         src={avatar}
         alt=""
         name={title}
-        size="md"
+        size="lg"
       />
       <span className="conversation-row__content">
         <span className="conversation-row__heading">

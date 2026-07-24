@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
-import { fetchContent, toggleUserFollow } from '../../lib/content'
+import { fetchContent, fetchPublicUser, toggleUserFollow } from '../../lib/content'
 import { createDirectConversation } from '../../lib/messaging'
 import { createModerationReport, toggleUserBlock } from '../../lib/moderation'
 import { fetchStories, getViewedStoryIds, markStoryViewed } from '../../lib/stories'
@@ -11,8 +11,10 @@ import { Button } from '../../components/ui/Button'
 import { ConfirmDialog, Sheet } from '../../components/ui/Overlay'
 import { EmptyState, ErrorState } from '../../components/ui/Feedback'
 import ProjectGrid from '../discovery/components/ProjectGrid'
+import DiscoveryProjectActions from '../discovery/components/DiscoveryProjectActions'
 import StoryViewer from '../discovery/components/StoryViewer'
 import CreatorHeader from './components/CreatorHeader'
+import FollowListSheet from './components/FollowListSheet'
 import PortfolioTabs from './components/PortfolioTabs'
 import { ProfileActions } from './components/ProfileActions'
 import { contentCollections, creatorFromPortfolio, mapPortfolioItems, matchesCreator } from './profileAdapters'
@@ -21,11 +23,12 @@ import './ProfilePage.css'
 export default function CreatorProfilePage() {
   const navigate = useNavigate()
   const { creatorId } = useParams()
-  const { isGuest, token } = useAuth()
+  const { isGuest, token, user } = useAuth()
   const { success, error: showError } = useToast()
   const [status, setStatus] = useState('loading')
   const [loadError, setLoadError] = useState('')
   const [portfolioEntries, setPortfolioEntries] = useState([])
+  const [publicProfile, setPublicProfile] = useState(null)
   const [activeTab, setActiveTab] = useState('projects')
   const [following, setFollowing] = useState(false)
   const [blocked, setBlocked] = useState(false)
@@ -37,6 +40,7 @@ export default function CreatorProfilePage() {
   const [activeStories, setActiveStories] = useState([])
   const [storyOpen, setStoryOpen] = useState(false)
   const [viewedStoryIds, setViewedStoryIds] = useState(getViewedStoryIds)
+  const [followList, setFollowList] = useState('')
   const activeStory = activeStories[0] || null
 
   const loadPortfolio = useCallback(async () => {
@@ -72,12 +76,39 @@ export default function CreatorProfilePage() {
     return () => controller.abort()
   }, [creatorId, token])
 
+  useEffect(() => {
+    const controller = new AbortController()
+    fetchPublicUser(creatorId, token, { signal: controller.signal })
+      .then((data) => { if (!controller.signal.aborted) { setPublicProfile(data.user || null); setFollowing(Boolean(data.user?.viewerIsFollowing)) } })
+      .catch((error) => { if (!controller.signal.aborted && error?.name !== 'AbortError') setLoadError(error.message || 'Creator not found.') })
+    return () => controller.abort()
+  }, [creatorId, token])
+
   const mappedEntries = useMemo(() => portfolioEntries.map(({ raw, kind }) => ({ raw, kind, model: mapPortfolioItems([raw], kind)[0] })), [portfolioEntries])
   const projects = mappedEntries.filter((entry) => entry.kind === 'project').map((entry) => entry.model)
   const games = mappedEntries.filter((entry) => entry.kind === 'game' || entry.model.media.kind === 'webgl').map((entry) => entry.model)
   const assets = mappedEntries.filter((entry) => entry.kind === 'asset' || entry.model.media.kind === 'gltf').map((entry) => entry.model)
   const creatorBase = creatorFromPortfolio(mappedEntries[0]?.raw, mappedEntries[0]?.model, creatorId)
-  const creator = { ...creatorBase, tools: [...new Set([...(creatorBase.tools || []), ...mappedEntries.flatMap((entry) => entry.model.tools)])] }
+  const creator = {
+    ...creatorBase,
+    ...(publicProfile ? {
+      id: publicProfile.id,
+      name: publicProfile.name,
+      username: publicProfile.username,
+      avatar: publicProfile.avatar,
+      banner: publicProfile.banner,
+      verified: publicProfile.isVerified,
+      role: publicProfile.creatorType,
+      headline: publicProfile.headline,
+      location: publicProfile.location,
+      bio: publicProfile.bio,
+      description: publicProfile.description,
+      website: publicProfile.website,
+      skills: publicProfile.skills,
+      socialLinks: [['GitHub', publicProfile.github], ['Itch.io', publicProfile.itchio], ['Behance', publicProfile.behance], ['ArtStation', publicProfile.artstation], ['Instagram', publicProfile.instagram], ['LinkedIn', publicProfile.linkedin]].filter(([, url]) => url).map(([label, url]) => ({ label, url })),
+    } : {}),
+    tools: [...new Set([...(creatorBase.tools || []), ...mappedEntries.flatMap((entry) => entry.model.tools)])],
+  }
   const tabs = [
     ...(projects.length || (!games.length && !assets.length) ? [{ id: 'projects', label: 'Projects', count: projects.length, projects }] : []),
     ...(games.length ? [{ id: 'games', label: 'Games', count: games.length, projects: games }] : []),
@@ -97,7 +128,7 @@ export default function CreatorProfilePage() {
     }).catch(() => { if (!controller.signal.aborted) setActiveStories([]) })
     return () => controller.abort()
   }, [creator.username, creatorId, targetId, token])
-  const stats = [{ label: 'Portfolio', value: mappedEntries.length }, { label: 'Followers', value: creator.followersCount }, { label: 'Following', value: creator.followingCount }, { label: 'Views', value: creator.viewsCount }]
+  const stats = [{ label: 'Portfolio', value: mappedEntries.length }, { label: 'Followers', value: creator.followersCount, action: 'followers' }, { label: 'Following', value: creator.followingCount, action: 'following' }]
 
   const guestGate = (action, callback) => {
     if (isGuest) { setGuestAction(action); return }
@@ -108,7 +139,7 @@ export default function CreatorProfilePage() {
     const previous = following
     setFollowing(!previous)
     setActionBusy(true)
-    try { const result = await toggleUserFollow(token, targetId); setFollowing(Boolean(result.following)) }
+    try { const result = await toggleUserFollow(token, targetId); setFollowing(Boolean(result.following)); setPublicProfile((profile) => profile ? { ...profile, followersCount: result.followersCount ?? profile.followersCount } : profile) }
     catch (error) { setFollowing(previous); showError(error.message || 'Unable to update follow status.') }
     finally { setActionBusy(false) }
   })
@@ -161,14 +192,16 @@ export default function CreatorProfilePage() {
       onMore={() => guestGate('manage safety settings', () => setSafetyOpen(true))}
       moreLabel="Creator safety options"
       actions={<ProfileActions capability="public" following={following} blocked={blocked} busy={actionBusy} onFollow={targetId ? followCreator : undefined} onMessage={messageCreator} />}
+      onStatSelect={setFollowList}
     />
+    <FollowListSheet open={Boolean(followList)} kind={followList || 'followers'} userId={targetId} currentUserId={user?.id || user?._id} token={token} onClose={() => setFollowList('')} />
     {storyOpen && activeStories.length ? <StoryViewer stories={activeStories} onClose={() => setStoryOpen(false)} /> : null}
     <section className="portfolio" aria-labelledby="portfolio-heading">
       <h2 id="portfolio-heading" className="gf-sr-only">Creator portfolio</h2>
       <PortfolioTabs tabs={tabs} selected={selectedTab.id} onSelect={setActiveTab} panelId="creator-portfolio-panel" />
       <div id="creator-portfolio-panel" role="tabpanel" aria-label={`${selectedTab.label} portfolio`} className="portfolio__panel">
         {status === 'loading' ? <ProjectGrid projects={[]} loading /> : null}
-        {status === 'ready' && selectedTab.projects.length ? <ProjectGrid projects={selectedTab.projects} onOpenProject={(project) => navigate(project.routeTarget)} /> : null}
+        {status === 'ready' && selectedTab.projects.length ? <ProjectGrid projects={selectedTab.projects} onOpenProject={(project) => navigate(project.routeTarget)} actionsPlacement="below" renderActions={(project) => <DiscoveryProjectActions project={project} onComment={() => navigate(project.routeTarget)} />} /> : null}
         {status === 'ready' && !selectedTab.projects.length ? <EmptyState title="No public projects found" description="This route has no public portfolio items in the current content collection." /> : null}
       </div>
     </section>

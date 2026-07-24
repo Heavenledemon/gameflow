@@ -1,20 +1,21 @@
 import { useId, useRef } from 'react'
-import { GridIcon, PlayIcon, BookmarkOutlineIcon, HeartOutlineIcon, CollabIcon } from '../../../components/icons/Icons'
+import { GridIcon, BookmarkOutlineIcon, HeartOutlineIcon, CollabIcon } from '../../../components/icons/Icons'
 
 const TAB_ICONS = {
   projects: GridIcon,
-  games: PlayIcon,
   saved: BookmarkOutlineIcon,
   liked: HeartOutlineIcon,
   collaborations: CollabIcon,
 }
 
+const HIDDEN_TABS = new Set(['games', 'assets', 'comments'])
+
 export default function PortfolioTabs({ tabs = [], selected, onSelect, panelId }) {
   const generatedId = useId()
   const refs = useRef([])
 
-  // Only render tabs that have items/data
-  const visibleTabs = tabs.filter((tab) => tab.projects?.length > 0 || tab.count > 0 || tab.alwaysShow)
+  // Core navigation remains available even when a collection is empty.
+  const visibleTabs = tabs.filter((tab) => !HIDDEN_TABS.has(tab.id) && (tab.projects?.length > 0 || tab.count > 0 || tab.alwaysShow))
   if (!visibleTabs.length) return null
 
   const moveFocus = (event, index) => {

@@ -7,12 +7,20 @@ import Message from '../models/Message.js'
 import Follow from '../models/Follow.js'
 import User from '../models/User.js'
 import ProjectMember from '../models/ProjectMember.js'
+import Project from '../models/Project.js'
 import { publishRealtimeEvent } from '../realtime/eventPublisher.js'
 import { isBlockedBetween } from '../services/moderationService.js'
 
 function createError(statusCode, message) { const error = new Error(message); error.statusCode = statusCode; return error }
 function validId(value) { return mongoose.isValidObjectId(value) }
-function messageDto(message) { return { id: String(message._id), conversationId: String(message.conversationId), senderId: String(message.senderId), body: message.body, type: message.type, clientMessageId: message.clientMessageId, createdAt: message.createdAt, editedAt: message.editedAt, deletedAt: message.deletedAt } }
+function messageDto(message, sender = null) {
+  return {
+    id: String(message._id), conversationId: String(message.conversationId), senderId: String(message.senderId),
+    sender: sender ? { id: String(sender._id), username: sender.username || '', name: sender.name || '', avatar: sender.avatar || '' } : undefined,
+    body: message.body, type: message.type, clientMessageId: message.clientMessageId,
+    createdAt: message.createdAt, editedAt: message.editedAt, deletedAt: message.deletedAt,
+  }
+}
 
 async function loadParticipantConversation(conversationId, userId) {
   if (!validId(conversationId)) throw createError(400, 'Invalid conversation ID.')
@@ -27,7 +35,11 @@ async function loadParticipantConversation(conversationId, userId) {
 
 async function assertCanSend(conversation, userId) {
   if (conversation.kind === 'project') {
-    if (!await ProjectMember.exists({ projectId: conversation.projectId, userId, status: 'active' })) throw createError(403, 'You are no longer an active project member.')
+    const [isMember, isOwner] = await Promise.all([
+      ProjectMember.exists({ projectId: conversation.projectId, userId, status: 'active' }),
+      Project.exists({ _id: conversation.projectId, ownerId: userId }),
+    ])
+    if (!isMember && !isOwner) throw createError(403, 'You are no longer an active project member.')
     return
   }
   if (conversation.kind !== 'collaboration_request') return
@@ -50,7 +62,18 @@ export const listConversations = asyncHandler(async (request, response) => {
   const rows = await Conversation.find(query).sort({ lastMessageAt: -1, _id: -1 }).limit(limit + 1).lean()
   const hasMore = rows.length > limit
   const conversations = rows.slice(0, limit)
-  response.json({ items: conversations.map((conversation) => ({ id: String(conversation._id), kind: conversation.kind, projectId: conversation.projectId ? String(conversation.projectId) : null, collaborationRequestId: conversation.collaborationRequestId ? String(conversation.collaborationRequestId) : null, lastMessageAt: conversation.lastMessageAt, lastMessagePreview: conversation.lastMessagePreview })), nextCursor: hasMore ? nextCursor({ createdAt: conversations.at(-1).lastMessageAt, _id: conversations.at(-1)._id }) : null })
+  const otherIds = conversations.filter((conversation) => conversation.kind === 'direct').map((conversation) => conversation.participantIds.find((id) => String(id) !== String(request.user._id))).filter(Boolean)
+  const people = await User.find({ _id: { $in: otherIds } }).select('username name avatar headline creatorType').lean()
+  const peopleById = new Map(people.map((person) => [String(person._id), person]))
+  const projectIds = conversations.filter((conversation) => conversation.kind === 'project' && conversation.projectId).map((conversation) => conversation.projectId)
+  const projects = await Project.find({ _id: { $in: projectIds } }).select('title previewUrl ownerId').lean()
+  const projectsById = new Map(projects.map((project) => [String(project._id), project]))
+  response.json({ items: conversations.map((conversation) => {
+    const otherId = conversation.kind === 'direct' ? conversation.participantIds.find((id) => String(id) !== String(request.user._id)) : null
+    const person = otherId ? peopleById.get(String(otherId)) : null
+    const project = conversation.projectId ? projectsById.get(String(conversation.projectId)) : null
+    return { id: String(conversation._id), kind: conversation.kind, projectId: conversation.projectId ? String(conversation.projectId) : null, project: project ? { id: String(project._id), title: project.title, previewUrl: project.previewUrl || '' } : undefined, collaborationRequestId: conversation.collaborationRequestId ? String(conversation.collaborationRequestId) : null, lastMessageAt: conversation.lastMessageAt, lastMessagePreview: conversation.lastMessagePreview, otherParticipant: person ? { id: String(person._id), username: person.username, name: person.name, avatar: person.avatar || '', headline: person.headline || person.creatorType || '' } : undefined }
+  }), nextCursor: hasMore ? nextCursor({ createdAt: conversations.at(-1).lastMessageAt, _id: conversations.at(-1)._id }) : null })
 })
 
 export const getConversationMessages = asyncHandler(async (request, response) => {
@@ -61,7 +84,9 @@ export const getConversationMessages = asyncHandler(async (request, response) =>
   const rows = await Message.find(query).sort({ createdAt: -1, _id: -1 }).limit(limit + 1).lean()
   const hasMore = rows.length > limit
   const items = rows.slice(0, limit)
-  response.json({ conversation: { id: String(conversation._id), kind: conversation.kind }, items: items.reverse().map(messageDto), nextCursor: hasMore ? nextCursor(items.at(-1)) : null })
+  const senders = await User.find({ _id: { $in: [...new Set(items.map((message) => String(message.senderId)))] } }).select('username name avatar').lean()
+  const sendersById = new Map(senders.map((sender) => [String(sender._id), sender]))
+  response.json({ conversation: { id: String(conversation._id), kind: conversation.kind }, items: items.reverse().map((message) => messageDto(message, sendersById.get(String(message.senderId)))), nextCursor: hasMore ? nextCursor(items.at(-1)) : null })
 })
 
 export const sendConversationMessage = asyncHandler(async (request, response) => {
@@ -108,11 +133,8 @@ export const createDirectConversation = asyncHandler(async (request, response) =
   if (!recipient) throw createError(404, 'Creator not found.')
   if (String(recipient._id) === String(request.user._id)) throw createError(400, 'You cannot message yourself.')
   if (await isBlockedBetween(request.user._id, recipient._id)) throw createError(403, 'Messaging is unavailable between these creators.')
-  const [followsRecipient, recipientFollows] = await Promise.all([
-    Follow.exists({ followerId: request.user._id, followingId: recipient._id }),
-    Follow.exists({ followerId: recipient._id, followingId: request.user._id }),
-  ])
-  if (!followsRecipient || !recipientFollows) throw createError(403, 'Direct messages are available only to mutually following creators.')
+  const followsRecipient = await Follow.exists({ followerId: request.user._id, followingId: recipient._id })
+  if (!followsRecipient) throw createError(403, 'Follow this creator before sending them a direct message.')
   let conversation = await Conversation.findOne({ kind: 'direct', participantIds: { $all: [request.user._id, recipient._id], $size: 2 } })
   if (!conversation) {
     conversation = await Conversation.create({ kind: 'direct', participantIds: [request.user._id, recipient._id], createdBy: request.user._id, lastMessageAt: new Date() })

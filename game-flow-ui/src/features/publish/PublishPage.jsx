@@ -25,6 +25,7 @@ const STEP_COPY = {
 }
 
 const isImageFile = (file) => /\.(png|jpg|jpeg|webp|gif|avif)$/i.test(file?.name || '')
+const isVideoFile = (file) => /\.(mp4|webm|ogv|mov|m4v)$/i.test(file?.name || '')
 const isModelFile = (file) => /\.(glb|gltf)$/i.test(file?.name || '')
 const isHtmlFile = (file) => /\.html?$/i.test(file?.name || '')
 
@@ -61,12 +62,13 @@ export default function PublishPage() {
   const [restored] = useState(loadPublishDraft)
   const navigate = useNavigate()
   const { isGuest, token, user } = useAuth()
-  const { setTopBar, clearTopBar } = useAppShell()
+  const { setTopBar, clearTopBar, enterImmersiveMode, exitImmersiveMode } = useAppShell()
   const { error: showError } = useToast()
   const [step, setStep] = useState(1)
   const [draft, setDraft] = useState(() => restored ? { type: restored.type, mode: restored.mode, title: restored.title, category: restored.category, description: restored.description, tags: restored.tags, software: restored.software, visibility: restored.visibility } : DEFAULT_PUBLISH_DRAFT)
   const [assets, setAssets] = useState([])
   const [cover, setCover] = useState(null)
+  const [gameplayGif, setGameplayGif] = useState(null)
   const [tagInput, setTagInput] = useState('')
   const [softwareInput, setSoftwareInput] = useState('')
   const [errors, setErrors] = useState({})
@@ -84,12 +86,14 @@ export default function PublishPage() {
   const mainFile = useMemo(() => {
     if (draft.type === 'game') return assets.find((item) => isHtmlFile(item.file) && item.file.name.toLowerCase() === 'index.html') || assets.find((item) => isHtmlFile(item.file)) || assets[0] || null
     if (draft.type === '3d') return assets.find((item) => isModelFile(item.file) && item.file.name.toLowerCase().endsWith('.glb')) || assets.find((item) => isModelFile(item.file)) || assets[0] || null
-    return assets.find((item) => isImageFile(item.file)) || assets[0] || null
+    if (draft.type === 'video') return assets.find((item) => isVideoFile(item.file)) || assets.find((item) => isImageFile(item.file)) || assets[0] || null
+    return assets.find((item) => isVideoFile(item.file)) || assets.find((item) => isImageFile(item.file)) || assets[0] || null
   }, [assets, draft.type])
-  const mainUrl = useObjectUrl(draft.type === '2d' ? mainFile?.file || null : null)
+  const isVideoMain = useMemo(() => isVideoFile(mainFile?.file), [mainFile])
+  const mainUrl = useObjectUrl(draft.type === '2d' || draft.type === 'video' ? mainFile?.file || null : null)
   const coverUrl = useObjectUrl(cover?.file || null)
 
-  const meaningful = hasMeaningfulPublishDraft(draft, { hadFiles: assets.length > 0 || restored?.hadFiles, hadCover: Boolean(cover) || restored?.hadCover })
+  const meaningful = hasMeaningfulPublishDraft(draft, { hadFiles: assets.length > 0 || Boolean(gameplayGif) || restored?.hadFiles, hadCover: Boolean(cover) || restored?.hadCover })
 
   const requestExit = useCallback(() => {
     if (meaningful && !published) setConfirmDiscard(true)
@@ -98,8 +102,12 @@ export default function PublishPage() {
 
   useEffect(() => {
     setTopBar(<PublishTopBar onClose={requestExit} />)
-    return clearTopBar
-  }, [clearTopBar, requestExit, setTopBar])
+    enterImmersiveMode()
+    return () => {
+      clearTopBar()
+      exitImmersiveMode()
+    }
+  }, [clearTopBar, enterImmersiveMode, exitImmersiveMode, requestExit, setTopBar])
 
   useEffect(() => {
     if (!meaningful || published) return
@@ -131,7 +139,10 @@ export default function PublishPage() {
 
   const selectType = (type) => {
     invalidateServerDraft()
-    setDraft((current) => ({ ...current, type, category: CATEGORY_OPTIONS[type][0], mode: type === '2d' ? 'portrait' : 'landscape' }))
+    const categories = CATEGORY_OPTIONS[type] || CATEGORY_OPTIONS.game
+    if (type === 'video') setCover(null)
+    if (type !== 'game') setGameplayGif(null)
+    setDraft((current) => ({ ...current, type, category: categories[0], mode: type === '2d' ? 'portrait' : 'landscape' }))
     setErrors({})
   }
 
@@ -156,8 +167,15 @@ export default function PublishPage() {
     if (detectedMode) setDraft((current) => ({ ...current, mode: detectedMode }))
   }
 
+  const handleGameplayGif = (event) => {
+    const file = event.target.files?.[0]
+    if (file) { invalidateServerDraft(); setGameplayGif({ file, relativePath: `gameplay/${file.name}` }); setRecoveryVisible(false) }
+    event.target.value = ''
+  }
+
   const removeAsset = (relativePath) => { invalidateServerDraft(); setAssets((current) => current.filter((item) => item.relativePath !== relativePath)) }
   const removeCover = () => { invalidateServerDraft(); setCover(null) }
+  const removeGameplayGif = () => { invalidateServerDraft(); setGameplayGif(null) }
 
   const addToken = (field, input, reset) => {
     const value = input.trim().replace(field === 'tags' ? /^#/ : /^$/, '')
@@ -213,7 +231,7 @@ export default function PublishPage() {
         projectId = created.project.id
         serverProjectIdRef.current = projectId
       }
-      const queue = cover ? [cover, ...assets] : assets
+      const queue = [cover, draft.type === 'game' ? gameplayGif : null, ...assets].filter(Boolean)
       for (let index = 0; index < queue.length; index += 1) {
         const item = queue[index]
         if (fileStatuses[item.relativePath]?.status === 'complete') continue
@@ -233,6 +251,7 @@ export default function PublishPage() {
       setPublished(result.project)
       setAssets([])
       setCover(null)
+      setGameplayGif(null)
       setPublishStatus('')
       setStep(5)
       window.dispatchEvent(new CustomEvent('projectPublished', { detail: result.project }))
@@ -251,6 +270,7 @@ export default function PublishPage() {
     clearPublishDraft()
     setAssets([])
     setCover(null)
+    setGameplayGif(null)
     setConfirmDiscard(false)
     navigate('/app/profile')
   }
@@ -259,17 +279,18 @@ export default function PublishPage() {
     id: 'publish-preview',
     title: draft.title.trim() || 'Untitled project',
     description: draft.description,
-    type: draft.type,
+    type: isVideoMain ? 'video' : draft.type,
     category: draft.category,
     mode: draft.mode,
-    previewUrl: coverUrl || (draft.type === '2d' ? mainUrl : null),
-    imageUrl: draft.type === '2d' ? mainUrl : coverUrl,
+    previewUrl: coverUrl || (isVideoMain ? '' : mainUrl),
+    videoUrl: isVideoMain ? mainUrl : '',
+    imageUrl: isVideoMain ? coverUrl : (draft.type === '2d' ? mainUrl : coverUrl),
     software: draft.software,
     tags: draft.tags,
     ownerUsername: user?.username,
     ownerName: user?.name,
     ownerAvatar: user?.avatar,
-  }), [coverUrl, draft, mainUrl, user])
+  }), [coverUrl, draft, isVideoMain, mainUrl, user])
 
   const retryAvailable = Object.values(fileStatuses).some((item) => item.status === 'failed') || Boolean(errors.publish)
   const publishedId = published?.id || published?._id
@@ -291,7 +312,7 @@ export default function PublishPage() {
       <ErrorSummary errors={errors} summaryRef={errorSummaryRef} />
       {step < 5 ? <section className="publish-card"><header><h2>{STEP_COPY[step][0]}</h2><p>{STEP_COPY[step][1]}</p></header><div className="publish-card__body">
         {step === 1 ? <ProjectTypeStep type={draft.type} mode={draft.mode} error={errors.type} onTypeChange={selectType} onModeChange={(mode) => changeDraft('mode', mode)} /> : null}
-        {step === 2 ? <><MediaPicker type={draft.type} error={errors.assets} onAssetsChange={handleAssets} onCoverChange={handleCover} /><FilesStep assets={assets} cover={cover} statuses={fileStatuses} onRemoveAsset={removeAsset} onRemoveCover={removeCover} /></> : null}
+        {step === 2 ? <><MediaPicker type={draft.type} error={errors.assets} onAssetsChange={handleAssets} onCoverChange={handleCover} onGameplayGifChange={handleGameplayGif} /><FilesStep assets={assets} cover={cover} gameplayGif={draft.type === 'game' ? gameplayGif : null} showCover={draft.type !== 'video'} statuses={fileStatuses} onRemoveAsset={removeAsset} onRemoveCover={removeCover} onRemoveGameplayGif={removeGameplayGif} /></> : null}
         {step === 3 ? <ProjectDetailsStep draft={draft} errors={errors} tagInput={tagInput} softwareInput={softwareInput} onChange={changeDraft} onTagInputChange={setTagInput} onSoftwareInputChange={setSoftwareInput} onAddTag={() => addToken('tags', tagInput, setTagInput)} onAddSoftware={() => addToken('software', softwareInput, setSoftwareInput)} onRemoveTag={(value) => removeToken('tags', value)} onRemoveSoftware={(value) => removeToken('software', value)} /> : null}
         {step === 4 ? <PublishPreview model={previewModel} draft={draft} assets={assets} cover={cover} statuses={fileStatuses} publishStatus={publishStatus} onRetry={publish} retrying={publishing} /> : null}
       </div></section> : <section className="publish-success"><span className="publish-success__icon" aria-hidden="true"><CheckIcon size={28} color="currentColor" /></span><h2>Project published</h2><p><strong>{published?.title || draft.title}</strong> is live and ready to view or play.</p><div className="publish-success__actions">{publishedId ? <Button onClick={() => navigate(`/app/project/${encodeURIComponent(String(publishedId))}`)}>View project</Button> : null}<Button variant="secondary" onClick={() => navigate('/app/home')}>Go to Feed</Button></div></section>}

@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { DotsIcon } from '../../../components/icons/Icons'
 import Avatar from '../../../components/ui/Avatar'
 import MediaFrame from '../../../components/ui/MediaFrame'
@@ -16,6 +16,7 @@ export default function ProjectReelCard({
   onProject,
   onFollow,
   onLike,
+  onViewLikes,
   onComments,
   onSave,
   onShare,
@@ -25,6 +26,10 @@ export default function ProjectReelCard({
   onDoubleTapLike,
 }) {
   const cardRef = useRef(null)
+  const lastTapRef = useRef({ time: 0, x: 0, y: 0 })
+  const touchLikeAtRef = useRef(0)
+  const [heartBurst, setHeartBurst] = useState(0)
+  const [runnerGifReady, setRunnerGifReady] = useState(false)
   const creatorName = project.creator?.name || project.creator?.username || 'Creator'
   const creatorHandle = project.creator?.handle || project.creator?.username || 'creator'
   const isCurrentUser = Boolean(currentUser && (creatorHandle === currentUser.username || creatorName === currentUser.name))
@@ -32,14 +37,52 @@ export default function ProjectReelCard({
   const isFollowing = Boolean(project.viewerState?.following)
 
   const isLightweight = project.mediaKind === 'image' || project.mediaKind === 'video' || project.media?.kind === 'image' || project.media?.kind === 'video'
+  const mediaKind = project.mediaKind || project.media?.kind || 'unknown'
+  const uploadedGameplayGif = project.media?.gameplayGifUrl || project.gameplayGifUrl || ''
+  const isRunnerGame = mediaKind === 'webgl' && String(project.title || '').trim().toLowerCase() === 'runner'
+  const gameplayPreviewUrl = uploadedGameplayGif || (isRunnerGame ? '/portrait_smooth.gif' : '')
+  const runnerPreviewUrl = gameplayPreviewUrl && runnerGifReady ? gameplayPreviewUrl : ''
+  const reelPosterUrl = runnerPreviewUrl || project.posterUrl || project.media?.posterUrl
+  const reelMedia = runnerPreviewUrl ? { ...project.media, posterUrl: runnerPreviewUrl } : project.media
+
+  useEffect(() => {
+    let timer
+    const frame = window.requestAnimationFrame(() => {
+      setRunnerGifReady(false)
+      if (gameplayPreviewUrl && active && !mediaActivationRequested) timer = window.setTimeout(() => setRunnerGifReady(true), 2200)
+    })
+    return () => { window.cancelAnimationFrame(frame); if (timer) window.clearTimeout(timer) }
+  }, [active, gameplayPreviewUrl, mediaActivationRequested, project.id])
 
   const handleTap = () => {
     onProject?.()
   }
 
-  const handleMediaDoubleClick = (event) => {
-    if (!isLightweight || event.target.closest('button, a, input, textarea, select, [role="button"], video')) return
+  const isMediaLikeTarget = (target) => !target.closest('button, a, input, textarea, select, [role="button"]')
+
+  const registerDoubleLike = () => {
+    setHeartBurst((value) => value + 1)
     onDoubleTapLike?.()
+  }
+
+  const handleMediaDoubleClick = (event) => {
+    if (!isLightweight || !isMediaLikeTarget(event.target) || Date.now() - touchLikeAtRef.current < 600) return
+    registerDoubleLike()
+  }
+
+  const handleMediaPointerUp = (event) => {
+    if (!isLightweight || !['touch', 'pen'].includes(event.pointerType) || !isMediaLikeTarget(event.target)) return
+    const now = Date.now()
+    const previous = lastTapRef.current
+    const closeEnough = Math.hypot(event.clientX - previous.x, event.clientY - previous.y) < 48
+    if (now - previous.time > 40 && now - previous.time < 350 && closeEnough) {
+      event.preventDefault()
+      lastTapRef.current = { time: 0, x: 0, y: 0 }
+      touchLikeAtRef.current = now
+      registerDoubleLike()
+      return
+    }
+    lastTapRef.current = { time: now, x: event.clientX, y: event.clientY }
   }
 
   return (
@@ -53,35 +96,38 @@ export default function ProjectReelCard({
       aria-labelledby={`feed-project-${project.id}`}
     >
       {/* Full-screen media container */}
-      <div className="project-reel-card__media" onClick={isLightweight ? handleMediaDoubleClick : undefined}>
+      <div className={`project-reel-card__media project-reel-card__media--${mediaKind}`} onDoubleClick={isLightweight ? handleMediaDoubleClick : undefined} onPointerUp={isLightweight ? handleMediaPointerUp : undefined}>
         <MediaFrame
           aspectRatio="auto"
-          poster={project.posterUrl || project.media?.posterUrl}
+          poster={reelPosterUrl}
           alt={project.title}
-          mediaKind={project.mediaKind || project.media?.kind}
+          mediaKind={mediaKind}
+          fit={mediaKind === 'image' ? 'contain' : 'cover'}
           onActivate={onMediaActivate}
         >
-          {active && (project.mediaKind === 'webgl' || project.mediaKind === 'gltf' || project.media?.kind === 'webgl' || project.media?.kind === 'gltf') ? (
+          {active ? (
             <ProjectMedia
-              media={project.media}
+              media={reelMedia}
               title={project.title}
               active={active}
               interactive={active}
               activationRequested={mediaActivationRequested}
-              allowAutoPreview={false}
-              className="project-media--feed"
+              allowAutoPreview={project.mediaKind === 'video' || project.media?.kind === 'video'}
+              className="project-media--feed project-media--reel"
               onActivate={onMediaActivate}
               onDeactivate={onMediaDeactivate}
-              onDoubleClick={isLightweight ? handleMediaDoubleClick : undefined}
             />
           ) : null}
         </MediaFrame>
+
+        {heartBurst ? <span key={heartBurst} className="project-reel-card__heart-burst" aria-hidden="true">♥</span> : null}
 
         {/* Instagram Reels-style vertical action rail */}
         <ProjectActionBar
           engagement={project.engagement || project.engagementCounts}
           viewerState={project.viewerState}
           onLike={onLike}
+          onViewLikes={onViewLikes}
           onComments={onComments}
           onSave={onSave}
           onShare={onShare}

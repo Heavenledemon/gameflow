@@ -31,6 +31,7 @@ const MEDIA_KIND_ALIASES = new Map([
 ])
 
 const PROJECT_TYPE_ALIASES = new Map([
+  ['video', 'video'],
   ['game', 'game'],
   ['webgl', 'game'],
   ['playable', 'game'],
@@ -139,16 +140,21 @@ export function toProjectCardModel(rawInput, options = {}) {
   }
 
   // Extract URLs (explicit alias map: posterUrl, previewUrl, imageUrl, thumbnail, videoUrl, gameUrl, manifestUrl, modelUrl)
-  const posterUrl = firstValue(media.posterUrl, raw.posterUrl, raw.previewUrl, raw.imageUrl, media.imageUrl, raw.thumbnail, raw.loadingScreenUrl)
-  const imageUrl = firstValue(media.imageUrl, raw.imageUrl, raw.previewUrl, raw.image, raw.thumbnail, posterUrl)
-  const videoUrl = firstValue(media.videoUrl, media.src, raw.videoUrl, raw.video)
+  const declaredMediaKind = MEDIA_KIND_ALIASES.get(String(options.mediaKindHint ?? media.kind ?? raw.mediaKind ?? raw.type ?? raw.category ?? '').trim().toLowerCase()) ?? null
+  const posterCandidate = firstValue(media.posterUrl, raw.posterUrl, raw.previewUrl, raw.imageUrl, media.imageUrl, raw.thumbnail, raw.loadingScreenUrl)
+  const posterIsVideo = declaredMediaKind === 'video' && /\.(mp4|webm|ogv|mov|m4v)(?:[?#]|$)/i.test(String(posterCandidate || ''))
+  const videoUrl = firstValue(media.videoUrl, media.src, raw.videoUrl, raw.video, posterIsVideo ? posterCandidate : null)
+  const gameplayGifUrl = firstValue(media.gameplayGifUrl, raw.gameplayGifUrl)
+  const posterUrl = posterIsVideo ? null : posterCandidate
+  const imageUrl = firstValue(media.imageUrl, raw.imageUrl, raw.image, raw.thumbnail, posterUrl)
   const gameUrl = firstValue(media.gameUrl, media.manifestUrl, raw.gameUrl, raw.manifestUrl)
   const modelUrl = firstValue(media.modelUrl, raw.modelUrl)
   const playableUrl = firstValue(gameUrl, modelUrl, videoUrl)
 
   // Resolve mediaKind
-  const sourceDeclaredKind = options.mediaKindHint ?? media.kind ?? raw.mediaKind ?? raw.type ?? raw.category
-  let declaredKind = sourceDeclaredKind ? (MEDIA_KIND_ALIASES.get(String(sourceDeclaredKind).trim().toLowerCase()) ?? null) : null
+  let declaredKind = declaredMediaKind
+  // A GIF published through the video workflow has an image URL and no video URL.
+  if (declaredKind === 'video' && !videoUrl && imageUrl) declaredKind = 'image'
 
   let mediaKind = 'unknown'
   if (declaredKind) {
@@ -249,6 +255,7 @@ export function toProjectCardModel(rawInput, options = {}) {
       posterUrl,
       imageUrl,
       videoUrl,
+      gameplayGifUrl,
       gameUrl,
       manifestUrl: firstValue(media.manifestUrl, raw.manifestUrl, gameUrl),
       modelUrl,

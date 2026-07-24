@@ -114,6 +114,37 @@
 .project-media--feed .gf-media-frame { width: 100%; height: 100%; }
 .project-media--feed .project-media__asset { object-fit: cover; }
 
+.project-reel-card__heart-burst {
+  position: absolute;
+  z-index: 8;
+  top: 50%;
+  left: 50%;
+  color: #fff;
+  font-size: clamp(104px, 36vw, 164px);
+  line-height: 1;
+  pointer-events: none;
+  filter: drop-shadow(0 5px 14px rgb(0 0 0 / 45%));
+  transform: translate(-50%, -50%) scale(0);
+  animation: reel-heart-burst 700ms ease-out forwards;
+}
+
+@keyframes reel-heart-burst {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.2) rotate(-10deg); }
+  22% { opacity: 1; transform: translate(-50%, -50%) scale(1.18) rotate(4deg); }
+  55% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(.82); }
+}
+
+/* Preserve uploaded artwork orientation inside the portrait reel viewport. */
+.project-reel-card__media--image .gf-media-frame img,
+.project-reel-card__media--image .project-media--feed .project-media__asset {
+  object-fit: contain;
+}
+
+.project-reel-card__media--image .project-media--feed[data-media-orientation="portrait"] .project-media__asset {
+  object-fit: cover;
+}
+
 /* ========================================
    BOTTOM OVERLAY — Creator + Title
    ======================================== */
@@ -336,6 +367,8 @@
     0 -1px 3px rgba(0, 0, 0, 0.8);
   transition: color 0.2s ease;
 }
+.feed-action__count--interactive { cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.feed-action__count--interactive:focus-visible { border-radius: 4px; outline: 2px solid #fff; outline-offset: 3px; }
 
 /* ================================================
    PER-ICON COLOR THEMES
@@ -538,6 +571,13 @@
 .project-quick-sheet__metadata { display: flex; flex-wrap: wrap; gap: var(--gf-space-2); margin-bottom: var(--gf-space-4); }
 .project-quick-sheet__collaboration { margin: 0 0 var(--gf-space-4); padding: var(--gf-space-3); border-radius: var(--gf-radius-md); color: var(--gf-text); background: var(--gf-control); }
 .project-quick-sheet__actions { display: grid; gap: var(--gf-space-2); }
+.likes-sheet { min-height: min(52dvh, 420px); }
+.likes-sheet__list { display: grid; gap: var(--gf-space-2); margin: 0; padding: 0; list-style: none; }
+.likes-sheet__person { width: 100%; min-height: 56px; display: flex; align-items: center; gap: var(--gf-space-3); padding: var(--gf-space-2); border: 0; border-radius: var(--gf-radius-sm); color: var(--gf-text); background: transparent; text-align: left; cursor: pointer; }
+.likes-sheet__person:hover { background: var(--gf-control); }
+.likes-sheet__person > span { display: grid; gap: 2px; }
+.likes-sheet__person strong { font-size: var(--gf-text-label); }
+.likes-sheet__person small, .likes-sheet__empty { color: var(--gf-text-muted); }
 
 @media (max-width: 370px) {
   .feed-action {

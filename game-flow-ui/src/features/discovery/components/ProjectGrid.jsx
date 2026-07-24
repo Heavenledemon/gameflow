@@ -24,6 +24,7 @@ export default function ProjectGrid({
   loading = false,
   onOpenProject,
   renderActions,
+  actionsPlacement = 'overlay',
 }) {
   const projectList = items || projects || []
 
@@ -38,6 +39,7 @@ export default function ProjectGrid({
             project={project}
             onOpen={onOpenProject ? () => onOpenProject(project) : undefined}
             actions={renderActions?.(project) || null}
+            actionsPlacement={actionsPlacement}
             variant="masonry"
             fallbackAspectRatio={['3 / 4', '1 / 1', '4 / 5', '2 / 3'][index % 4]}
           />

@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
-import { fetchContent, togglePostLike, updateContentEngagement, updateProject, deleteProject, uploadProjectFile } from '../../lib/content'
+import { fetchContent, fetchPublicUser, togglePostLike, updateContentEngagement, updateProject, deleteProject, uploadProjectFile } from '../../lib/content'
 import { fetchMyCollaborations } from '../../lib/collaboration'
 import { fetchStories, getViewedStoryIds, markStoryViewed } from '../../lib/stories'
 import { useMessagingRealtime } from '../../hooks/useMessagingRealtime'
@@ -12,10 +12,12 @@ import { Button } from '../../components/ui/Button'
 import { ConfirmDialog } from '../../components/ui/Overlay'
 import { EmptyState, ErrorState } from '../../components/ui/Feedback'
 import ProjectGrid from '../discovery/components/ProjectGrid'
+import DiscoveryProjectActions from '../discovery/components/DiscoveryProjectActions'
 import CreatorHeader from './components/CreatorHeader'
+import FollowListSheet from './components/FollowListSheet'
 import StoryViewer from '../discovery/components/StoryViewer'
 import PortfolioTabs from './components/PortfolioTabs'
-import { ProfileActions, ProjectManagementMenu } from './components/ProfileActions'
+import { ProfileActions } from './components/ProfileActions'
 import EditProfileForm from './components/EditProfileForm'
 import ProjectManagementSheet from './components/ProjectManagementSheet'
 import { contentCollections, mapPortfolioItems } from './profileAdapters'
@@ -51,6 +53,8 @@ export default function ProfilePage() {
   const [activeStories, setActiveStories] = useState([])
   const [storyOpen, setStoryOpen] = useState(false)
   const [viewedStoryIds, setViewedStoryIds] = useState(getViewedStoryIds)
+  const [followList, setFollowList] = useState('')
+  const [socialCounts, setSocialCounts] = useState({ followers: user?.followersCount ?? 0, following: user?.followingCount ?? 0 })
   const activeStory = activeStories[0] || null
 
   const loadContent = useCallback(async () => {
@@ -98,6 +102,14 @@ export default function ProfilePage() {
     }).catch(() => { if (!controller.signal.aborted) setActiveStories([]) })
     return () => controller.abort()
   }, [isGuest, token, userId])
+  useEffect(() => {
+    if (!userId) return undefined
+    const controller = new AbortController()
+    fetchPublicUser(userId, token, { signal: controller.signal }).then(({ user: profile }) => {
+      if (!controller.signal.aborted) setSocialCounts({ followers: profile?.followersCount ?? 0, following: profile?.followingCount ?? 0 })
+    }).catch(() => {})
+    return () => controller.abort()
+  }, [token, userId])
   const handleRealtime = useCallback((eventName) => { if (eventName.startsWith('project.member.')) loadCollaborations() }, [loadCollaborations])
   useMessagingRealtime(token, { onEvent: handleRealtime, onReady: loadCollaborations })
 
@@ -118,15 +130,20 @@ export default function ProfilePage() {
   const collaborationModels = useMemo(() => mapPortfolioItems(collaborationProjects), [collaborationProjects])
 
   const tabs = [
-    { id: 'projects', label: 'Projects', count: projects.length, projects },
-    ...(games.length ? [{ id: 'games', label: 'Games', count: games.length, projects: games }] : []),
-    ...(assets.length ? [{ id: 'assets', label: 'Assets', count: assets.length, projects: assets }] : []),
-    ...(collaborationModels.length ? [{ id: 'collaborations', label: 'Collaborations', count: collaborationModels.length, projects: collaborationModels }] : []),
-    ...(saved.length ? [{ id: 'saved', label: 'Saved', count: saved.length, projects: saved }] : []),
-    ...(liked.length ? [{ id: 'liked', label: 'Liked', count: liked.length, projects: liked }] : []),
-    ...(commented.length ? [{ id: 'comments', label: 'Comments', count: commented.length, projects: commented }] : []),
+    { id: 'projects', label: 'Projects', count: projects.length, projects, alwaysShow: true },
+    { id: 'games', label: 'Games', count: games.length, projects: games, alwaysShow: true },
+    { id: 'assets', label: 'Assets', count: assets.length, projects: assets, alwaysShow: true },
+    { id: 'collaborations', label: 'Collaborations', count: collaborationModels.length, projects: collaborationModels, alwaysShow: true },
+    { id: 'saved', label: 'Saved', count: saved.length, projects: saved, alwaysShow: true },
+    { id: 'liked', label: 'Liked', count: liked.length, projects: liked, alwaysShow: true },
+    { id: 'comments', label: 'Comments', count: commented.length, projects: commented, alwaysShow: true },
   ]
   const selectedTab = tabs.find((tab) => tab.id === activeTab) || tabs[0]
+  const emptyCopy = {
+    projects: ['No projects published yet', 'Publish a game, asset, artwork, video, or animation to start your portfolio.'],
+    saved: ['No saved projects yet', 'Projects you save will appear here.'],
+    liked: ['No liked projects yet', 'Projects you like will appear here.'],
+  }[selectedTab.id] || [`No ${selectedTab.label.toLowerCase()} yet`, `Your ${selectedTab.label.toLowerCase()} will appear here.`]
 
   const creator = {
     id: userId, name: user?.name || (isGuest ? 'Guest' : null), username: user?.username, avatar: user?.avatar,
@@ -139,8 +156,8 @@ export default function ProfilePage() {
   }
   const stats = [
     { label: 'Projects', value: projects.length },
-    { label: 'Followers', value: user?.followersCount ?? 0 },
-    { label: 'Following', value: user?.followingCount ?? 0 },
+    { label: 'Followers', value: socialCounts.followers, action: 'followers' },
+    { label: 'Following', value: socialCounts.following, action: 'following' },
   ]
 
   const shareProfile = async () => {
@@ -163,7 +180,6 @@ export default function ProfilePage() {
     catch (error) { showError(error.message || 'Failed to update profile.') }
     finally { setSavingProfile(false) }
   }
-  const originalProject = (model) => ownedRaw.find((project) => String(project.id || project._id) === String(model.rawIds.sourceId || model.projectId))
   const saveProject = async (payload, previewFile) => {
     const projectId = editingProject.id || editingProject._id
     setSavingProject(true)
@@ -209,7 +225,9 @@ export default function ProfilePage() {
       onMore={() => setLogoutOpen(true)}
       moreLabel="Log out"
       actions={<ProfileActions capability="self" onEdit={openEdit} />}
+      onStatSelect={setFollowList}
     />
+    <FollowListSheet open={Boolean(followList)} kind={followList || 'followers'} userId={userId} currentUserId={userId} token={token} onClose={() => setFollowList('')} onChanged={(result) => setSocialCounts((counts) => ({ ...counts, following: result.followingCount ?? counts.following }))} />
     {storyOpen && activeStories.length ? <StoryViewer stories={activeStories} onClose={() => setStoryOpen(false)} /> : null}
     <section className="portfolio" aria-labelledby="portfolio-heading">
       <h2 id="portfolio-heading" className="gf-sr-only">Creator portfolio</h2>
@@ -217,11 +235,8 @@ export default function ProfilePage() {
       <div id="profile-portfolio-panel" role="tabpanel" aria-label={`${selectedTab.label} portfolio`} className="portfolio__panel">
         {selectedTab.id === 'liked' && liked.length ? <Button className="portfolio__clear" variant="secondary" onClick={clearLiked}>Clear liked items</Button> : null}
         {status === 'error' ? <ErrorState title="Portfolio unavailable" description={loadError} onRetry={retryContent} /> : null}
-        {status === 'ready' && selectedTab.projects.length === 0 ? <EmptyState title="No projects published yet" description={isGuest ? 'Sign in to manage your creator portfolio.' : 'Publish a game, asset, or artwork to start your portfolio.'} actionLabel={isGuest ? undefined : 'Publish first project'} onAction={isGuest ? undefined : () => navigate('/app/upload')} /> : null}
-        {status !== 'error' && selectedTab.projects.length ? <ProjectGrid projects={selectedTab.projects} loading={status === 'loading'} onOpenProject={(project) => navigate(project.routeTarget)} renderActions={(model) => {
-          const raw = originalProject(model)
-          return raw ? <ProjectManagementMenu projectTitle={model.title} onEdit={() => setEditingProject(raw)} onDelete={() => setDeletingProject(raw)} /> : null
-        }} /> : status === 'loading' ? <ProjectGrid projects={[]} loading /> : null}
+        {status === 'ready' && selectedTab.projects.length === 0 ? <EmptyState title={emptyCopy[0]} description={isGuest ? 'Sign in to manage your creator portfolio.' : emptyCopy[1]} actionLabel={!isGuest && selectedTab.id === 'projects' ? 'Publish first project' : undefined} onAction={!isGuest && selectedTab.id === 'projects' ? () => navigate('/app/upload') : undefined} /> : null}
+        {status !== 'error' && selectedTab.projects.length ? <ProjectGrid projects={selectedTab.projects} loading={status === 'loading'} onOpenProject={(project) => navigate(project.routeTarget)} actionsPlacement="below" renderActions={(model) => <DiscoveryProjectActions project={model} onComment={() => navigate(model.routeTarget)} />} /> : status === 'loading' ? <ProjectGrid projects={[]} loading /> : null}
       </div>
     </section>
     {guestAction ? <GuestToast message={`Sign in to ${guestAction}.`} onSignIn={() => navigate('/signin')} onDismiss={() => setGuestAction('')} /> : null}

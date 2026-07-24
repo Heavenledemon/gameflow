@@ -8,6 +8,7 @@ import {
   getHealth,
   getReadiness,
   getPostEngagement,
+  getProjectLikes,
   getProjectById,
   getPublishedAssets,
   getPublishedGames,
@@ -22,7 +23,7 @@ import {
   updateContentEngagement,
   deleteProject,
 } from '../controllers/contentController.js'
-import { createCollaborationRequest } from '../controllers/socialController.js'
+import { createCollaborationRequest, getPublicUser, listUserFollows, searchUsers } from '../controllers/socialController.js'
 import { optionalProtect, protect } from '../middlewares/authMiddleware.js'
 import { redisRateLimit } from '../middlewares/rateLimitMiddleware.js'
 import { getFeed, getPost, getPostComments } from '../controllers/feedController.js'
@@ -35,9 +36,13 @@ router.get('/content', optionalProtect, getContent)
 router.get('/feed', optionalProtect, getFeed)
 router.get('/games', optionalProtect, getPublishedGames)
 router.get('/assets', optionalProtect, getPublishedAssets)
+router.get('/users/search', optionalProtect, searchUsers)
+router.get('/users/:identity', optionalProtect, getPublicUser)
+router.get('/users/:userId/:kind', optionalProtect, listUserFollows)
 router.get('/projects', optionalProtect, getPublishedProjects)
 router.get('/projects/:projectId', optionalProtect, getProjectById)
 router.get('/posts/:postId/engagement', protect, getPostEngagement)
+router.get('/posts/:postId/likes', protect, getProjectLikes)
 router.get('/posts/:postId/comments', optionalProtect, getPostComments)
 router.get('/posts/:postId', optionalProtect, getPost)
 router.post('/projects', protect, createProject)

@@ -4,6 +4,8 @@ import Project from '../models/Project.js'
 import PostEngagement from '../models/PostEngagement.js'
 import PostComment from '../models/PostComment.js'
 import CommentReaction from '../models/CommentReaction.js'
+import User from '../models/User.js'
+import Follow from '../models/Follow.js'
 import asyncHandler from '../middlewares/asyncHandler.js'
 import { clampFeedLimit, decodeFeedCursor, encodeFeedCursor } from '../utils/feedCursor.js'
 
@@ -14,28 +16,56 @@ function createError(statusCode, message) {
 }
 
 async function viewerState(items, viewerId) {
-  const state = new Map(items.map((item) => [item.feedId, { viewerHasLiked: false, viewerHasSaved: false }]))
+  const state = new Map(items.map((item) => [item.feedId, { viewerHasLiked: false, viewerHasSaved: false, following: false }]))
   if (!viewerId) return state
 
   const projectIds = items.filter((item) => item.contentType === 'project').map((item) => item.contentId)
   const gameIds = items.filter((item) => item.contentType === 'game').map((item) => item.contentId)
   const assetIds = items.filter((item) => item.contentType === 'asset').map((item) => item.contentId)
-  const rows = await PostEngagement.find({ userId: viewerId, $or: [
-    ...(projectIds.length ? [{ contentType: 'project', contentId: { $in: projectIds } }] : []),
-    ...(gameIds.length ? [{ contentType: 'game', contentId: { $in: gameIds } }] : []),
-    ...(assetIds.length ? [{ contentType: 'asset', contentId: { $in: assetIds } }] : []),
-  ] }).select('contentType contentId liked saved').lean()
-  for (const row of rows) state.set(`${row.contentType}:${row.contentId}`, { viewerHasLiked: Boolean(row.liked), viewerHasSaved: Boolean(row.saved) })
+  const creatorIds = [...new Set(items.map((item) => String(item.creator?.id || '')).filter((id) => mongoose.isValidObjectId(id)))]
+  const [rows, follows] = await Promise.all([
+    PostEngagement.find({ userId: viewerId, $or: [
+      ...(projectIds.length ? [{ contentType: 'project', contentId: { $in: projectIds } }] : []),
+      ...(gameIds.length ? [{ contentType: 'game', contentId: { $in: gameIds } }] : []),
+      ...(assetIds.length ? [{ contentType: 'asset', contentId: { $in: assetIds } }] : []),
+    ] }).select('contentType contentId liked saved').lean(),
+    creatorIds.length ? Follow.find({ followerId: viewerId, followingId: { $in: creatorIds } }).select('followingId').lean() : [],
+  ])
+  const followedIds = new Set(follows.map((row) => String(row.followingId)))
+  for (const item of items) state.get(item.feedId).following = followedIds.has(String(item.creator?.id || ''))
+  for (const row of rows) {
+    const key = `${row.contentType}:${row.contentId}`
+    state.set(key, { ...state.get(key), viewerHasLiked: Boolean(row.liked), viewerHasSaved: Boolean(row.saved) })
+  }
   return state
 }
 
-function toFeedDto(item, state) {
+async function currentCreators(items) {
+  const creatorIds = [...new Set(items
+    .map((item) => String(item.creator?.id || ''))
+    .filter((id) => mongoose.isValidObjectId(id)))]
+  if (!creatorIds.length) return new Map()
+
+  const users = await User.find({ _id: { $in: creatorIds } }).select('username name avatar isVerified').lean()
+  return new Map(users.map((user) => [String(user._id), {
+    id: String(user._id),
+    username: user.username || '',
+    name: user.name || '',
+    avatarUrl: user.avatar || '',
+    verified: Boolean(user.isVerified),
+  }]))
+}
+
+function toFeedDto(item, state, creators) {
+  const liveCreator = creators.get(String(item.creator?.id || ''))
+  const viewer = state.get(item.feedId) || {}
   return {
     feedId: item.feedId, type: item.contentType, createdAt: item.publishedAt, rank: item.rank,
-    creator: item.creator,
+    creator: liveCreator ? { ...item.creator, ...liveCreator } : item.creator,
     title: item.title, description: item.description, tags: item.tags, software: item.software, mode: item.mode,
     media: item.media,
-    engagement: { ...(item.engagement || {}), ...(state.get(item.feedId) || {}) },
+    engagement: { ...(item.engagement || {}), ...viewer },
+    viewerIsFollowing: Boolean(viewer.following),
     version: item.version,
   }
 }
@@ -53,9 +83,12 @@ export const getFeed = asyncHandler(async (request, response) => {
   const rows = await FeedItem.find(query).sort({ publishedAt: -1, _id: -1 }).limit(limit + 1).lean()
   const hasMore = rows.length > limit
   const items = rows.slice(0, limit)
-  const state = await viewerState(items, request.user?._id ? String(request.user._id) : '')
+  const [state, creators] = await Promise.all([
+    viewerState(items, request.user?._id ? String(request.user._id) : ''),
+    currentCreators(items),
+  ])
   response.json({
-    items: items.map((item) => toFeedDto(item, state)),
+    items: items.map((item) => toFeedDto(item, state, creators)),
     nextCursor: hasMore ? encodeFeedCursor(items.at(-1)) : null,
     serverTime: new Date().toISOString(),
   })

@@ -12,6 +12,8 @@ function legacyEngagement(engagement = {}) {
 }
 
 function projectDocument(project) {
+  // GIF animations use the video publishing workflow but render as images.
+  const isVideo = Boolean(project.videoUrl)
   return {
     feedId: `project:${project._id}`,
     contentType: 'project', contentId: String(project._id),
@@ -19,7 +21,16 @@ function projectDocument(project) {
     publishedAt: project.publishedAt || project.createdAt || new Date(), rank: 0,
     creator: { id: String(project.ownerId), username: project.ownerUsername || '', name: project.ownerName || '', avatarUrl: project.ownerAvatar || '' },
     title: project.title, description: project.description || '', tags: project.tags || [], software: project.software || [], mode: project.mode || 'landscape',
-    media: { kind: project.type, posterUrl: project.previewUrl || '', manifestUrl: project.gameUrl || '', modelUrl: project.modelUrl || '', imageUrl: project.imageUrl || '', background: '' },
+    media: {
+      kind: isVideo ? 'video' : project.type === 'video' ? 'image' : project.type,
+      posterUrl: project.previewUrl || '',
+      manifestUrl: project.gameUrl || '',
+      modelUrl: project.modelUrl || '',
+      videoUrl: project.videoUrl || '',
+      gameplayGifUrl: project.gameplayGifUrl || '',
+      imageUrl: project.imageUrl || '',
+      background: ''
+    },
     engagement: legacyEngagement(project.engagement),
   }
 }

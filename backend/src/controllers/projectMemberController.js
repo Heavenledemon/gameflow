@@ -20,8 +20,23 @@ export const listProjectMembers = asyncHandler(async (request, response) => {
 })
 
 export const listMyCollaborations = asyncHandler(async (request, response) => {
-  const rows = await ProjectMember.find({ userId: request.user._id, status: 'active' }).populate('projectId', 'title slug previewUrl imageUrl modelUrl category type updatedAt createdAt visibility').sort({ updatedAt: -1 }).lean()
-  response.json({ items: rows.filter((row) => row.projectId).map((row) => ({ projectId: String(row.projectId._id), role: row.role, project: { id: String(row.projectId._id), title: row.projectId.title, slug: row.projectId.slug, previewUrl: row.projectId.previewUrl || row.projectId.imageUrl || row.projectId.modelUrl || '', category: row.projectId.category, type: row.projectId.type, updatedAt: row.projectId.updatedAt, createdAt: row.projectId.createdAt } })) })
+  const rows = await ProjectMember.find({ userId: request.user._id, status: 'active', role: { $ne: 'owner' } })
+    .populate('projectId', 'title slug description previewUrl imageUrl videoUrl gameplayGifUrl gameUrl modelUrl category type mode ownerId ownerUsername ownerName ownerAvatar updatedAt createdAt visibility isPublished')
+    .sort({ updatedAt: -1 })
+    .lean()
+  response.json({
+    items: rows.filter((row) => row.projectId).map((row) => ({
+      projectId: String(row.projectId._id),
+      role: row.role,
+      project: {
+        ...row.projectId,
+        id: String(row.projectId._id),
+        contentId: String(row.projectId._id),
+        contentType: 'project',
+        previewUrl: row.projectId.previewUrl || row.projectId.imageUrl || row.projectId.modelUrl || '',
+      },
+    })),
+  })
 })
 
 export const updateProjectMember = asyncHandler(async (request, response) => {

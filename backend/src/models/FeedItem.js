@@ -26,6 +26,8 @@ const feedItemSchema = new mongoose.Schema(
       posterUrl: { type: String, default: '' },
       manifestUrl: { type: String, default: '' },
       modelUrl: { type: String, default: '' },
+      videoUrl: { type: String, default: '' },
+      gameplayGifUrl: { type: String, default: '' },
       imageUrl: { type: String, default: '' },
       background: { type: String, default: '' },
     },
@@ -43,4 +45,3 @@ feedItemSchema.index({ visibility: 1, isPublished: 1, publishedAt: -1, _id: -1 }
 feedItemSchema.index({ visibility: 1, isPublished: 1, rank: -1, publishedAt: -1, _id: -1 })
 
 export default mongoose.model('FeedItem', feedItemSchema)
-

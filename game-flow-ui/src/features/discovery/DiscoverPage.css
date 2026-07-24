@@ -57,19 +57,132 @@
 
 .discovery-filters { position: relative; display: flex; justify-content: flex-end; padding: 0; }
 .discovery-filters h2 { margin: 0; font-size: var(--gf-text-body); }
-.discovery-filters__trigger { min-height: 42px; display: inline-flex; align-items: center; gap: 7px; padding: 8px 12px; border: 1px solid var(--gf-border); border-radius: 999px; color: var(--gf-text); background: var(--gf-surface); font: inherit; font-size: var(--gf-text-label); font-weight: 700; cursor: pointer; }
-.discovery-filters__trigger svg { width: 19px; height: 19px; }
-.discovery-filters__trigger:hover,
-.discovery-filters__trigger--active { border-color: var(--gf-brand); color: var(--gf-brand); background: color-mix(in srgb, var(--gf-brand) 8%, var(--gf-surface)); }
-.discovery-filters__trigger:focus-visible { outline: 3px solid var(--gf-focus); outline-offset: 2px; }
-.discovery-filters__active-label { max-width: 92px; overflow: hidden; padding-left: 7px; border-left: 1px solid currentColor; font-size: var(--gf-text-caption); text-overflow: ellipsis; white-space: nowrap; }
-.discovery-filters__menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 20; width: min(240px, calc(100vw - 32px)); display: grid; gap: var(--gf-space-4); padding: var(--gf-space-4); border: 1px solid var(--gf-border); border-radius: var(--gf-radius-lg); background: var(--gf-surface); box-shadow: var(--gf-shadow-lg); }
-.discovery-filters__group { min-width: 0; display: grid; gap: var(--gf-space-2); }
-.discovery-filters__group > span { color: var(--gf-text-muted); font-size: var(--gf-text-caption); font-weight: 700; }
-.discovery-filters__scroller { min-width: 0; display: flex; flex-direction: column; gap: 4px; padding: 2px; }
-.discovery-filters__scroller::-webkit-scrollbar { display: none; }
-.discovery-filters__scroller .gf-chip-wrapper { width: 100%; }
-.discovery-filters__scroller .gf-chip { width: 100%; height: 40px; justify-content: flex-start; padding-inline: var(--gf-space-3); border-radius: var(--gf-radius-md); }
+.discovery-filters__trigger {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 1px solid var(--gf-border, #cbd5e1);
+  border-radius: 20px;
+  color: var(--gf-text, #0f172a);
+  background: var(--gf-surface-raised, #ffffff);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  font: inherit;
+  font-size: var(--gf-text-label);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.discovery-filters__trigger svg { width: 17px; height: 17px; color: var(--gf-brand-coral, #ff5c5c); }
+.discovery-filters__trigger:hover {
+  border-color: var(--gf-brand-coral, #ff5c5c);
+  color: var(--gf-brand-coral, #ff5c5c);
+  background: var(--gf-surface-hover, #f8fafc);
+}
+.discovery-filters__trigger--active {
+  border-color: var(--gf-brand-coral, #ff5c5c);
+  color: var(--gf-brand-coral, #ff5c5c);
+  background: #fff5f5;
+  box-shadow: 0 2px 10px rgba(255, 92, 92, 0.15);
+}
+.discovery-filters__trigger:focus-visible { outline: 2px solid var(--gf-brand-coral, #ff5c5c); outline-offset: 2px; }
+.discovery-filters__active-label {
+  max-width: 130px;
+  overflow: hidden;
+  padding-left: 8px;
+  border-left: 1px solid #cbd5e1;
+  color: var(--gf-brand-coral, #ff5c5c);
+  font-size: var(--gf-text-caption);
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.discovery-filters__menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 50;
+  width: min(270px, calc(100vw - 32px));
+  display: grid;
+  gap: var(--gf-space-3);
+  padding: 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 12px 36px rgba(15, 23, 42, 0.18), 0 4px 12px rgba(0, 0, 0, 0.06);
+  animation: gf-menu-appear 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes gf-menu-appear {
+  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.discovery-filters__group { min-width: 0; display: grid; gap: 8px; }
+.discovery-filters__group > span.discovery-filters__label {
+  color: #64748b;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding-left: 6px;
+}
+.discovery-filters__options {
+  display: grid;
+  gap: 4px;
+}
+.discovery-filters__option {
+  width: 100%;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #334155;
+  font: inherit;
+  font-size: var(--gf-text-caption);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.discovery-filters__option:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+  color: #0f172a;
+}
+.discovery-filters__option--active {
+  border-color: #ff5c5c;
+  background: #fff5f5;
+  color: #ff5c5c;
+  font-weight: 800;
+}
+.discovery-filters__option-icon {
+  display: grid;
+  place-items: center;
+  color: #64748b;
+  flex-shrink: 0;
+}
+.discovery-filters__option--active .discovery-filters__option-icon {
+  color: #ff5c5c;
+}
+.discovery-filters__option-text {
+  flex: 1;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.discovery-filters__option-check {
+  display: grid;
+  place-items: center;
+  color: #ff5c5c;
+  flex-shrink: 0;
+}
 
 .discover-page__results { display: grid; gap: var(--gf-space-4); padding: var(--gf-space-4); }
 .discover-page__results-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--gf-space-3); }
@@ -79,6 +192,18 @@
 .discover-page__results-heading > div p { display: none; }
 .discover-page__result-count { display: none; }
 .discover-page__guidance { margin: 0; padding: var(--gf-space-3); border: 1px solid var(--gf-border); border-radius: var(--gf-radius-md); color: var(--gf-text-muted); background: var(--gf-surface); font-size: var(--gf-text-label); }
+
+/* Keep Discover as a two-column Pinterest-style masonry wall on every
+   viewport instead of expanding to three or four rigid columns. */
+.discover-page .project-grid {
+  columns: 2;
+  column-gap: 12px;
+}
+
+.discover-page .project-grid > * {
+  margin-bottom: 12px;
+  break-inside: avoid;
+}
 
 .discovery-result-group { min-width: 0; display: grid; gap: var(--gf-space-3); }
 .discovery-result-group h3 { margin: 0; font-size: var(--gf-text-label); }

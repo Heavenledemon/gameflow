@@ -4,16 +4,16 @@ function formatCount(value) {
   return String(value ?? 0)
 }
 
-export default function CreatorStats({ stats = [] }) {
+export default function CreatorStats({ stats = [], onSelect }) {
   if (!stats.length) return null
 
   return (
     <div className="creator-stats" aria-label="Creator statistics">
       {stats.map((stat) => (
-        <div key={stat.label} className="creator-stats__item">
+        <button type="button" key={stat.label} className="creator-stats__item" disabled={!stat.action} onClick={() => stat.action && onSelect?.(stat.action)}>
           <span className="creator-stats__value">{formatCount(stat.value)}</span>
           <span className="creator-stats__label">{stat.label}</span>
-        </div>
+        </button>
       ))}
     </div>
   )

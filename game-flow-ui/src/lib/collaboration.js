@@ -44,7 +44,7 @@ export async function createCollaborationRequest(token, projectId, payload) {
 
 export async function acceptCollaborationRequest(token, requestId) {
   const data = await request(`/collaboration/requests/${encodeURIComponent(requestId)}/accept`, { method: 'POST', headers: headers(token) })
-  return { ...data, request: normalizeCollaborationRequest(data.request) }
+  return { ...data, request: normalizeCollaborationRequest(data.request), workspace: data.workspace || null }
 }
 
 export async function declineCollaborationRequest(token, requestId) {

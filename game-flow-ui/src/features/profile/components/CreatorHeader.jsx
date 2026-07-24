@@ -37,6 +37,7 @@ export default function CreatorHeader({
   hasActiveStory = false,
   storyViewed = false,
   onStoryOpen,
+  onStatSelect,
 }) {
   const [bioExpanded, setBioExpanded] = useState(false)
   const website = safeExternalUrl(creator.website)
@@ -101,7 +102,7 @@ export default function CreatorHeader({
           </button>
 
           <div className="creator-header__stats-wrapper">
-            <CreatorStats stats={stats} />
+            <CreatorStats stats={stats} onSelect={onStatSelect} />
           </div>
         </div>
 

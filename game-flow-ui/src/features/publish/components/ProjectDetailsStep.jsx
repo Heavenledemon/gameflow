@@ -4,6 +4,7 @@ import { Button } from '../../../components/ui/Button'
 
 export const CATEGORY_OPTIONS = {
   game: ['Action', 'Puzzle', 'Arcade', 'Simulation', 'Strategy', 'Casual'],
+  video: ['Animation', 'Gameplay', 'Cinematic', 'Motion Graphics', 'VFX', 'Showreel'],
   '3d': ['Character', 'Environment', 'Prop', 'Hard Surface', 'Sculpt', 'Vehicle'],
   '2d': ['Illustration', 'Concept Art', 'Texture', 'UI/UX', 'Poster', 'Sprite'],
 }

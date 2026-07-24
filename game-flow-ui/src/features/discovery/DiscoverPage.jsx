@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Avatar from '../../components/ui/Avatar'
 import Chip from '../../components/ui/Chip'
@@ -8,12 +8,23 @@ import DiscoveryFilters from './components/DiscoveryFilters'
 import DiscoverySearch from './components/DiscoverySearch'
 import InstagramStories from './components/InstagramStories'
 import ProjectGrid from './components/ProjectGrid'
+import DiscoveryProjectActions from './components/DiscoveryProjectActions'
 import { useDiscoveryCollection } from './hooks/useDiscoveryCollection'
 import { toProjectCardModelList } from '../project/model/projectCardModel'
 import { getDiscoverSections, DISCOVER_FIXTURE_LABEL } from './discoverFixtures'
+import { searchUsers } from '../../lib/content'
 import './DiscoverPage.css'
 
-const FILTERABLE_TYPES = new Set(['project', 'game', 'asset'])
+const FILTERABLE_TYPES = new Set(['game', 'video', '3d', 'image'])
+
+function discoveryType(project) {
+  const mediaKind = project.mediaKind || project.media?.kind
+  if (mediaKind === 'video' || project.projectType === 'video') return 'video'
+  if (mediaKind === 'webgl' || project.contentType === 'game') return 'game'
+  if (mediaKind === 'gltf' || project.contentType === 'asset') return '3d'
+  if (mediaKind === 'image') return 'image'
+  return 'project'
+}
 
 function searchableProjectText(project) {
   return [
@@ -41,6 +52,9 @@ function deriveCreators(projects) {
   const creators = new Map()
   projects.forEach(({ creator }) => {
     if (!creator) return
+    // Normalization uses "Anonymous" when legacy content has no real owner.
+    // Such placeholders are not searchable user accounts.
+    if (!creator.id && !creator.username && !creator.handle) return
     const key = creatorKey(creator)
     if (key && !creators.has(key)) creators.set(key, creator)
   })
@@ -58,7 +72,9 @@ export default function DiscoverPage() {
   const [query, setQuery] = useState('')
   const [selectedType, setSelectedType] = useState('all')
   const [collaborationOnly, setCollaborationOnly] = useState(false)
+  const [directoryCreators, setDirectoryCreators] = useState([])
   const normalizedQuery = query.trim().toLowerCase()
+  const hasActiveFilters = selectedType !== 'all' || collaborationOnly
 
   // Normalize raw collection through canonical ProjectCardModel
   const normalizedItems = useMemo(() => {
@@ -70,14 +86,14 @@ export default function DiscoverPage() {
   }, [data?.items])
 
   const assetTypes = useMemo(() => (
-    [...new Set(normalizedItems.map((project) => project.contentType).filter((type) => FILTERABLE_TYPES.has(type)))]
+    [...new Set(normalizedItems.map(discoveryType).filter((type) => FILTERABLE_TYPES.has(type)))]
   ), [normalizedItems])
 
   const collaborationSupported = normalizedItems.some((project) => project.collaborationOpen === true || project.collaboration?.open === true)
 
   const facetItems = useMemo(() => {
     return normalizedItems.filter((project) => (
-      (selectedType === 'all' || project.contentType === selectedType) &&
+      (selectedType === 'all' || discoveryType(project) === selectedType) &&
       (!collaborationOnly || project.collaborationOpen === true || project.collaboration?.open === true)
     ))
   }, [normalizedItems, selectedType, collaborationOnly])
@@ -88,13 +104,36 @@ export default function DiscoverPage() {
       : facetItems
   }, [normalizedQuery, facetItems])
 
-  const creatorResults = useMemo(() => {
-    return normalizedQuery
+  const localCreatorResults = useMemo(() => {
+    return normalizedQuery.length >= 2
       ? deriveCreators(facetItems).filter((creator) => (
         [creator.name, creator.username, creator.handle].filter(Boolean).join(' ').toLowerCase().includes(normalizedQuery)
       ))
       : []
   }, [normalizedQuery, facetItems])
+
+  useEffect(() => {
+    if (normalizedQuery.length < 2) {
+      return undefined
+    }
+    const controller = new AbortController()
+    const timer = window.setTimeout(() => {
+      searchUsers(normalizedQuery, token, { signal: controller.signal })
+        .then((data) => setDirectoryCreators((data.items || []).map((person) => ({ ...person, avatarUrl: person.avatar || '', handle: person.username }))))
+        .catch((error) => { if (error?.name !== 'AbortError') setDirectoryCreators([]) })
+    }, 250)
+    return () => { window.clearTimeout(timer); controller.abort() }
+  }, [normalizedQuery, token])
+
+  const creatorResults = useMemo(() => {
+    const creators = new Map()
+    const directoryResults = normalizedQuery.length >= 2 ? directoryCreators : []
+    ;[...directoryResults, ...localCreatorResults].forEach((creator) => {
+      const key = creatorKey(creator)
+      if (key && !creators.has(key)) creators.set(key, creator)
+    })
+    return [...creators.values()]
+  }, [directoryCreators, localCreatorResults, normalizedQuery.length])
 
   const tagResults = useMemo(() => {
     return normalizedQuery
@@ -120,6 +159,7 @@ export default function DiscoverPage() {
       navigate(project.canonicalRoute || project.routeTarget)
     }
   }
+  const renderProjectActions = (project) => <DiscoveryProjectActions project={project} onComment={() => openProject(project)} />
 
   return (
     <main className="discover-page">
@@ -256,24 +296,32 @@ export default function DiscoverPage() {
           {!error && !loading && normalizedQuery && projectResults.length ? (
             <section className="discovery-result-group" aria-labelledby="project-results-title">
               <h3 id="project-results-title">Projects</h3>
-              <ProjectGrid items={projectResults} onOpenProject={openProject} />
+              <ProjectGrid items={projectResults} onOpenProject={openProject} renderActions={renderProjectActions} actionsPlacement="below" />
+            </section>
+          ) : null}
+
+          {/* Filtered Projects (without a text query) */}
+          {!error && !loading && !normalizedQuery && hasActiveFilters && projectResults.length ? (
+            <section className="discovery-result-group" aria-labelledby="filtered-projects-title">
+              <h3 id="filtered-projects-title">Filtered Results</h3>
+              <ProjectGrid items={projectResults} onOpenProject={openProject} renderActions={renderProjectActions} actionsPlacement="below" />
             </section>
           ) : null}
 
           {/* Default Non-Query View: Trending & Featured Sections */}
-          {!error && !loading && !normalizedQuery && (
+          {!error && !loading && !normalizedQuery && !hasActiveFilters && (
             <>
               {defaultSections.trending.length > 0 && (
                 <section className="discovery-result-group" aria-labelledby="trending-title">
                   <h3 id="trending-title">Trending</h3>
-                  <ProjectGrid items={defaultSections.trending} onOpenProject={openProject} />
+                  <ProjectGrid items={defaultSections.trending} onOpenProject={openProject} renderActions={renderProjectActions} actionsPlacement="below" />
                 </section>
               )}
 
               {defaultSections.recent.length > 0 && (
                 <section className="discovery-result-group" aria-labelledby="recent-title">
                   <h3 id="recent-title">Recent</h3>
-                  <ProjectGrid items={defaultSections.recent} onOpenProject={openProject} />
+                  <ProjectGrid items={defaultSections.recent} onOpenProject={openProject} renderActions={renderProjectActions} actionsPlacement="below" />
                 </section>
               )}
             </>

@@ -86,6 +86,7 @@ export default function ProjectDetailPage() {
       const data = await fetchProject(projectId, token)
       if (data?.project) {
         setProject(data.project)
+        setIsFollowing(Boolean(data.project.viewerIsFollowing))
         setLoadState({ status: 'ready', error: '' })
       } else {
         setProject(null)
@@ -104,6 +105,7 @@ export default function ProjectDetailPage() {
       if (!current) return
       if (data?.project) {
         setProject(data.project)
+        setIsFollowing(Boolean(data.project.viewerIsFollowing))
         setLoadState({ status: 'ready', error: '' })
       } else {
         setProject(null)
@@ -124,6 +126,14 @@ export default function ProjectDetailPage() {
   const isOwner = Boolean(project && user && ((project.ownerId && String(project.ownerId) === String(viewerId)) || (normalizedOwner && normalizedOwner === normalizedViewer)))
   const viewerRole = project?.viewerRole || (isOwner ? 'owner' : '')
   const isActiveMember = Boolean(viewerRole)
+
+  useEffect(() => {
+    const syncFollow = (event) => {
+      if (String(event.detail?.userId || '') === String(project?.ownerId || '')) setIsFollowing(Boolean(event.detail?.following))
+    }
+    window.addEventListener('gameflow:follow-changed', syncFollow)
+    return () => window.removeEventListener('gameflow:follow-changed', syncFollow)
+  }, [project?.ownerId])
   const canManageMembers = isOwner || ['owner', 'editor'].includes(viewerRole)
   const members = useProjectMembers(token, projectId, { enabled: Boolean(token && isActiveMember) })
   const conversations = useConversations(token, { enabled: Boolean(token && isActiveMember) })
@@ -324,8 +334,8 @@ export default function ProjectDetailPage() {
     } catch (error) { showError(error.message || 'Failed to update visibility.') }
   }
 
-  if (resolvedProjectId !== projectId || loadState.status === 'loading') return <main className="project-detail project-detail--state" data-theme="immersive"><Skeleton className="project-detail__media-skeleton" /><Skeleton height="28px" width="70%" /><Skeleton height="92px" /></main>
-  if (loadState.status !== 'ready' || !project) return <main className="project-detail project-detail--state" data-theme="immersive"><ErrorState title={loadState.status === 'not-found' ? 'Project not found' : 'Project unavailable'} description={loadState.error || 'This project could not be found.'} onRetry={loadState.status === 'error' ? loadProject : undefined} actionLabel="Go back" /><Button variant="secondary" onClick={() => navigate(-1)}>Go back</Button></main>
+  if (resolvedProjectId !== projectId || loadState.status === 'loading') return <main className="project-detail project-detail--state"><Skeleton className="project-detail__media-skeleton" /><Skeleton height="28px" width="70%" /><Skeleton height="92px" /></main>
+  if (loadState.status !== 'ready' || !project) return <main className="project-detail project-detail--state"><ErrorState title={loadState.status === 'not-found' ? 'Project not found' : 'Project unavailable'} description={loadState.error || 'This project could not be found.'} onRetry={loadState.status === 'error' ? loadProject : undefined} actionLabel="Go back" /><Button variant="secondary" onClick={() => navigate(-1)}>Go back</Button></main>
 
   const model = fromProject(project)
   const creatorRole = project.type === 'game' ? 'Game Developer' : project.type === '3d' ? '3D Artist' : '2D Artist'
@@ -340,7 +350,7 @@ export default function ProjectDetailPage() {
   const collaborationAction = isActiveMember ? openWorkspace : isOwner ? openCollaborationPicker : projectRequest ? openRequest : requestToCollaborate
 
   return (
-    <main className={`project-detail ${showComments ? 'project-detail--comments-open' : ''}`} data-theme="immersive">
+    <main className={`project-detail ${showComments ? 'project-detail--comments-open' : ''}`}>
       {isGuest ? <GuestBanner onSignIn={() => navigate('/signin')} /> : null}
       <div className="project-detail__layout">
         <div className="project-detail__main">

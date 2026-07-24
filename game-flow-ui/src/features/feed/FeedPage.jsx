@@ -13,14 +13,17 @@ import {
   createPostComment,
   fetchPostComments,
   fetchPostEngagement,
+  fetchProjectLikes,
   toggleCommentReaction,
   togglePostLike,
   togglePostSave,
   updateContentEngagement,
+  toggleUserFollow,
 } from '../../lib/content'
 import CommentsSheet from './components/CommentsSheet'
 import ProjectQuickActionsSheet from './components/ProjectQuickActionsSheet'
 import ProjectReelCard from './components/ProjectReelCard'
+import LikesSheet from './components/LikesSheet'
 import './FeedPage.css'
 
 
@@ -87,6 +90,10 @@ export default function FeedPage() {
   const [replyTarget, setReplyTarget] = useState(null)
   const [isSubmittingComment, setIsSubmittingComment] = useState(false)
   const [quickSheet, setQuickSheet] = useState(null)
+  const [likesTarget, setLikesTarget] = useState(null)
+  const [likes, setLikes] = useState([])
+  const [likesStatus, setLikesStatus] = useState('idle')
+  const [likesError, setLikesError] = useState('')
   const feedRef = useRef(null)
   const cardNodesRef = useRef(new Map())
   const observerRef = useRef(null)
@@ -240,6 +247,22 @@ export default function FeedPage() {
     }
   }
 
+  const openLikes = async (project) => {
+    setInteractiveProjectId(null)
+    setLikesTarget(project)
+    setLikes([])
+    setLikesStatus('loading')
+    setLikesError('')
+    try {
+      const data = await fetchProjectLikes(token, project.contentId)
+      setLikes(data.items || [])
+      setLikesStatus('ready')
+    } catch (error) {
+      setLikesError(error.message || 'Could not load the people who liked this project.')
+      setLikesStatus('error')
+    }
+  }
+
   const handleSave = async (project) => {
     if (isGuest) {
       window.alert('Sign in to save posts.')
@@ -279,19 +302,22 @@ export default function FeedPage() {
     }
   }
 
-  const handleFollow = (project) => {
+  const handleFollow = async (project) => {
     if (isGuest) {
       window.alert('Sign in to follow creators.')
       return
     }
-    const targetKey = getProjectKey(project)
-    updateProject(targetKey, (item) => {
-      const isFollowing = Boolean(item.viewerState?.following)
-      return {
-        ...item,
-        viewerState: { ...item.viewerState, following: !isFollowing },
-      }
-    })
+    const creatorId = project.creator?.id
+    if (!creatorId) return
+    const previous = Boolean(project.viewerState?.following)
+    setProjects((items) => items.map((item) => String(item.creator?.id) === String(creatorId) ? { ...item, viewerState: { ...item.viewerState, following: !previous } } : item))
+    try {
+      const result = await toggleUserFollow(token, creatorId)
+      setProjects((items) => items.map((item) => String(item.creator?.id) === String(creatorId) ? { ...item, viewerState: { ...item.viewerState, following: Boolean(result.following) } } : item))
+    } catch (error) {
+      setProjects((items) => items.map((item) => String(item.creator?.id) === String(creatorId) ? { ...item, viewerState: { ...item.viewerState, following: previous } } : item))
+      window.alert(error.message || 'Unable to update follow status.')
+    }
   }
 
   const loadComments = useCallback(async (project) => {
@@ -512,6 +538,7 @@ export default function FeedPage() {
               onProject={() => openProject(project)}
               onFollow={() => handleFollow(project)}
               onLike={() => handleLike(project)}
+              onViewLikes={String(project.creator?.id || '') === String(user?.id || user?._id || '') ? () => openLikes(project) : undefined}
               onComments={() => openComments(project)}
               onSave={() => handleSave(project)}
               onShare={() => {
@@ -569,6 +596,17 @@ export default function FeedPage() {
         onOpenProject={() => openProject(quickSheet.project)}
         onCollaborate={() => openCollaboration(quickSheet.project)}
         onShare={(platform) => handleShare(quickSheet.project, platform)}
+      />
+
+      <LikesSheet
+        open={Boolean(likesTarget)}
+        project={likesTarget}
+        items={likes}
+        status={likesStatus}
+        error={likesError}
+        onClose={() => { setLikesTarget(null); setLikes([]); setLikesStatus('idle'); setLikesError('') }}
+        onRetry={() => openLikes(likesTarget)}
+        onCreator={(person) => { setLikesTarget(null); navigate(`/app/creator/${encodeURIComponent(person.username)}`) }}
       />
     </main>
   )

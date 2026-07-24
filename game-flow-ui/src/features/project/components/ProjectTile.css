@@ -21,6 +21,7 @@
   overflow: hidden;
   background-color: var(--gf-media-surface);
 }
+.project-tile__video { width: 100%; height: 100%; display: block; object-fit: cover; pointer-events: none; }
 
 .project-tile--masonry {
   overflow: visible;
@@ -43,22 +44,48 @@
 .project-tile--masonry .project-tile__title { font-size: 12px; }
 .project-tile--masonry .project-tile__creator { display: none; }
 .project-tile__more { position: absolute; right: 4px; bottom: 5px; color: var(--gf-text); font-size: 14px; font-weight: 900; letter-spacing: 1px; }
+.project-tile:has(.project-tile__actions) .project-tile__more { display: none; }
+.project-tile__actions { z-index: 3; }
+.project-tile__actions--below { position: relative; padding: 0 2px 7px; }
+.project-tile__actions--overlay { position: absolute; z-index: 4; top: 8px; right: 8px; }
+.project-tile__actions--overlay .project-management > .gf-icon-button { width: 34px; height: 34px; color: #fff; background: rgb(20 20 24 / 64%); box-shadow: 0 3px 12px rgb(0 0 0 / 30%); backdrop-filter: blur(8px); }
+.project-tile__actions--overlay .project-management__menu { position: absolute; top: 40px; right: 0; width: 156px; display: grid; grid-template-columns: 1fr; gap: 2px; padding: 5px; border: 1px solid var(--gf-border); border-radius: 10px; background: var(--gf-surface-raised); box-shadow: var(--gf-shadow-lg); }
+.project-tile__actions--overlay .project-management__menu button { min-height: 38px; border: 0; text-align: left; }
+.project-tile__engagement { display: flex; align-items: center; justify-content: space-between; gap: 2px; border-top: 1px solid var(--gf-border-subtle); padding-top: 5px; }
+.project-tile__engagement button { display: inline-flex; min-width: 27px; min-height: 30px; align-items: center; justify-content: center; gap: 2px; padding: 3px; border: 0; color: var(--gf-text); background: transparent; }
+.project-tile__engagement button span { font-size: 10px; font-weight: 700; }
+.project-tile__engagement button.is-active { color: #ff4d61; }
+.project-tile__engagement button.is-saved { color: #f2ad33; }
+
+/* The web profile uses four narrow masonry columns. Keep every action inside
+   its own card instead of allowing global button minimums to overflow. */
+@media (min-width: 480px) {
+  .project-tile__actions--below { width: 100%; min-width: 0; box-sizing: border-box; overflow: hidden; padding-inline: 0; }
+  .project-tile__engagement { width: 100%; min-width: 0; gap: 0; justify-content: stretch; overflow: hidden; }
+  .project-tile__engagement button { width: 25%; min-width: 0; min-height: 28px; flex: 1 1 25%; gap: 1px; padding: 2px 0; overflow: hidden; }
+  .project-tile__engagement button svg { width: 17px; height: 17px; flex: 0 0 17px; }
+  .project-tile__engagement button span { min-width: 0; max-width: 18px; overflow: hidden; font-size: 9px; text-overflow: ellipsis; }
+}
 
 .project-tile__badge {
   display: inline-flex;
   align-items: center;
-  padding: 2px var(--gf-space-2);
-  font-size: var(--gf-text-xs);
+  min-height: 20px;
+  padding: 2px 7px;
+  font-size: 9px;
+  line-height: 1;
   font-weight: var(--gf-weight-bold);
   color: var(--gf-text-inverse);
   background-color: rgba(0, 0, 0, 0.72);
-  border-radius: var(--gf-radius-sm);
+  border: 1px solid rgb(255 255 255 / 20%);
+  border-radius: 999px;
   backdrop-filter: blur(4px);
-  max-width: calc(100% - 16px);
-  overflow: hidden;
+  max-width: none;
   white-space: nowrap;
-  text-overflow: ellipsis;
+  box-sizing: border-box;
 }
+
+.project-tile .gf-media-frame__badge { top: 7px; right: 7px; max-width: calc(100% - 14px); }
 
 .project-tile__copy {
   display: flex;

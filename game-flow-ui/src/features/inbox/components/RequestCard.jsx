@@ -35,7 +35,7 @@ export default function RequestCard({ request, box, pending = false, onAction, o
           <h3 className="request-card__title">{projectTitle}</h3>
 
           <div className="request-card__person">
-            <Avatar src={person?.avatar} alt="" name={personName} size="xs" />
+            <Avatar src={person?.avatar} alt="" name={personName} size="sm" />
             <p>
               {incoming ? (
                 <>

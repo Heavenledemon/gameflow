@@ -19,7 +19,7 @@ export default function MessageThread({ title, items, status, nextCursor, userId
       if (message.type === 'system') return <div className="conversation-system" key={message.id}><span>{message.body}</span><time dateTime={message.createdAt}>{formatInboxTime(message.createdAt, true)}</time></div>
       const retrying = retryingIds.has(message.clientMessageId)
       return <article className={mine ? 'message message--mine' : 'message'} key={message.clientMessageId || message.id}>
-        {!grouped ? <span className="message__sender">{mine ? 'You' : 'Creator'}</span> : null}
+        {!grouped ? <span className="message__sender">{mine ? 'You' : message.sender?.name || message.sender?.username || 'Creator'}</span> : null}
         <div className="message__bubble"><p>{message.body}</p><div className="message__meta"><time dateTime={message.createdAt}>{formatInboxTime(message.createdAt)}</time>{message.pending ? <span role="status">Sending</span> : null}</div>{message.failed ? <button type="button" className="message__retry" disabled={retrying} onClick={() => onRetryMessage(message)}>{retrying ? 'Retrying…' : 'Retry send'}</button> : null}</div>
       </article>
     })}

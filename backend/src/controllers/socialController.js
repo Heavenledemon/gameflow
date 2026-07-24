@@ -29,6 +29,58 @@ function publicUser(user, relationship) {
   }
 }
 
+function escapeRegex(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+export const searchUsers = asyncHandler(async (request, response) => {
+  const query = String(request.query.q || '').trim().slice(0, 80)
+  if (query.length < 2) return response.json({ items: [] })
+  const pattern = new RegExp(escapeRegex(query), 'i')
+  const users = await User.find({ $or: [{ username: pattern }, { name: pattern }, { headline: pattern }] })
+    .select('username name avatar headline creatorType isVerified')
+    .sort({ username: 1 })
+    .limit(20)
+    .lean()
+  response.json({ items: users.map((user) => ({ ...publicUser(user, ''), isVerified: Boolean(user.isVerified) })) })
+})
+
+export const getPublicUser = asyncHandler(async (request, response) => {
+  const identity = String(request.params.identity || '').trim().toLowerCase()
+  const query = mongoose.isValidObjectId(identity) ? { $or: [{ _id: identity }, { username: identity }] } : { username: identity }
+  const user = await User.findOne(query).select('username name avatar banner headline creatorType isVerified bio description location website skills github itchio behance artstation instagram linkedin').lean()
+  if (!user) throw createError(404, 'Creator not found.')
+  const [followersCount, followingCount, viewerIsFollowing] = await Promise.all([
+    Follow.countDocuments({ followingId: user._id }),
+    Follow.countDocuments({ followerId: user._id }),
+    request.user && String(request.user._id) !== String(user._id)
+      ? Follow.exists({ followerId: request.user._id, followingId: user._id })
+      : null,
+  ])
+  response.json({ user: { ...publicUser(user, ''), banner: user.banner || '', creatorType: user.creatorType || '', isVerified: Boolean(user.isVerified), bio: user.bio || '', description: user.description || '', location: user.location || '', website: user.website || '', skills: user.skills || [], github: user.github || '', itchio: user.itchio || '', behance: user.behance || '', artstation: user.artstation || '', instagram: user.instagram || '', linkedin: user.linkedin || '', followersCount, followingCount, viewerIsFollowing: Boolean(viewerIsFollowing) } })
+})
+
+export const listUserFollows = asyncHandler(async (request, response) => {
+  const { userId, kind } = request.params
+  if (!mongoose.isValidObjectId(userId)) throw createError(400, 'Invalid user ID.')
+  if (!['followers', 'following'].includes(kind)) throw createError(400, 'Invalid follow list.')
+  if (!await User.exists({ _id: userId })) throw createError(404, 'User not found.')
+
+  const rows = await Follow.find(kind === 'followers' ? { followingId: userId } : { followerId: userId })
+    .sort({ createdAt: -1 })
+    .limit(200)
+    .populate(kind === 'followers' ? 'followerId' : 'followingId', 'username name avatar headline creatorType isVerified')
+    .lean()
+  const people = rows.map((row) => kind === 'followers' ? row.followerId : row.followingId).filter(Boolean)
+  const viewerFollowing = request.user && people.length
+    ? await Follow.find({ followerId: request.user._id, followingId: { $in: people.map((person) => person._id) } }).select('followingId').lean()
+    : []
+  const followedIds = new Set(viewerFollowing.map((row) => String(row.followingId)))
+  response.json({
+    items: people.map((person) => ({ ...publicUser(person, ''), isVerified: Boolean(person.isVerified), viewerIsFollowing: followedIds.has(String(person._id)), isSelf: String(request.user?._id || '') === String(person._id) })),
+  })
+})
+
 export const getCollaborationCandidates = asyncHandler(async (request, response) => {
   const viewerId = request.user._id
   const relationships = await Follow.find({ $or: [{ followerId: viewerId }, { followingId: viewerId }] }).lean()
@@ -65,11 +117,14 @@ export const toggleFollow = asyncHandler(async (request, response) => {
   const existing = await Follow.findOne({ followerId: request.user._id, followingId: userId })
   if (existing) {
     await existing.deleteOne()
-    response.json({ following: false })
+    const [followersCount, followingCount] = await Promise.all([Follow.countDocuments({ followingId: userId }), Follow.countDocuments({ followerId: request.user._id })])
+    response.json({ following: false, followersCount, followingCount })
     return
   }
-  await Follow.create({ followerId: request.user._id, followingId: userId })
-  response.status(201).json({ following: true })
+  try { await Follow.create({ followerId: request.user._id, followingId: userId }) }
+  catch (error) { if (error?.code !== 11000) throw error }
+  const [followersCount, followingCount] = await Promise.all([Follow.countDocuments({ followingId: userId }), Follow.countDocuments({ followerId: request.user._id })])
+  response.status(201).json({ following: true, followersCount, followingCount })
 })
 
 function requestDto(record) {
@@ -174,20 +229,23 @@ export const createCollaborationRequest = asyncHandler(async (request, response)
     { requesterId, recipientId: targetRecipientId }, { requesterId: targetRecipientId, recipientId: requesterId },
   ] })
   if (duplicate) throw createError(409, 'A pending collaboration request already exists between these creators.')
-  const session = await mongoose.startSession()
   let requestRecord
-  try {
-    await session.withTransaction(async () => {
-      requestRecord = await CollaborationRequest.findOne({ projectId: project._id, requesterId, recipientId: targetRecipientId }).session(session)
-      if (requestRecord) {
-        requestRecord.set({ initiatedBy, proposedRole, message: String(message).trim(), status: 'pending', resolvedBy: null, resolvedAt: null, resolutionEvent: '' })
-        await requestRecord.save({ session })
-      } else {
-        requestRecord = await CollaborationRequest.create([{ projectId: project._id, requesterId, recipientId: targetRecipientId, initiatedBy, proposedRole, message: String(message).trim() }], { session }).then(([created]) => created)
-      }
-      await ensureRequestConversation(requestRecord, session)
-    })
-  } finally { await session.endSession() }
+  requestRecord = await CollaborationRequest.findOne({ projectId: project._id, requesterId, recipientId: targetRecipientId })
+  if (requestRecord) {
+    requestRecord.set({ initiatedBy, proposedRole, message: String(message).trim(), status: 'pending', resolvedBy: null, resolvedAt: null, resolutionEvent: '' })
+    await requestRecord.save()
+  } else {
+    try {
+      requestRecord = await CollaborationRequest.create({ projectId: project._id, requesterId, recipientId: targetRecipientId, initiatedBy, proposedRole, message: String(message).trim() })
+    } catch (error) {
+      if (error?.code !== 11000) throw error
+      requestRecord = await CollaborationRequest.findOne({ projectId: project._id, requesterId, recipientId: targetRecipientId })
+      if (!requestRecord) throw error
+      requestRecord.set({ initiatedBy, proposedRole, message: String(message).trim(), status: 'pending', resolvedBy: null, resolvedAt: null, resolutionEvent: '' })
+      await requestRecord.save()
+    }
+  }
+  await ensureRequestConversation(requestRecord)
   const populated = await populateRequest(CollaborationRequest.findById(requestRecord._id)).lean()
   publishRealtimeEvent({ eventType: 'collaboration.request.created', aggregateId: requestRecord._id, audiences: { userIds: [targetRecipientId] }, payload: { request: requestDto(populated) } }).catch(() => {})
   recordAudit(request.user._id, 'collaboration.request.created', 'collaborationRequest', requestRecord._id, { projectId: String(project._id), initiatedBy })
@@ -254,34 +312,46 @@ export const acceptCollaborationRequest = asyncHandler(async (request, response)
   if (record.status === 'accepted') return response.json({ request: requestDto(record.toObject()) })
   if (record.status !== 'pending') throw createError(409, 'This collaboration request has already been resolved.')
   const memberId = record.initiatedBy === 'creator_request' ? record.requesterId._id || record.requesterId : record.recipientId._id || record.recipientId
-  const session = await mongoose.startSession()
-  try {
-    await session.withTransaction(async () => {
-      const current = await CollaborationRequest.findOne({ _id: record._id, status: 'pending' }).session(session)
-      if (!current) throw createError(409, 'This collaboration request has already been resolved.')
-      await ProjectMember.updateOne({ projectId: current.projectId, userId: memberId }, { $set: { role: current.proposedRole, status: 'active', invitedBy: request.user._id, joinedAt: new Date(), removedAt: null } }, { upsert: true, session })
-      let workspace = await Conversation.findOne({ kind: 'project', projectId: current.projectId }).session(session)
-      if (!workspace && current.conversationId) {
-        workspace = await Conversation.findById(current.conversationId).session(session)
-        if (workspace) {
-          workspace.kind = 'project'; workspace.collaborationRequestId = undefined; workspace.projectId = current.projectId
-          if (!workspace.participantIds.some((id) => String(id) === String(memberId))) workspace.participantIds.push(memberId)
-          await workspace.save({ session })
-        }
-      }
-      if (!workspace) {
-        const workspaceProject = await Project.findById(current.projectId).select('ownerId').session(session)
-        workspace = await Conversation.create([{ kind: 'project', projectId: current.projectId, participantIds: [workspaceProject.ownerId, memberId], createdBy: request.user._id, lastMessageAt: new Date(), lastMessagePreview: 'Project workspace created.' }], { session }).then(([created]) => created)
-        await ConversationParticipant.updateOne({ conversationId: workspace._id, userId: workspaceProject.ownerId }, { $setOnInsert: { conversationId: workspace._id, userId: workspaceProject.ownerId } }, { upsert: true, session })
-      }
-      await ConversationParticipant.updateOne({ conversationId: workspace._id, userId: memberId }, { $set: { hiddenAt: null }, $setOnInsert: { conversationId: workspace._id, userId: memberId } }, { upsert: true, session })
-      current.status = 'accepted'; current.resolvedBy = request.user._id; current.resolvedAt = new Date(); current.resolutionEvent = 'accepted'
-      await current.save({ session })
-    })
-  } finally { await session.endSession() }
+  const current = await CollaborationRequest.findOne({ _id: record._id, status: 'pending' })
+  if (!current) throw createError(409, 'This collaboration request has already been resolved.')
+  const workspaceProject = await Project.findById(current.projectId).select('ownerId title previewUrl').lean()
+  if (!workspaceProject) throw createError(404, 'Project not found.')
+
+  await ProjectMember.updateOne(
+    { projectId: current.projectId, userId: memberId },
+    { $set: { role: current.proposedRole, status: 'active', invitedBy: request.user._id, joinedAt: new Date(), removedAt: null } },
+    { upsert: true },
+  )
+
+  let workspace = await Conversation.findOne({ kind: 'project', projectId: current.projectId })
+  if (!workspace && current.conversationId) {
+    workspace = await Conversation.findById(current.conversationId)
+    if (workspace) {
+      workspace.kind = 'project'
+      workspace.collaborationRequestId = undefined
+      workspace.projectId = current.projectId
+    }
+  }
+  if (!workspace) {
+    workspace = await Conversation.create({ kind: 'project', projectId: current.projectId, participantIds: [], createdBy: request.user._id, lastMessageAt: new Date(), lastMessagePreview: 'Project room created.' })
+  }
+  for (const participantId of [workspaceProject.ownerId, memberId]) {
+    if (!workspace.participantIds.some((id) => String(id) === String(participantId))) workspace.participantIds.push(participantId)
+  }
+  workspace.lastMessageAt = new Date()
+  workspace.lastMessagePreview = 'Collaboration accepted. Project room is ready.'
+  await workspace.save()
+  await Promise.all([workspaceProject.ownerId, memberId].map((userId) => ConversationParticipant.updateOne(
+    { conversationId: workspace._id, userId },
+    { $set: { hiddenAt: null }, $setOnInsert: { conversationId: workspace._id, userId } },
+    { upsert: true },
+  )))
+
+  current.status = 'accepted'; current.resolvedBy = request.user._id; current.resolvedAt = new Date(); current.resolutionEvent = 'accepted'
+  await current.save()
   const updated = await populateRequest(CollaborationRequest.findById(record._id)).lean()
   recordAudit(request.user._id, 'collaboration.request.accepted', 'collaborationRequest', record._id, { memberId: String(memberId) })
   publishRealtimeEvent({ eventType: 'collaboration.request.updated', aggregateId: record._id, audiences: { userIds: [record.requesterId._id || record.requesterId, record.recipientId._id || record.recipientId] }, payload: { request: requestDto(updated) } }).catch(() => {})
   publishRealtimeEvent({ eventType: 'project.member.added', aggregateId: updated.projectId._id || updated.projectId, audiences: { userIds: [memberId], projectId: updated.projectId._id || updated.projectId }, payload: { projectId: String(updated.projectId._id || updated.projectId), userId: String(memberId) } }).catch(() => {})
-  response.json({ request: requestDto(updated) })
+  response.json({ request: requestDto(updated), workspace: { id: String(workspace._id), kind: 'project', projectId: String(current.projectId), project: { id: String(current.projectId), title: workspaceProject.title, previewUrl: workspaceProject.previewUrl || '' } } })
 })

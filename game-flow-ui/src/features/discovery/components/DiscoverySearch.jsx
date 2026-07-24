@@ -30,7 +30,7 @@ export default function DiscoverySearch({ value, onChange, onClear }) {
         />
         {value ? <button type="button" onClick={onClear}>Clear</button> : null}
       </div>
-      <p id={helpId}>Search is limited to the projects currently loaded from GameFlow.</p>
+      <p id={helpId}>Search projects, tags, tools, and every creator on GameFlow.</p>
     </form>
   )
 }

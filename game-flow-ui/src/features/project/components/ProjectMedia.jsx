@@ -96,6 +96,7 @@ export default function ProjectMedia({
   const [activation, setActivation] = useState({ identity: '', active: false })
   const [failure, setFailure] = useState({ identity: '', message: '' })
   const [webglSession, setWebglSession] = useState({ identity: '', playing: false, stopSignal: 0 })
+  const [imageOrientation, setImageOrientation] = useState('unknown')
   const activationButtonRef = useRef(null)
   const videoRef = useRef(null)
   const { ref: visibilityRef, isVisible } = useMediaVisibility({ threshold: 0.15 })
@@ -191,6 +192,7 @@ export default function ProjectMedia({
           alt={title}
           loading="lazy"
           decoding="async"
+          onLoad={(event) => setImageOrientation(event.currentTarget.naturalHeight > event.currentTarget.naturalWidth ? 'portrait' : 'landscape')}
           onError={(event) => reportError('The project image could not be loaded.', event)}
         />
       </MediaFrame>
@@ -283,6 +285,7 @@ export default function ProjectMedia({
       className={`project-media ${className}`.trim()}
       aria-label={`${title} media`}
       data-media-kind={normalizedMedia.kind || 'unknown'}
+      data-media-orientation={normalizedMedia.kind === 'image' ? imageOrientation : undefined}
       data-media-active={active && isVisible ? 'true' : 'false'}
       onDoubleClick={onDoubleClick}
     >

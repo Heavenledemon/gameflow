@@ -57,7 +57,7 @@ const projectSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ['game', '3d', '2d'],
+      enum: ['game', '3d', '2d', 'video'],
       required: true,
     },
     title: {
@@ -125,6 +125,16 @@ const projectSchema = new mongoose.Schema(
       trim: true,
     },
     imageUrl: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    videoUrl: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    gameplayGifUrl: {
       type: String,
       default: '',
       trim: true,

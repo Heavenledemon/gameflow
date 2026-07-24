@@ -52,6 +52,12 @@
   height: 14px;
 }
 
+.gf-chip__label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gf-space-1);
+}
+
 /* Focus indicator for interactive chip */
 .gf-chip--interactive:focus-visible {
   outline: 2px solid var(--gf-brand-coral);

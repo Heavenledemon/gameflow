@@ -58,7 +58,9 @@ function getContentType(filePath) {
   if (basePath.endsWith('.avif')) return 'image/avif'
   if (basePath.endsWith('.mp4')) return 'video/mp4'
   if (basePath.endsWith('.webm')) return 'video/webm'
+  if (basePath.endsWith('.ogv')) return 'video/ogg'
   if (basePath.endsWith('.mov')) return 'video/quicktime'
+  if (basePath.endsWith('.m4v')) return 'video/x-m4v'
   if (basePath.endsWith('.ico')) return 'image/x-icon'
 
   return 'application/octet-stream'

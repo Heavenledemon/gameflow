@@ -2,11 +2,22 @@ import Avatar from '../../../components/ui/Avatar'
 import MediaFrame from '../../../components/ui/MediaFrame'
 import './ProjectTile.css'
 
-export default function ProjectTile({ project, onOpen, selected = false, variant = 'card', fallbackAspectRatio = '1 / 1' }) {
+function formatProjectType(project, mediaKind) {
+  if (mediaKind === 'video') return 'VIDEO'
+  if (mediaKind === 'webgl') return 'GAME'
+  if (mediaKind === 'gltf') return '3D ART'
+  const value = String(project.projectType || 'Project').toLowerCase()
+  const labels = { '2d-art': '2D ART', image: '2D ART', artwork: '2D ART', '3d-art': '3D ART', '3d-asset': '3D ART', asset: '3D ART' }
+  return labels[value] || value.replace(/[-_]+/g, ' ').toUpperCase()
+}
+
+export default function ProjectTile({ project, onOpen, actions, actionsPlacement = 'overlay', selected = false, variant = 'card', fallbackAspectRatio = '1 / 1' }) {
   const creatorName = project.creator?.name || project.creator?.handle || project.creator?.username || 'Creator'
   const creatorHandle = project.creator?.handle || project.creator?.username || creatorName
-  const projectTypeLabel = (project.projectType || 'Project').toUpperCase()
   const routeTarget = project.canonicalRoute || project.routeTarget
+  const mediaKind = project.mediaKind || project.media?.kind
+  const projectTypeLabel = formatProjectType(project, mediaKind)
+  const videoUrl = project.media?.videoUrl || (mediaKind === 'video' ? project.playableUrl : null)
   const mediaAspectRatio = project.media?.aspectRatio
     || (project.media?.mode === 'portrait' ? '3 / 4' : project.media?.mode === 'landscape' ? '4 / 3' : fallbackAspectRatio)
 
@@ -22,11 +33,13 @@ export default function ProjectTile({ project, onOpen, selected = false, variant
       <div className="project-tile__media" style={{ '--project-tile-aspect-ratio': mediaAspectRatio }}>
         <MediaFrame
           aspectRatio={mediaAspectRatio}
-          poster={project.posterUrl || project.media?.posterUrl}
+          poster={mediaKind === 'video' ? undefined : (project.posterUrl || project.media?.posterUrl)}
           alt={project.title}
-          mediaKind={project.mediaKind || project.media?.kind}
+          mediaKind={mediaKind}
           badge={<span className="project-tile__badge">{projectTypeLabel}</span>}
-        />
+        >
+          {mediaKind === 'video' && videoUrl ? <video className="project-tile__video" src={videoUrl} muted loop autoPlay playsInline preload="metadata" aria-label={`${project.title} video`} /> : null}
+        </MediaFrame>
       </div>
 
       <div className="project-tile__copy">
@@ -38,6 +51,8 @@ export default function ProjectTile({ project, onOpen, selected = false, variant
       </div>
 
       {variant === 'masonry' ? <span className="project-tile__more" aria-hidden="true">•••</span> : null}
+
+      {actions ? <div className={`project-tile__actions project-tile__actions--${actionsPlacement}`}>{actions}</div> : null}
 
       {routeTarget && (
         <button

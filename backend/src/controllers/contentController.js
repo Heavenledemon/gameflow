@@ -9,6 +9,8 @@ import CommentReaction from '../models/CommentReaction.js'
 import PostEngagement from '../models/PostEngagement.js'
 import Project from '../models/Project.js'
 import ProjectMember from '../models/ProjectMember.js'
+import User from '../models/User.js'
+import Follow from '../models/Follow.js'
 import Upload from '../models/Upload.js'
 import ProjectFile from '../models/ProjectFile.js'
 import { publishProjectEngagement } from '../realtime/eventPublisher.js'
@@ -31,6 +33,7 @@ const MAX_PATH_BYTES = 512
 const MAX_NAME_BYTES = 255
 const SAFE_TEXT_EXTENSIONS = new Set(['.html', '.htm', '.js', '.mjs', '.css', '.json', '.txt', '.svg'])
 const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif', '.ico'])
+const VIDEO_EXTENSIONS = new Set(['.mp4', '.webm', '.ogv', '.mov', '.m4v'])
 const GAME_BINARY_EXTENSIONS = new Set(['.wasm', '.br', '.gz', '.unityweb'])
 
 function hasMagicBytes(buffer, extension) {
@@ -40,6 +43,16 @@ function hasMagicBytes(buffer, extension) {
   if (extension === '.webp') return buffer.subarray(0, 4).toString('ascii') === 'RIFF' && buffer.subarray(8, 12).toString('ascii') === 'WEBP'
   if (extension === '.glb') return buffer.subarray(0, 4).toString('ascii') === 'glTF'
   if (extension === '.wasm') return buffer.subarray(0, 4).equals(Buffer.from([0, 97, 115, 109]))
+  if (extension === '.mp4' || extension === '.m4v' || extension === '.mov') {
+    return buffer.length >= 8 && (
+      buffer.subarray(4, 8).toString('ascii') === 'ftyp' ||
+      buffer.subarray(0, 4).toString('hex') === '00000014' ||
+      buffer.subarray(0, 4).toString('hex') === '00000018' ||
+      buffer.subarray(0, 4).toString('hex') === '0000001c' ||
+      buffer.subarray(0, 4).toString('hex') === '00000020'
+    )
+  }
+  if (extension === '.webm') return buffer.subarray(0, 4).equals(Buffer.from([0x1a, 0x45, 0xdf, 0xa3]))
   return true
 }
 
@@ -55,10 +68,10 @@ function validateUploadMetadata(project, fileName, relativePath, buffer) {
   const normalizedPath = safeRelativePath(relativePath, fileName)
   const extension = path.posix.extname(normalizedPath).toLowerCase()
   const allowed = project.type === 'game'
-    ? SAFE_TEXT_EXTENSIONS.has(extension) || GAME_BINARY_EXTENSIONS.has(extension) || IMAGE_EXTENSIONS.has(extension)
+    ? SAFE_TEXT_EXTENSIONS.has(extension) || GAME_BINARY_EXTENSIONS.has(extension) || IMAGE_EXTENSIONS.has(extension) || VIDEO_EXTENSIONS.has(extension)
     : project.type === '3d'
-      ? extension === '.glb' || extension === '.gltf' || IMAGE_EXTENSIONS.has(extension) || extension === '.bin'
-      : IMAGE_EXTENSIONS.has(extension)
+      ? extension === '.glb' || extension === '.gltf' || IMAGE_EXTENSIONS.has(extension) || VIDEO_EXTENSIONS.has(extension) || extension === '.bin'
+      : IMAGE_EXTENSIONS.has(extension) || VIDEO_EXTENSIONS.has(extension)
 
   if (!allowed || extension === '.zip' || extension === '.rar' || extension === '.7z' || extension === '.exe') {
     throw createError(400, `Unsupported upload type: ${extension || 'unknown'}.`)
@@ -248,7 +261,10 @@ async function validatePlayableGameBundle(project) {
 
 function pickMainFile(uploadedFiles, type) {
   const byRelativePath = [...uploadedFiles]
-    .filter((file) => !file.relativePath.toLowerCase().startsWith('cover/'))
+    .filter((file) => {
+      const relativePath = file.relativePath.toLowerCase()
+      return !relativePath.startsWith('cover/') && !relativePath.startsWith('gameplay/')
+    })
     .sort((a, b) => a.relativePath.localeCompare(b.relativePath))
 
   if (type === 'game') {
@@ -265,7 +281,14 @@ function pickMainFile(uploadedFiles, type) {
     return glbFile ?? null
   }
 
-  if (type === '2d') {
+  if (type === '2d' || type === 'video') {
+    const videoFile = byRelativePath.find((file) =>
+      ['.mp4', '.webm', '.ogv', '.mov', '.m4v'].some((ext) =>
+        file.relativePath.toLowerCase().endsWith(ext),
+      ),
+    )
+    if (videoFile) return videoFile
+
     const imageFile = byRelativePath.find((file) =>
       ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif'].some((ext) =>
         file.relativePath.toLowerCase().endsWith(ext),
@@ -278,12 +301,35 @@ function pickMainFile(uploadedFiles, type) {
   return null
 }
 
+function applyProjectMedia(project, uploadedFiles) {
+  const mainFile = pickMainFile(uploadedFiles, project.type)
+  if (!mainFile) return null
+
+  const coverFile = uploadedFiles.find((file) => file.relativePath.toLowerCase().startsWith('cover/'))
+    ?? uploadedFiles.find((file) => !file.relativePath.toLowerCase().startsWith('gameplay/') && IMAGE_EXTENSIONS.has(path.posix.extname(file.relativePath).toLowerCase()))
+    ?? null
+  const gameplayGifFile = project.type === 'game'
+    ? uploadedFiles.find((file) => file.relativePath.toLowerCase().startsWith('gameplay/') && path.posix.extname(file.relativePath).toLowerCase() === '.gif')
+    : null
+  const mainExtension = path.posix.extname(mainFile.relativePath).toLowerCase()
+  const isVideo = VIDEO_EXTENSIONS.has(mainExtension)
+
+  project.previewUrl = isVideo ? (coverFile?.url ?? '') : (coverFile?.url ?? mainFile.url)
+  project.gameUrl = project.type === 'game' ? mainFile.url : ''
+  project.modelUrl = project.type === '3d' ? mainFile.url : ''
+  project.videoUrl = isVideo ? mainFile.url : ''
+  project.gameplayGifUrl = gameplayGifFile?.url ?? ''
+  project.imageUrl = isVideo ? (coverFile?.url ?? '') : (project.type === '2d' || project.type === 'video' ? mainFile.url : (coverFile?.url ?? mainFile.url))
+  return mainFile
+}
+
 function safeAvatarUrl(avatar) {
-  // Strip huge base64 data URLs — only keep external/CDN URLs
-  if (typeof avatar === 'string' && avatar.startsWith('data:')) {
-    return ''
-  }
-  return avatar || ''
+  if (typeof avatar !== 'string') return ''
+  const value = avatar.trim()
+  // Profile uploads are stored as image data URLs. Preserve those images in
+  // project DTOs while rejecting non-image data payloads.
+  if (value.startsWith('data:') && !/^data:image\/[a-z0-9.+-]+;base64,/i.test(value)) return ''
+  return value
 }
 
 function normalizeProjectEngagementSummary(summary = {}, viewerState = {}, comments = []) {
@@ -356,6 +402,7 @@ function buildProjectPayload(project, engagement = {}, projectFiles = [], collab
     ownerUsername: project.ownerUsername,
     ownerName: project.ownerName,
     ownerAvatar: safeAvatarUrl(project.ownerAvatar),
+    viewerIsFollowing: Boolean(project.viewerIsFollowing),
     type: project.type,
     title: project.title,
     slug: project.slug,
@@ -370,6 +417,8 @@ function buildProjectPayload(project, engagement = {}, projectFiles = [], collab
     gameUrl: project.gameUrl,
     modelUrl: project.modelUrl,
     imageUrl: project.imageUrl,
+    videoUrl: project.videoUrl || '',
+    gameplayGifUrl: project.gameplayGifUrl || '',
     collaborationOpen: Boolean(project.collaborationOpen),
     collaborationRoles: Array.isArray(project.collaborationRoles) ? project.collaborationRoles : [],
     collaborationSummary: project.collaborationSummary || '',
@@ -550,14 +599,27 @@ async function getProjectEngagementPayload(postId, viewerId = '', options = {}) 
 }
 
 async function enrichProjects(projects = [], viewerId = '', options = {}) {
-  const [engagementMap, collaborationMap] = await Promise.all([
+  const ownerIds = [...new Set(projects.map((project) => String(project.ownerId || '')).filter((id) => mongoose.isValidObjectId(id)))]
+  const [engagementMap, collaborationMap, owners, follows] = await Promise.all([
     computeProjectEngagementMap(projects.map((project) => project._id), viewerId),
     getProjectCollaborationMap(projects, viewerId),
+    ownerIds.length ? User.find({ _id: { $in: ownerIds } }).select('username name avatar').lean() : [],
+    viewerId && ownerIds.length ? Follow.find({ followerId: viewerId, followingId: { $in: ownerIds } }).select('followingId').lean() : [],
   ])
+  const ownerMap = new Map(owners.map((owner) => [String(owner._id), owner]))
+  const followedIds = new Set(follows.map((row) => String(row.followingId)))
 
   return projects.map((project) => {
+    const owner = ownerMap.get(String(project.ownerId))
+    const hydratedProject = {
+      ...project,
+      ownerUsername: owner?.username || project.ownerUsername,
+      ownerName: owner?.name || project.ownerName,
+      ownerAvatar: owner ? owner.avatar || '' : project.ownerAvatar,
+      viewerIsFollowing: followedIds.has(String(project.ownerId)),
+    }
     const engagement = engagementMap.get(String(project._id)) ?? normalizeProjectEngagementSummary()
-    return buildProjectPayload(project, {
+    return buildProjectPayload(hydratedProject, {
       ...engagement,
       sharesCount: Number(project?.engagement?.sharesCount || 0),
       comments: options.includeComments ? engagement.comments : [],
@@ -785,11 +847,12 @@ export const getProjectById = asyncHandler(async (request, response) => {
     throw createError(403, 'You cannot view this private project.')
   }
 
-  const [engagement, collaborationMap] = await Promise.all([getProjectEngagementPayload(project._id, viewerId, {
+  const [engagement, collaborationMap, owner, viewerFollow] = await Promise.all([getProjectEngagementPayload(project._id, viewerId, {
     includeComments: false,
     sharesCount: project?.engagement?.sharesCount || 0,
-  }), getProjectCollaborationMap([project], viewerId)])
-  response.json({ project: buildProjectPayload(project, engagement, [], collaborationMap.get(String(project._id))) })
+  }), getProjectCollaborationMap([project], viewerId), User.findById(project.ownerId).select('username name avatar').lean(), viewerId ? Follow.exists({ followerId: viewerId, followingId: project.ownerId }) : null])
+  const hydratedProject = { ...project, ownerUsername: owner?.username || project.ownerUsername, ownerName: owner?.name || project.ownerName, ownerAvatar: owner ? owner.avatar || '' : project.ownerAvatar, viewerIsFollowing: Boolean(viewerFollow) }
+  response.json({ project: buildProjectPayload(hydratedProject, engagement, [], collaborationMap.get(String(project._id))) })
 })
 
 export const createProject = asyncHandler(async (request, response) => {
@@ -821,7 +884,7 @@ export const createProject = asyncHandler(async (request, response) => {
     throw createError(400, 'Project title is required.')
   }
 
-  if (!['game', '3d', '2d'].includes(normalizedType)) {
+  if (!['game', '3d', '2d', 'video'].includes(normalizedType)) {
     throw createError(400, 'Please choose a valid project type.')
   }
 
@@ -984,17 +1047,7 @@ export const uploadProjectFile = asyncHandler(async (request, response) => {
 
   const nextFiles = [...existingFiles, projectFile.toObject()].sort((a, b) => a.relativePath.localeCompare(b.relativePath))
 
-  const mainFile = pickMainFile(nextFiles, project.type)
-  if (mainFile) {
-    const coverFile = nextFiles.find((file) => file.relativePath.toLowerCase().startsWith('cover/'))
-      ?? nextFiles.find((file) => ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif'].some((ext) => file.relativePath.toLowerCase().endsWith(ext)))
-      ?? null
-
-    project.previewUrl = coverFile?.url ?? mainFile.url
-    project.gameUrl = project.type === 'game' ? mainFile.url : ''
-    project.modelUrl = project.type === '3d' ? mainFile.url : ''
-    project.imageUrl = project.type === '2d' ? mainFile.url : ''
-  }
+  applyProjectMedia(project, nextFiles)
 
   try {
     await project.save()
@@ -1034,10 +1087,10 @@ export const initiateProjectUpload = asyncHandler(async (request, response) => {
   const normalizedPath = safeRelativePath(relativePath, name)
   const extension = path.posix.extname(normalizedPath).toLowerCase()
   const allowed = project.type === 'game'
-    ? SAFE_TEXT_EXTENSIONS.has(extension) || GAME_BINARY_EXTENSIONS.has(extension) || IMAGE_EXTENSIONS.has(extension)
+    ? SAFE_TEXT_EXTENSIONS.has(extension) || GAME_BINARY_EXTENSIONS.has(extension) || IMAGE_EXTENSIONS.has(extension) || VIDEO_EXTENSIONS.has(extension)
     : project.type === '3d'
-      ? extension === '.glb' || extension === '.gltf' || IMAGE_EXTENSIONS.has(extension) || extension === '.bin'
-      : IMAGE_EXTENSIONS.has(extension)
+      ? extension === '.glb' || extension === '.gltf' || IMAGE_EXTENSIONS.has(extension) || VIDEO_EXTENSIONS.has(extension) || extension === '.bin'
+      : IMAGE_EXTENSIONS.has(extension) || VIDEO_EXTENSIONS.has(extension)
   if (!allowed || !Number.isFinite(byteSize) || byteSize <= 0 || byteSize > MAX_UPLOAD_BYTES || !/^[a-f\d]{64}$/i.test(String(checksum))) throw createError(400, 'Invalid upload manifest.')
   const existing = await Upload.findOne({ ownerId: request.user._id, idempotencyKey }).lean()
   if (existing) return response.json({ uploadId: existing.uploadId, status: existing.status, uploadUrl: existing.status === 'pending' ? createPresignedPutUrl(existing.storageKey) : null, storageKey: existing.storageKey })
@@ -1061,10 +1114,7 @@ export const completeProjectUpload = asyncHandler(async (request, response) => {
   const file = await ProjectFile.create({ projectId: project._id, ownerId: project.ownerId, name: path.posix.basename(upload.relativePath), relativePath: upload.relativePath, url, storageKey: upload.storageKey, mimeType: upload.mimeType, size: upload.size, checksum: upload.checksum, version: 1, status: 'ready' })
   upload.status = 'ready'; upload.etag = String(etag); await upload.save()
   const files = await ProjectFile.find({ projectId: project._id, status: 'ready' }).lean()
-  const mainFile = pickMainFile(files, project.type)
-  if (mainFile) {
-    const coverFile = files.find((entry) => entry.relativePath.toLowerCase().startsWith('cover/')) ?? files.find((entry) => IMAGE_EXTENSIONS.has(path.posix.extname(entry.relativePath).toLowerCase()))
-    project.previewUrl = coverFile?.url ?? mainFile.url; project.gameUrl = project.type === 'game' ? mainFile.url : ''; project.modelUrl = project.type === '3d' ? mainFile.url : ''; project.imageUrl = project.type === '2d' ? mainFile.url : ''
+  if (applyProjectMedia(project, files)) {
     await project.save()
   }
   response.status(201).json({ message: 'Upload completed successfully.', uploadId: upload.uploadId, status: upload.status, file })
@@ -1088,7 +1138,7 @@ export const publishProject = asyncHandler(async (request, response) => {
     throw createError(400, 'Please upload at least one file before publishing.')
   }
 
-  const mainFile = pickMainFile(uploadedFiles, project.type)
+  const mainFile = applyProjectMedia(project, uploadedFiles)
 
   if (!mainFile) {
     throw createError(
@@ -1097,7 +1147,9 @@ export const publishProject = asyncHandler(async (request, response) => {
         ? 'A WebGL project needs an index.html or another .html entry file.'
         : project.type === '3d'
           ? 'A 3D project needs a .glb or .gltf file.'
-        : 'A 2D project needs an image file.',
+        : project.type === 'video'
+          ? 'A video project needs a video, animated GIF, or image file.'
+          : 'A 2D project needs an image file.',
     )
   }
 
@@ -1105,14 +1157,6 @@ export const publishProject = asyncHandler(async (request, response) => {
     await validatePlayableGameBundle(project)
   }
 
-  const coverFile = uploadedFiles.find((file) => file.relativePath.toLowerCase().startsWith('cover/'))
-    ?? uploadedFiles.find((file) => ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif'].some((ext) => file.relativePath.toLowerCase().endsWith(ext)))
-    ?? null
-
-  project.previewUrl = coverFile?.url ?? mainFile.url
-  project.gameUrl = project.type === 'game' ? mainFile.url : ''
-  project.modelUrl = project.type === '3d' ? mainFile.url : ''
-  project.imageUrl = project.type === '2d' ? mainFile.url : ''
   project.isPublished = project.visibility === 'public'
   project.publishedAt = project.isPublished ? (project.publishedAt || new Date()) : null
 
@@ -1162,7 +1206,7 @@ export const updateProject = asyncHandler(async (request, response) => {
     project.mode = mode
   }
   if (type !== undefined) {
-    if (!['game', '3d', '2d'].includes(type)) {
+    if (!['game', '3d', '2d', 'video'].includes(type)) {
       throw createError(400, 'Invalid type value.')
     }
     project.type = type
@@ -1176,17 +1220,7 @@ export const updateProject = asyncHandler(async (request, response) => {
   }
 
   const uploadedFiles = await ProjectFile.find({ projectId: project._id, status: 'ready' }).lean()
-  const mainFile = pickMainFile(uploadedFiles, project.type)
-  if (mainFile) {
-    const coverFile = uploadedFiles.find((file) => file.relativePath.toLowerCase().startsWith('cover/'))
-      ?? uploadedFiles.find((file) => ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif'].some((ext) => file.relativePath.toLowerCase().endsWith(ext)))
-      ?? null
-
-    project.previewUrl = coverFile?.url ?? mainFile.url
-    project.gameUrl = project.type === 'game' ? mainFile.url : ''
-    project.modelUrl = project.type === '3d' ? mainFile.url : ''
-    project.imageUrl = project.type === '2d' ? mainFile.url : ''
-  }
+  applyProjectMedia(project, uploadedFiles)
 
   await project.save()
   await upsertFeedProjection('project', project)
@@ -1320,6 +1354,33 @@ export const getPostEngagement = asyncHandler(async (request, response) => {
   response.json({
     postId: String(project._id),
     engagement,
+  })
+})
+
+export const getProjectLikes = asyncHandler(async (request, response) => {
+  const { postId } = request.params
+  if (!mongoose.isValidObjectId(postId)) throw createError(400, 'Invalid project ID.')
+
+  const project = await Project.findById(postId).select('ownerId').lean()
+  if (!project) throw createError(404, 'Project not found.')
+  if (String(project.ownerId) !== String(request.user._id)) {
+    throw createError(403, 'Only the project owner can view who liked this project.')
+  }
+
+  const rows = await PostEngagement.find({ contentType: 'project', contentId: String(postId), liked: true })
+    .sort({ updatedAt: -1 })
+    .populate('userId', 'username name avatar isVerified')
+    .lean()
+
+  response.json({
+    items: rows.filter((row) => row.userId).map((row) => ({
+      id: String(row.userId._id),
+      username: row.userId.username || '',
+      name: row.userId.name || '',
+      avatar: row.userId.avatar || '',
+      isVerified: Boolean(row.userId.isVerified),
+      likedAt: row.updatedAt,
+    })),
   })
 })
 

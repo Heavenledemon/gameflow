@@ -74,14 +74,14 @@
   --gf-safe-area-top: env(safe-area-inset-top, 0px);
   --gf-safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --gf-shell-bottom-clearance: calc(var(--gf-shell-bottom-nav-height) + var(--gf-shell-nav-bottom-gap) + var(--gf-safe-area-bottom));
-  --gf-shell-surface: #0b0d12;
-  --gf-shell-outer-surface: #090a0e;
-  --gf-shell-top-bar-surface: rgb(11 13 18 / 92%);
-  --gf-shell-navigation-surface: rgb(11 13 18 / 76%);
-  --gf-shell-navigation-border: rgb(255 255 255 / 10%);
-  --gf-shell-navigation-text: rgb(255 255 255 / 62%);
-  --gf-shell-text: #ffffff;
-  --gf-shell-shadow: 0 0 60px rgb(0 0 0 / 22%);
+  --gf-shell-surface: #f3f4f8;
+  --gf-shell-outer-surface: #e9ebf1;
+  --gf-shell-top-bar-surface: rgb(247 248 251 / 96%);
+  --gf-shell-navigation-surface: rgb(248 249 252 / 96%);
+  --gf-shell-navigation-border: #d9dce5;
+  --gf-shell-navigation-text: #555b6e;
+  --gf-shell-text: #171827;
+  --gf-shell-shadow: 0 0 60px rgb(15 23 42 / 12%);
   --gf-shell-navigation-layer: 100;
   --gf-shell-top-bar-layer: 90;
 
