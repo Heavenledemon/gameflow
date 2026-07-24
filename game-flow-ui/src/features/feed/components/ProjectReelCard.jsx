@@ -91,7 +91,7 @@ export default function ProjectReelCard({
         <div className="project-reel-card__bottom-overlay">
           <div className="project-reel-card__creator-row">
             <button type="button" className="project-reel-card__creator" onClick={onCreator}>
-              <Avatar src={avatarUrl} alt={creatorName} size="sm" />
+              <Avatar src={avatarUrl} alt={creatorName} size="lg" />
               <strong className="project-reel-card__creator-name">{creatorName}</strong>
             </button>
 
@@ -107,7 +107,7 @@ export default function ProjectReelCard({
             )}
 
             <button type="button" className="project-reel-card__more-btn" onClick={onQuickActions} aria-label={`More actions for ${project.title}`}>
-              <DotsIcon size={18} />
+              <DotsIcon size={22} />
             </button>
           </div>
 

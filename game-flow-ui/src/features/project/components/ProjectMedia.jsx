@@ -33,7 +33,18 @@ function MediaPoster({ media, title, actionLabel, onActivate, buttonRef, fallbac
   const showPoster = Boolean(posterUrl && failedPosterUrl !== posterUrl)
   const action = onActivate ? (
     <div className="project-media__poster-action">
-      <Button ref={buttonRef} onClick={onActivate}>{actionLabel}</Button>
+      <button
+        ref={buttonRef}
+        type="button"
+        className="project-media__play-btn"
+        onClick={onActivate}
+        aria-label={actionLabel || 'Open preview'}
+        title={actionLabel || 'Open preview'}
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <polygon points="6 4 20 12 6 20 6 4" />
+        </svg>
+      </button>
     </div>
   ) : null
 

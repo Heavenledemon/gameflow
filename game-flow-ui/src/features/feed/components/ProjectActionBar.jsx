@@ -61,25 +61,25 @@ export default function ProjectActionBar({ engagement, viewerState, onLike, onCo
         className={`feed-action--like ${isLiked ? 'feed-action--active' : ''} ${animateLike ? 'feed-action--animate' : ''}`}
         onClick={handleLikeClick}
       >
-        <HeartIcon filled={isLiked} size={28} />
+        <HeartIcon filled={isLiked} size={30} />
       </ActionButton>
 
-      <ActionButton label="View comments" count={commentsCount} onClick={onComments}>
-        <CommentIcon size={28} />
+      <ActionButton label="View comments" count={commentsCount} className="feed-action--comment" onClick={onComments}>
+        <CommentIcon size={30} />
       </ActionButton>
 
       <ActionButton
         label={isSaved ? 'Remove saved project' : 'Save project'}
         count={savesCount}
         pressed={isSaved}
-        className={isSaved ? 'feed-action--active' : ''}
+        className={`feed-action--bookmark ${isSaved ? 'feed-action--active' : ''}`}
         onClick={onSave}
       >
-        <BookmarkIcon filled={isSaved} size={28} />
+        <BookmarkIcon filled={isSaved} size={30} />
       </ActionButton>
 
-      <ActionButton label="Share project" count={sharesCount} onClick={onShare}>
-        <ShareIcon size={28} />
+      <ActionButton label="Share project" count={sharesCount} className="feed-action--share" onClick={onShare}>
+        <ShareIcon size={30} />
       </ActionButton>
     </div>
   )

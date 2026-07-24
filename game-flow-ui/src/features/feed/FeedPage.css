@@ -15,7 +15,7 @@
   min-height: calc(56px + var(--gf-safe-area-top));
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   padding: var(--gf-safe-area-top) var(--gf-space-4) 0;
   background: linear-gradient(180deg, rgb(0 0 0 / 70%) 0%, rgb(0 0 0 / 40%) 60%, transparent 100%);
   pointer-events: none;
@@ -121,12 +121,13 @@
   position: absolute;
   bottom: 0;
   left: 0;
-  right: 56px; /* Leave space for action rail */
+  right: 0; /* Full width — dark gradient covers entire bottom including rail area */
   z-index: 5;
   display: flex;
   flex-direction: column;
   gap: 10px;
   padding: 0 var(--gf-space-4) calc(var(--gf-shell-bottom-clearance, 80px) + var(--gf-space-3));
+  /* Gradient extends right so bottom-right is never brighter than the rest */
   background: linear-gradient(0deg, rgb(0 0 0 / 72%) 0%, rgb(0 0 0 / 40%) 60%, transparent 100%);
 }
 
@@ -139,10 +140,10 @@
 
 .project-reel-card__creator {
   min-width: 0;
-  min-height: 40px;
+  min-height: 48px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -152,14 +153,15 @@
 }
 
 .project-reel-card__creator .gf-avatar {
-  border: 2px solid rgb(255 255 255 / 60%);
+  border: 2.5px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.6);
 }
 
 .project-reel-card__creator-name {
-  font-size: 0.88rem;
-  font-weight: 700;
+  font-size: 0.96rem;
+  font-weight: 800;
   letter-spacing: -0.01em;
-  text-shadow: 0 1px 6px rgb(0 0 0 / 60%);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.8);
 }
 
 /* Follow Button */
@@ -222,61 +224,235 @@
   text-shadow: 0 1px 4px rgb(0 0 0 / 40%);
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}/* ========================================
+   ACTION BAR — Premium vertical rail
+   ======================================== */
+
+/* Slide-in entrance for the whole rail */
+@keyframes gf-rail-enter {
+  from { opacity: 0; transform: translateY(-50%) translateX(24px); }
+  to   { opacity: 1; transform: translateY(-50%) translateX(0); }
 }
 
-/* ========================================
-   ACTION BAR — Right side vertical rail
-   ======================================== */
 .project-action-bar {
   position: absolute;
-  right: var(--gf-space-3);
+  right: 10px;
   top: 50%;
   transform: translateY(-50%);
   z-index: 6;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 10px;
+  /* Unified rail: one frosted glass strip behind all buttons */
+  padding: 10px 5px;
+  border-radius: 28px;
+  background: rgba(0, 0, 0, 0.30);
+  /* blur only — no saturate() which brightens the background */
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+  animation: gf-rail-enter 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
+/* Thin separator between buttons */
+.project-action-bar > * + * {
+  position: relative;
+}
+.project-action-bar > * + *::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.07);
+  pointer-events: none;
+}
+
+/* ---- Base action button ---- */
 .feed-action {
-  min-width: 48px;
-  min-height: 48px;
+  position: relative;
+  width: 50px;
+  min-height: 60px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 4px;
-  padding: 0;
+  padding: 8px 4px 7px;
   border: 0;
-  border-radius: 50%;
-  color: #fff;
+  border-radius: 20px;
+  /* Default color: muted white — each button has its own override below */
+  color: rgba(255, 255, 255, 0.82);
   background: transparent;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+    color 0.2s ease,
+    background 0.2s ease;
+  will-change: transform, color;
 }
 
+/* Hover: lift + brighten */
+.feed-action:hover {
+  transform: scale(1.12);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.feed-action:active {
+  transform: scale(0.88);
+}
+
+/* Icon */
 .feed-action svg {
-  filter: drop-shadow(0 1px 4px rgb(0 0 0 / 60%));
+  display: block;
+  flex-shrink: 0;
+  filter:
+    drop-shadow(0 0 5px rgba(0, 0, 0, 0.7))
+    drop-shadow(0 2px 3px rgba(0, 0, 0, 0.5));
+  transition: filter 0.22s ease, transform 0.2s ease;
 }
 
-/* Like button micro-animation */
-@keyframes gf-like-bounce {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.4); }
-  100% { transform: scale(1); }
-}
-
-.feed-action--like.feed-action--animate svg {
-  animation: gf-like-bounce 220ms var(--gf-ease-spring);
-}
-
-.feed-action--active { color: var(--gf-brand-coral); }
+/* Count */
 .feed-action__count {
   min-width: 1ch;
   font-size: 0.68rem;
   font-weight: 800;
-  text-shadow: 0 1px 4px rgb(0 0 0 / 60%);
+  letter-spacing: -0.01em;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow:
+    0 0 8px rgba(0, 0, 0, 1),
+    0 1px 3px rgba(0, 0, 0, 0.8),
+    0 -1px 3px rgba(0, 0, 0, 0.8);
+  transition: color 0.2s ease;
+}
+
+/* ================================================
+   PER-ICON COLOR THEMES
+   Each button gets its own hue — heart=red,
+   comment=sky, bookmark=amber, share=teal
+   ================================================ */
+
+/* — LIKE (Heart) — red coral */
+.feed-action--like {
+  color: rgba(255, 130, 130, 0.9);
+}
+.feed-action--like:hover {
+  color: #ff7070;
+  background: rgba(255, 80, 80, 0.10);
+}
+/* No colored drop-shadow — prevents color bleeding outside the rail */
+.feed-action--like svg {
+  filter:
+    drop-shadow(0 1px 4px rgba(0, 0, 0, 0.7))
+    drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
+}
+
+/* — LIKE active (filled heart) — vivid red */
+.feed-action--like.feed-action--active {
+  color: #ff4d4d;
+  background: rgba(255, 60, 60, 0.14);
+}
+.feed-action--like.feed-action--active svg {
+  /* Gentle inner glow only — no bleed */
+  filter:
+    drop-shadow(0 1px 4px rgba(0, 0, 0, 0.7))
+    drop-shadow(0 0 3px rgba(255, 80, 80, 0.15));
+}
+.feed-action--like.feed-action--active .feed-action__count {
+  color: #ff8080;
+  text-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+/* — COMMENT — sky blue */
+.feed-action--comment {
+  color: rgba(130, 195, 255, 0.88);
+}
+.feed-action--comment:hover {
+  color: #90d0ff;
+  background: rgba(80, 160, 255, 0.10);
+}
+.feed-action--comment svg {
+  filter:
+    drop-shadow(0 1px 4px rgba(0, 0, 0, 0.7))
+    drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
+}
+
+/* — BOOKMARK — amber gold */
+.feed-action--bookmark {
+  color: rgba(255, 195, 90, 0.88);
+}
+.feed-action--bookmark:hover {
+  color: #ffd060;
+  background: rgba(255, 180, 60, 0.10);
+}
+.feed-action--bookmark svg {
+  filter:
+    drop-shadow(0 1px 4px rgba(0, 0, 0, 0.7))
+    drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
+}
+
+/* — BOOKMARK active (filled) — bright gold */
+.feed-action--bookmark.feed-action--active {
+  color: #ffc040;
+  background: rgba(255, 170, 40, 0.14);
+}
+.feed-action--bookmark.feed-action--active svg {
+  filter:
+    drop-shadow(0 1px 4px rgba(0, 0, 0, 0.7))
+    drop-shadow(0 0 3px rgba(255, 190, 60, 0.15));
+}
+
+/* — SHARE — emerald teal */
+.feed-action--share {
+  color: rgba(80, 215, 175, 0.88);
+}
+.feed-action--share:hover {
+  color: #60e8c8;
+  background: rgba(60, 200, 160, 0.10);
+}
+.feed-action--share svg {
+  /* Strictly dark shadow only — no teal bleed */
+  filter:
+    drop-shadow(0 1px 4px rgba(0, 0, 0, 0.7))
+    drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
+}
+
+/* ================================================
+   LIKE ANIMATION — springy + glow pulse
+   ================================================ */
+@keyframes gf-like-bounce {
+  0%   { transform: scale(1)    rotate(0deg); }
+  25%  { transform: scale(1.6)  rotate(-10deg); }
+  55%  { transform: scale(0.88) rotate(5deg); }
+  80%  { transform: scale(1.12) rotate(-2deg); }
+  100% { transform: scale(1)    rotate(0deg); }
+}
+
+@keyframes gf-like-glow-pulse {
+  0%   { box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0   0   rgba(255, 70, 70, 0);    }
+  40%  { box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 22px 8px rgba(255, 70, 70, 0.65); }
+  100% { box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0   0   rgba(255, 70, 70, 0);    }
+}
+
+.feed-action--like.feed-action--animate svg {
+  animation: gf-like-bounce 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Pulse the entire rail on like */
+.feed-action--like.feed-action--animate {
+  animation: gf-like-glow-pulse 400ms ease-out;
 }
 
 /* ========================================
@@ -364,8 +540,13 @@
 .project-quick-sheet__actions { display: grid; gap: var(--gf-space-2); }
 
 @media (max-width: 370px) {
-  .project-reel-card__bottom-overlay { right: 48px; }
-  .feed-action { gap: 2px; }
+  .feed-action {
+    min-width: 44px;
+    min-height: 56px;
+    padding: 8px 4px 6px;
+    gap: 3px;
+    border-radius: 16px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -34,6 +34,17 @@ export default defineConfig(({ mode }) => ({
         target: 'http://localhost:4000',
         changeOrigin: true,
         ws: true,
+        configure: (proxy) => {
+          proxy.on('error', (err) => {
+            if (err.code === 'ECONNRESET' || err.code === 'ECONNABORTED') return
+            console.error('Proxy error:', err)
+          })
+          proxy.on('proxyReqWs', (_proxyReq, _req, socket) => {
+            socket.on('error', (err) => {
+              if (err.code === 'ECONNRESET' || err.code === 'ECONNABORTED') return
+            })
+          })
+        },
       },
     },
   },

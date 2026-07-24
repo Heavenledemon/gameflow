@@ -23,14 +23,7 @@ import ProjectQuickActionsSheet from './components/ProjectQuickActionsSheet'
 import ProjectReelCard from './components/ProjectReelCard'
 import './FeedPage.css'
 
-function SearchIcon() {
-  return (
-    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <circle cx="11" cy="11" r="8" />
-      <path d="m21 21-4.35-4.35" />
-    </svg>
-  )
-}
+
 
 function getProjectKey(project) {
   return project.rawIds.feedId ?? project.id
@@ -490,9 +483,6 @@ export default function FeedPage() {
           <img src={logoImg} alt="" />
           <div><strong>GameFlow</strong><span>Play feed</span></div>
         </div>
-        <IconButton label="Search projects" variant="light" onClick={() => navigate('/app/explore')}>
-          <SearchIcon />
-        </IconButton>
       </header>
 
       <div ref={feedRef} className="feed-page__stream">

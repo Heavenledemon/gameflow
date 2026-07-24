@@ -47,7 +47,7 @@ const BottomNav = () => {
               {key === 'profile' && user?.avatar ? (
                 <img className="bottom-nav__avatar" src={user.avatar} alt="" />
               ) : (
-                <Icon size={22} />
+                <Icon size={26} />
               )}
               {key === 'inbox' && inboxCount > 0 ? (
                 <span className="bottom-nav__badge">{inboxCount > 99 ? '99+' : inboxCount}</span>

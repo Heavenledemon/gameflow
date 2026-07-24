@@ -1,4 +1,4 @@
-﻿/* =========================================================
+/* =========================================================
    BottomNav — Design Guide §7.3
    Fixed, glassmorphism pill floating above content.
    Active: --gf-brand-coral. Inactive: --gf-text-secondary.
@@ -8,98 +8,75 @@
 
 .bottom-nav {
   display: grid;
-  grid-template-columns: repeat(5, minmax(44px, 1fr));
+  grid-template-columns: repeat(5, 1fr);
   align-items: center;
-  width: calc(100% - (var(--gf-space-4) * 2));
-  max-width: calc(var(--gf-app-max-width) - (var(--gf-space-4) * 2));
-  height: var(--gf-bottom-nav-height);
+  width: 100%;
+  max-width: var(--gf-app-max-width);
+  height: calc(var(--gf-bottom-nav-height, 64px) + env(safe-area-inset-bottom, 0px));
   margin-inline: auto;
-  padding-inline: var(--gf-space-2);
-  border: 1px solid var(--gf-shell-navigation-border);
-  border-radius: var(--gf-radius-pill);
-  background: var(--gf-shell-navigation-surface);
-  box-shadow: var(--gf-shadow-xl);
-  backdrop-filter: blur(28px);
-  -webkit-backdrop-filter: blur(28px);
+  padding-inline: var(--gf-space-1);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0;
+  background: rgba(18, 18, 22, 0.92);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
 }
 
 /* ── Nav items ───────────────────────────────────── */
 .bottom-nav__item {
   position: relative;
   display: flex;
-  min-width: 44px;
-  min-height: 44px;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--gf-space-1);
-  border-radius: var(--gf-radius-pill);
-  color: var(--gf-text-secondary);
+  gap: 3px;
+  padding-block: 6px;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.72);
   transition:
-    color     var(--gf-duration-fast)   var(--gf-ease-standard),
+    color var(--gf-duration-fast) var(--gf-ease-standard),
     transform var(--gf-duration-instant) var(--gf-ease-standard);
 }
 
-/* Active-dot indicator (mobile, no labels) */
-.bottom-nav__item::after {
-  position: absolute;
-  bottom: var(--gf-space-1);
-  width: var(--gf-space-1);
-  height: var(--gf-space-1);
-  border-radius: 50%;
-  background: var(--gf-brand-coral);
-  content: '';
-  opacity: 0;
-  transform: scale(0);
-  transition:
-    opacity   var(--gf-duration-normal) var(--gf-ease-standard),
-    transform var(--gf-duration-normal) var(--gf-ease-spring);
-}
-
 .bottom-nav__item:hover {
-  color: var(--gf-brand-coral);
+  color: #ffffff;
 }
 
 .bottom-nav__item--active {
-  color: var(--gf-brand-coral);
-}
-
-.bottom-nav__item--active::after {
-  opacity: 1;
-  transform: scale(1);
+  color: var(--gf-brand-coral, #ff5c5c);
+  font-weight: 700;
 }
 
 .bottom-nav__item:active {
   transform: scale(0.93);
 }
 
-/* ── Publish (center elevated button) ────────────── */
+/* ── Publish (center button) ────────────────────── */
 .bottom-nav__item--publish {
-  min-width: 56px;
-  min-height: 56px;
-  width: 56px;
-  height: 56px;
+  min-width: 48px;
+  min-height: 48px;
+  width: 48px;
+  height: 48px;
   margin-inline: auto;
-  border-radius: var(--gf-radius-pill);
-  background: var(--gf-brand-gradient);
-  box-shadow: var(--gf-shadow-md);
-  color: var(--gf-text-inverse);
+  border-radius: 14px;
+  background: var(--gf-brand-gradient, linear-gradient(135deg, #ff5c5c, #ff8c42));
+  box-shadow: 0 4px 14px rgba(255, 92, 92, 0.4);
+  color: #ffffff;
   transition:
     transform var(--gf-duration-fast) var(--gf-ease-spring),
     box-shadow var(--gf-duration-fast) var(--gf-ease-standard);
 }
 
 .bottom-nav__item--publish:hover {
-  color: var(--gf-text-inverse);
+  color: #ffffff;
   transform: translateY(-1px);
-  box-shadow: var(--gf-shadow-lg);
+  box-shadow: 0 6px 18px rgba(255, 92, 92, 0.5);
 }
 
 .bottom-nav__item--publish.bottom-nav__item--active {
-  color: var(--gf-text-inverse);
-}
-
-.bottom-nav__item--publish::after {
-  display: none;
+  color: #ffffff;
 }
 
 /* ── Icon wrapper ─────────────────────────────────── */
@@ -110,10 +87,18 @@
   place-items: center;
 }
 
+.bottom-nav__icon svg {
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.6));
+}
+
+.bottom-nav__item--active .bottom-nav__icon svg {
+  filter: drop-shadow(0 0 8px rgba(255, 92, 92, 0.6));
+}
+
 /* ── Avatar (profile item) ──────────────────────── */
 .bottom-nav__avatar {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   border: 2px solid currentColor;
   border-radius: 50%;
   object-fit: cover;
@@ -129,67 +114,27 @@
   height: 16px;
   padding-inline: 3px;
   place-items: center;
-  border-radius: var(--gf-radius-pill);
-  background: var(--gf-brand-coral);
-  color: var(--gf-text-inverse);
-  font-size: var(--gf-text-xs);
-  font-weight: var(--gf-weight-extrabold);
+  border-radius: 10px;
+  background: var(--gf-brand-coral, #ff5c5c);
+  color: #ffffff;
+  font-size: 0.68rem;
+  font-weight: 800;
   line-height: 1;
 }
 
-/* ── Labels: sr-only by default (< 390px) ────────── */
+/* ── Labels always visible on mobile and desktop ──── */
 .bottom-nav__label {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  color: inherit;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
-/* ── >= 390px: show labels ──────────────────────── */
-@media (min-width: 390px) {
-  .bottom-nav {
-    padding-inline: var(--gf-space-3);
-  }
-
-  .bottom-nav__item:not(.bottom-nav__item--publish) {
-    flex-direction: column;
-    gap: 2px;
-    padding-top: var(--gf-space-1);
-  }
-
-  /* Hide dot indicator when labels are showing */
-  .bottom-nav__item:not(.bottom-nav__item--publish)::after {
-    display: none;
-  }
-
-  .bottom-nav__label {
-    position: static;
-    width: auto;
-    height: auto;
-    margin: 0;
-    overflow: visible;
-    clip: auto;
-    white-space: normal;
-    font-size: var(--gf-text-xs);
-    font-weight: var(--gf-weight-bold);
-    line-height: 1;
-  }
-
-  /* Publish label remains sr-only even at >= 390px */
-  .bottom-nav__item--publish .bottom-nav__label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-  }
+/* Publish button hides label */
+.bottom-nav__item--publish .bottom-nav__label {
+  display: none;
 }
 
 /* ── Reduced-transparency fallback ─────────────── */
