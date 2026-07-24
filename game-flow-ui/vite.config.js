@@ -19,7 +19,7 @@ function compressedUnityAssets() {
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
-  base: mode === 'development' ? '/' : '/m/',
+  base: '/',
   plugins: [react(), compressedUnityAssets()],
   server: {
     fs: {
