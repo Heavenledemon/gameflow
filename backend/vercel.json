@@ -3,6 +3,10 @@
   "framework": "express",
   "rewrites": [
     {
+      "source": "/webgl-frame-adapter.js",
+      "destination": "https://gameflow-flow-ui.vercel.app/webgl-frame-adapter.js"
+    },
+    {
       "source": "/media-storage/:path*",
       "destination": "https://swqaxkqpegwoscyiuitm.supabase.co/storage/v1/object/public/gameflow-media/:path*"
     }
