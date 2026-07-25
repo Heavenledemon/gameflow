@@ -1,6 +1,8 @@
 import crypto from 'node:crypto'
 import fs from 'node:fs/promises'
 import path from 'node:path'
+import { promisify } from 'node:util'
+import { brotliDecompress, gunzip } from 'node:zlib'
 import Project from '../models/Project.js'
 import ProjectFile from '../models/ProjectFile.js'
 import Story from '../models/Story.js'
@@ -14,6 +16,8 @@ const skipUpload = process.argv.includes('--skip-upload')
 const uploadsRoot = path.resolve('uploads')
 const runtimeRoot = path.resolve('runtime')
 const mediaFields = ['previewUrl', 'gameUrl', 'modelUrl', 'imageUrl', 'videoUrl', 'gameplayGifUrl']
+const decompressBrotli = promisify(brotliDecompress)
+const decompressGzip = promisify(gunzip)
 
 function normalizeKey(value) {
   return String(value || '').replace(/\\/g, '/').replace(/^\/+/, '')
@@ -76,14 +80,21 @@ async function latestDemoBackup() {
 
 async function uploadFile(filePath) {
   const key = normalizeKey(path.relative(uploadsRoot, filePath))
-  const body = await fs.readFile(filePath)
+  const sourceBody = await fs.readFile(filePath)
   const { contentType, contentEncoding } = contentMetadata(filePath)
+  // Supabase's S3-compatible upload currently drops Content-Encoding metadata.
+  // Store the decoded payload and let the Vercel proxy apply the declared
+  // encoding once. This prevents Unity's .gz/.br assets being double encoded.
+  const body = contentEncoding === 'br'
+    ? await decompressBrotli(sourceBody)
+    : contentEncoding === 'gzip'
+      ? await decompressGzip(sourceBody)
+      : sourceBody
   const response = await fetch(createPresignedPutUrl(key), {
     method: 'PUT',
     headers: {
       'Content-Type': contentType,
       'Cache-Control': 'public, max-age=31536000, immutable',
-      ...(contentEncoding ? { 'Content-Encoding': contentEncoding } : {}),
     },
     body,
   })
