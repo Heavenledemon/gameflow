@@ -3,6 +3,25 @@ import { createCollaborationRequest as createCollaborationRequestApi } from './c
 import { flags } from './flags'
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api'
 const mutationHeaders = (token) => ({ Authorization: `Bearer ${token}`, 'Idempotency-Key': crypto.randomUUID() })
+const RETRYABLE_MUTATION_STATUSES = new Set([409, 502, 503, 504])
+
+async function requestMutation(path, options, attempts = 3) {
+  let lastError
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      return await request(path, options)
+    } catch (error) {
+      lastError = error
+      const retryable = !error?.status || RETRYABLE_MUTATION_STATUSES.has(error.status)
+      if (!retryable || attempt === attempts - 1) throw error
+      const delay = error.retryAfter > 0
+        ? Math.min(error.retryAfter * 1000, 2000)
+        : 250 * (attempt + 1)
+      await new Promise((resolve) => window.setTimeout(resolve, delay))
+    }
+  }
+  throw lastError
+}
 
 export async function fetchContent(token = '', options = {}) {
   return request('/content', {
@@ -173,14 +192,14 @@ export async function fetchPostComments(token, postId, { cursor = '', limit = 30
 }
 
 export async function togglePostLike(token, postId) {
-  return request(`/posts/${encodeURIComponent(postId)}/like`, {
+  return requestMutation(`/posts/${encodeURIComponent(postId)}/like`, {
     method: 'POST',
     headers: mutationHeaders(token),
   })
 }
 
 export async function togglePostSave(token, postId) {
-  return request(`/posts/${encodeURIComponent(postId)}/save`, {
+  return requestMutation(`/posts/${encodeURIComponent(postId)}/save`, {
     method: 'POST',
     headers: mutationHeaders(token),
   })
