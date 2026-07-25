@@ -1,5 +1,6 @@
 import cors from 'cors'
 import express from 'express'
+import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import authRoutes from './routes/authRoutes.js'
@@ -19,6 +20,8 @@ const uploadsRoot = path.join(process.cwd(), 'uploads')
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const mobileBuildRoot = path.join(repositoryRoot, 'game-flow-ui', 'dist')
 const webBuildRoot = path.join(repositoryRoot, 'game-flow-web', 'dist')
+const mobileBuildAvailable = fs.existsSync(path.join(mobileBuildRoot, 'index.html'))
+const webBuildAvailable = fs.existsSync(path.join(webBuildRoot, 'index.html'))
 app.use(observabilityMiddleware)
 app.use(requestTimeoutMiddleware(env.requestTimeoutMs))
 
@@ -122,14 +125,26 @@ function mountFrontend(prefix, buildRoot) {
   })
 }
 
-mountFrontend('/m', mobileBuildRoot)
-mountFrontend('/web', webBuildRoot)
+if (mobileBuildAvailable) mountFrontend('/m', mobileBuildRoot)
+if (webBuildAvailable) mountFrontend('/web', webBuildRoot)
 
 app.get('/', deviceResolver, (request, response) => {
-  const destination = request.deviceClass === 'mobile' ? '/m' : '/web'
-  response.setHeader('Vary', 'User-Agent')
-  response.setHeader('Cache-Control', 'no-store')
-  response.redirect(302, destination)
+  const destination = request.deviceClass === 'mobile'
+    ? (mobileBuildAvailable ? '/m' : null)
+    : (webBuildAvailable ? '/web' : null)
+
+  if (destination) {
+    response.setHeader('Vary', 'User-Agent')
+    response.setHeader('Cache-Control', 'no-store')
+    response.redirect(302, destination)
+    return
+  }
+
+  response.json({
+    name: 'GameFlow API',
+    status: 'ok',
+    health: '/api/health',
+  })
 })
 
 app.use(notFound)
