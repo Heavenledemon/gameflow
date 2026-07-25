@@ -23,7 +23,7 @@ function countAllReplies(replies = []) {
   return replies.reduce((total, reply) => total + 1 + countAllReplies(reply.replies || []), 0)
 }
 
-function CommentThread({ comment, depth = 0, viewer, canReply, onReply, onReact }) {
+export function CommentThread({ comment, depth = 0, viewer, canReply, onReply, onReact }) {
   const [reactionsOpen, setReactionsOpen] = useState(false)
   const [repliesOpen, setRepliesOpen] = useState(false)
   const commentId = comment.commentId || comment._id

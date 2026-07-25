@@ -848,7 +848,9 @@ export const getProjectById = asyncHandler(async (request, response) => {
   }
 
   const [engagement, collaborationMap, owner, viewerFollow] = await Promise.all([getProjectEngagementPayload(project._id, viewerId, {
-    includeComments: false,
+    // The detail screen renders the responses panel from engagement.comments.
+    // Keep the list hydrated alongside commentsCount so the two cannot disagree.
+    includeComments: true,
     sharesCount: project?.engagement?.sharesCount || 0,
   }), getProjectCollaborationMap([project], viewerId), User.findById(project.ownerId).select('username name avatar').lean(), viewerId ? Follow.exists({ followerId: viewerId, followingId: project.ownerId }) : null])
   const hydratedProject = { ...project, ownerUsername: owner?.username || project.ownerUsername, ownerName: owner?.name || project.ownerName, ownerAvatar: owner ? owner.avatar || '' : project.ownerAvatar, viewerIsFollowing: Boolean(viewerFollow) }
