@@ -17,7 +17,12 @@ export async function request(path, options = {}) {
   })
   const data = await response.json().catch(() => ({}))
   if (response.status === 401) window.dispatchEvent(new CustomEvent(AUTH_EXPIRED_EVENT))
-  if (!response.ok) throw new Error(data?.message || 'Request failed.')
+  if (!response.ok) {
+    const error = new Error(data?.message || 'Request failed.')
+    error.status = response.status
+    error.retryAfter = Number(data?.retryAfter || response.headers.get('Retry-After') || 0)
+    throw error
+  }
   return data
 }
 
@@ -29,4 +34,3 @@ export const normalizeList = (data, key = 'items') => {
 }
 
 export const normalizeUser = (user) => user ? { ...user, id: user.id ?? user._id ?? null } : null
-

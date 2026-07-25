@@ -190,6 +190,17 @@ export default function FeedPage() {
       const result = await requestFn()
       syncProjectEngagement(project.contentId, result.engagement)
     } catch (error) {
+      // A Vercel request can time out after Atlas has already committed the
+      // mutation. Reconcile with the server before rolling back optimistic UI.
+      try {
+        const current = await fetchPostEngagement(token, project.contentId)
+        if (current?.engagement) {
+          syncProjectEngagement(project.contentId, current.engagement)
+          return
+        }
+      } catch {
+        // The original error is more useful when reconciliation also fails.
+      }
       updateProject(target, (item) => ({ ...item, engagement: previous }))
       throw error
     }
