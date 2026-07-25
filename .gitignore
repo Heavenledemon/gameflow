@@ -115,4 +115,7 @@ graphify*.html
 .venv/
 **/.venv/
 
+# Local backups
+/backups/
+
 

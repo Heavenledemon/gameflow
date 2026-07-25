@@ -10,7 +10,9 @@ import { useMessagingRealtime } from '../../hooks/useMessagingRealtime'
 import {
   createCommentReply,
   createPostComment,
+  fetchPostComments,
   fetchProject,
+  toggleCommentReaction,
   togglePostLike,
   togglePostSave,
   updateContentEngagement,
@@ -47,6 +49,9 @@ export default function ProjectDetailPage() {
   const [commentText, setCommentText] = useState('')
   const [isSubmittingComment, setIsSubmittingComment] = useState(false)
   const [showComments, setShowComments] = useState(false)
+  const [commentsStatus, setCommentsStatus] = useState('idle')
+  const [commentError, setCommentError] = useState('')
+  const [replyTarget, setReplyTarget] = useState(null)
   const [showOwnerSheet, setShowOwnerSheet] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [deleteConfirmTitle, setDeleteConfirmTitle] = useState('')
@@ -300,24 +305,65 @@ export default function ProjectDetailPage() {
     if (isGuest) { setShowGuestAuthSheet(true); return }
     if (!commentText.trim() || isSubmittingComment) return
     setIsSubmittingComment(true)
+    setCommentError('')
     const previous = engagement
+    const submittedText = commentText.trim()
+    if (replyTarget) {
+      try {
+        const replyId = replyTarget.commentId || replyTarget._id
+        const result = await createCommentReply(token, replyId, { text: submittedText })
+        const confirmedReply = { commentId: `reply-${++localIdRef.current}`, userId: viewerId || 'me', username: user?.username || 'me', name: user?.name || 'Me', avatar: user?.avatar, text: submittedText, createdAt: new Date().toISOString(), replies: [] }
+        const appendReply = (items) => items.map((item) => String(item.commentId || item._id) === String(replyId)
+          ? { ...item, replies: [...(item.replies || []), confirmedReply] }
+          : { ...item, replies: appendReply(item.replies || []) })
+        syncProject({ engagement: { ...engagement, ...result.engagement, comments: appendReply(comments) } })
+        setCommentText('')
+        setReplyTarget(null)
+      } catch (error) { setCommentError(error.message || 'Could not post your reply. Please try again.') }
+      finally { setIsSubmittingComment(false) }
+      return
+    }
     localIdRef.current += 1
-    const optimisticComment = { commentId: `optimistic-${localIdRef.current}`, userId: viewerId || 'me', username: user?.username || 'me', name: user?.name || 'Me', avatar: user?.avatar, text: commentText.trim(), createdAt: new Date().toISOString(), replies: [] }
+    const optimisticComment = { commentId: `optimistic-${localIdRef.current}`, userId: viewerId || 'me', username: user?.username || 'me', name: user?.name || 'Me', avatar: user?.avatar, text: submittedText, createdAt: new Date().toISOString(), replies: [] }
     syncProject({ engagement: { ...engagement, commentsCount: Number(engagement.commentsCount || 0) + 1, comments: [optimisticComment, ...comments] } })
     try {
-      const result = await createPostComment(token, projectId, { text: commentText.trim() })
-      syncProject({ engagement: result.engagement })
+      const result = await createPostComment(token, projectId, { text: submittedText })
+      syncProject({ engagement: { ...result.engagement, comments: [optimisticComment, ...comments] } })
       setCommentText('')
-    } catch (error) { syncProject({ engagement: previous }); showError(error.message || 'Failed to add comment.') }
+    } catch (error) { syncProject({ engagement: previous }); setCommentError(error.message || 'Could not post your comment. Your text is still here - try again.') }
     finally { setIsSubmittingComment(false) }
   }
 
-  const handleReply = async (commentId) => {
+  const loadComments = useCallback(async () => {
+    setCommentsStatus('loading')
+    setCommentError('')
+    try {
+      const result = await fetchPostComments(token, projectId)
+      syncProject({ engagement: { comments: result.items || [] } })
+      setCommentsStatus('ready')
+    } catch (error) {
+      setCommentError(error.message || 'Failed to load comments.')
+      setCommentsStatus('error')
+    }
+  }, [projectId, syncProject, token])
+
+  const openComments = () => {
+    setShowComments(true)
+    setReplyTarget(null)
+    loadComments()
+  }
+
+  const handleCommentReaction = async (comment, emoji) => {
     if (isGuest) { setShowGuestAuthSheet(true); return }
-    const text = window.prompt('Write a reply')
-    if (!text?.trim()) return
-    try { const result = await createCommentReply(token, commentId, { text: text.trim() }); syncProject({ engagement: result.engagement }) }
-    catch (error) { showError(error.message || 'Failed to add reply.') }
+    const commentId = comment.commentId || comment._id
+    setCommentError('')
+    try {
+      const result = await toggleCommentReaction(token, commentId, emoji)
+      const updateTree = (items) => items.map((item) => String(item.commentId || item._id) === String(commentId)
+        ? { ...item, reactions: result.reactions, viewerReaction: result.viewerReaction }
+        : { ...item, replies: updateTree(item.replies || []) })
+      syncProject({ engagement: { ...engagement, comments: updateTree(comments) } })
+    } catch (error) { setCommentError(error.message || 'Could not add a reaction.') }
   }
 
   const handleDeleteConfirm = async () => {
@@ -372,7 +418,7 @@ export default function ProjectDetailPage() {
               collaborationBusy={isSendingCollaborationRequest || isOpeningWorkspace}
               onPrimary={primaryMediaAction}
               onLike={() => mutateEngagement('react')}
-              onComments={() => setShowComments(true)}
+              onComments={openComments}
               onSave={() => mutateEngagement('save')}
               onCollaboration={guard(collaborationAction)}
               onShare={handleShare}
@@ -406,7 +452,7 @@ export default function ProjectDetailPage() {
             {typeof project.viewsCount === 'number' ? <p className="project-detail__views">{project.viewsCount.toLocaleString()} views</p> : null}
           </div>
         </div>
-        <ProjectComments open={showComments} title={model.title} comments={comments} viewer={user} isGuest={isGuest} draft={commentText} submitting={isSubmittingComment} onClose={() => setShowComments(false)} onDraftChange={setCommentText} onSubmit={handleCommentSubmit} onReply={handleReply} />
+        <ProjectComments open={showComments} title={model.title} comments={comments} status={commentsStatus} error={commentError} viewer={user} isGuest={isGuest} draft={commentText} replyTarget={replyTarget} submitting={isSubmittingComment} onClose={() => setShowComments(false)} onRetry={loadComments} onDraftChange={setCommentText} onSubmit={handleCommentSubmit} onReply={setReplyTarget} onCancelReply={() => setReplyTarget(null)} onReact={handleCommentReaction} />
       </div>
 
       <Sheet open={showCollaborationSheet} title="Invite a collaborator" description={model.title} onClose={() => !isSendingCollaborationRequest && setShowCollaborationSheet(false)}>
