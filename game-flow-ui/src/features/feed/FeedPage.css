@@ -367,9 +367,6 @@
     0 -1px 3px rgba(0, 0, 0, 0.8);
   transition: color 0.2s ease;
 }
-.feed-action__count--interactive { cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
-.feed-action__count--interactive:focus-visible { border-radius: 4px; outline: 2px solid #fff; outline-offset: 3px; }
-
 /* ================================================
    PER-ICON COLOR THEMES
    Each button gets its own hue — heart=red,

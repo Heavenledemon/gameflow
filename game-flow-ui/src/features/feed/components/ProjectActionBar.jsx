@@ -20,7 +20,7 @@ function formatCount(value = 0) {
   return String(count)
 }
 
-function ActionButton({ label, count, pressed, className = '', onClick, onCountClick, children }) {
+function ActionButton({ label, count, pressed, className = '', onClick, children }) {
   const countLabel = `${count ?? 0}`
   return (
     <button
@@ -31,20 +31,12 @@ function ActionButton({ label, count, pressed, className = '', onClick, onCountC
       onClick={onClick}
     >
       {children}
-      <span
-        className={`feed-action__count ${onCountClick ? 'feed-action__count--interactive' : ''}`.trim()}
-        role={onCountClick ? 'button' : undefined}
-        tabIndex={onCountClick ? 0 : undefined}
-        aria-label={onCountClick ? `View ${countLabel} likes` : undefined}
-        aria-hidden={onCountClick ? undefined : 'true'}
-        onClick={onCountClick ? (event) => { event.stopPropagation(); onCountClick() } : undefined}
-        onKeyDown={onCountClick ? (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); onCountClick() } } : undefined}
-      >{formatCount(count)}</span>
+      <span className="feed-action__count" aria-hidden="true">{formatCount(count)}</span>
     </button>
   )
 }
 
-export default function ProjectActionBar({ engagement, viewerState, onLike, onViewLikes, onComments, onSave, onShare }) {
+export default function ProjectActionBar({ engagement, viewerState, onLike, onComments, onSave, onShare }) {
   const [animateLike, setAnimateLike] = useState(false)
 
   const isLiked = engagement?.viewerHasLiked ?? viewerState?.liked
@@ -68,7 +60,6 @@ export default function ProjectActionBar({ engagement, viewerState, onLike, onVi
         pressed={isLiked}
         className={`feed-action--like ${isLiked ? 'feed-action--active' : ''} ${animateLike ? 'feed-action--animate' : ''}`}
         onClick={handleLikeClick}
-        onCountClick={onViewLikes}
       >
         <HeartIcon filled={isLiked} size={30} />
       </ActionButton>
