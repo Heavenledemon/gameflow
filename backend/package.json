@@ -10,6 +10,8 @@
     "backfill:feed": "node src/scripts/backfillFeedItems.js",
     "migrate:engagement": "node src/scripts/migrateEngagementCollections.js",
     "backfill:project-members": "node src/scripts/backfillProjectMembers.js",
+    "demo-media": "node src/scripts/migrateBrokenMediaToDemo.js",
+    "demo-media:apply": "node src/scripts/migrateBrokenMediaToDemo.js --apply",
     "purge:messaging": "node src/scripts/purgeExpiredMessagingData.js",
     "worker": "node src/worker.js",
     "test": "node --test test/*.test.js",
