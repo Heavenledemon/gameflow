@@ -54,7 +54,6 @@ export default function ProjectDetailPage() {
   const [replyTarget, setReplyTarget] = useState(null)
   const [showOwnerSheet, setShowOwnerSheet] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
-  const [deleteConfirmTitle, setDeleteConfirmTitle] = useState('')
   const [metadataExpanded, setMetadataExpanded] = useState(false)
   const [isFollowing, setIsFollowing] = useState(false)
   const [showCollaborationSheet, setShowCollaborationSheet] = useState(false)
@@ -367,7 +366,6 @@ export default function ProjectDetailPage() {
   }
 
   const handleDeleteConfirm = async () => {
-    if (deleteConfirmTitle !== project.title) { showError('Project title does not match. Deletion cancelled.'); return }
     try { await deleteProject(token, projectId); showSuccess('Project deleted successfully.'); navigate('/app/profile') }
     catch (error) { showError(error.message || 'Failed to delete project.') }
   }
@@ -470,7 +468,7 @@ export default function ProjectDetailPage() {
 
       <ConfirmDialog open={Boolean(pendingRoleChange)} title="Change member role?" confirmLabel="Change role" onConfirm={applyRoleChange} onClose={() => setPendingRoleChange(null)} message={pendingRoleChange ? `Make @${pendingRoleChange.member.username || 'this member'} a ${pendingRoleChange.role}?` : ''} />
       <ConfirmDialog open={Boolean(pendingRemoval)} title="Remove collaborator?" confirmLabel="Remove member" onConfirm={removeMember} onClose={() => setPendingRemoval(null)} message={pendingRemoval ? `Remove @${pendingRemoval.username || 'this member'} from this project and its private workspace?` : ''} />
-      <ConfirmDialog open={showDeleteDialog} title="Confirm deletion" confirmLabel="Delete permanently" onConfirm={handleDeleteConfirm} onClose={() => { setShowDeleteDialog(false); setDeleteConfirmTitle('') }} message={<label className="project-detail__delete-label">Type the project title, “{project.title}”, to confirm.<input className="gf-input" value={deleteConfirmTitle} onChange={(event) => setDeleteConfirmTitle(event.target.value)} /></label>} />
+      <ConfirmDialog open={showDeleteDialog} title="Delete project?" confirmLabel="Delete" onConfirm={handleDeleteConfirm} onClose={() => setShowDeleteDialog(false)} message={`Are you sure you want to delete “${project.title}”?`} />
     </main>
   )
 }

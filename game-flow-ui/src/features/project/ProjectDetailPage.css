@@ -152,7 +152,7 @@
 .collaboration-picker > button:not(.gf-button) { min-height: 56px; width: 100%; display: flex; align-items: center; gap: var(--gf-space-3); padding: var(--gf-space-3); border: 1px solid var(--gf-border); border-radius: var(--gf-radius-sm); color: var(--gf-text); text-align: left; background: var(--gf-control); }
 .collaboration-picker > button[aria-pressed='true'] { border-color: var(--gf-brand); background: color-mix(in srgb, var(--gf-brand) 12%, var(--gf-control)); }
 .collaboration-picker small { display: block; margin-top: 3px; color: var(--gf-text-muted); }
-.collaboration-picker label, .project-detail__delete-label { display: grid; gap: var(--gf-space-2); color: var(--gf-text-muted); }
+.collaboration-picker label { display: grid; gap: var(--gf-space-2); color: var(--gf-text-muted); }
 .collaboration-picker textarea { min-height: 88px; resize: vertical; padding: var(--gf-space-3); border: 1px solid var(--gf-border); border-radius: var(--gf-radius-sm); color: var(--gf-text); background: var(--gf-control); }
 .project-detail__sheet-actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gf-space-2); }
 
