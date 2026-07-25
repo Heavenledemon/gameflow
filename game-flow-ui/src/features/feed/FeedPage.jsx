@@ -538,7 +538,6 @@ export default function FeedPage() {
               onProject={() => openProject(project)}
               onFollow={() => handleFollow(project)}
               onLike={() => handleLike(project)}
-              onViewLikes={String(project.creator?.id || '') === String(user?.id || user?._id || '') ? () => openLikes(project) : undefined}
               onComments={() => openComments(project)}
               onSave={() => handleSave(project)}
               onShare={() => {

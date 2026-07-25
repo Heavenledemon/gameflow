@@ -16,7 +16,6 @@ export default function ProjectReelCard({
   onProject,
   onFollow,
   onLike,
-  onViewLikes,
   onComments,
   onSave,
   onShare,
@@ -127,7 +126,6 @@ export default function ProjectReelCard({
           engagement={project.engagement || project.engagementCounts}
           viewerState={project.viewerState}
           onLike={onLike}
-          onViewLikes={onViewLikes}
           onComments={onComments}
           onSave={onSave}
           onShare={onShare}
