@@ -75,7 +75,18 @@ export async function uploadProjectFile(token, projectId, fileMeta, file) {
       method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Idempotency-Key': idempotencyKey },
       body: { name: fileMeta.name, relativePath: fileMeta.relativePath, mimeType: fileMeta.mimeType || file.type || '', size: body.byteLength, checksum },
     })
-    const uploadResponse = await fetch(initiated.uploadUrl, { method: 'PUT', headers: { 'Content-Type': fileMeta.mimeType || file.type || 'application/octet-stream', 'Cache-Control': 'public, max-age=31536000, immutable' }, body })
+    const lowerName = String(fileMeta.relativePath || fileMeta.name || '').toLowerCase()
+    const contentEncoding = lowerName.endsWith('.br')
+      ? 'br'
+      : lowerName.endsWith('.gz') || lowerName.endsWith('.unityweb')
+        ? 'gzip'
+        : ''
+    const uploadHeaders = {
+      'Content-Type': fileMeta.mimeType || file.type || 'application/octet-stream',
+      'Cache-Control': 'public, max-age=31536000, immutable',
+      ...(contentEncoding ? { 'Content-Encoding': contentEncoding } : {}),
+    }
+    const uploadResponse = await fetch(initiated.uploadUrl, { method: 'PUT', headers: uploadHeaders, body })
     if (!uploadResponse.ok) throw new Error('Direct upload failed.')
     return request(`/uploads/${encodeURIComponent(initiated.uploadId)}/complete`, {
       method: 'POST', headers: { Authorization: `Bearer ${token}` },

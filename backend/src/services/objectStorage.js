@@ -25,7 +25,10 @@ export function createPresignedPutUrl(storageKey, expiresInSeconds = 900) {
   const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '')
   const dateStamp = amzDate.slice(0, 8)
   const scope = `${dateStamp}/${env.s3Region}/s3/aws4_request`
-  const pathname = `/${encodeURIComponent(env.s3Bucket)}/${encodeKey(storageKey)}`
+  // Some S3-compatible providers, including Supabase Storage, expose their S3
+  // API below a path such as /storage/v1/s3. Preserve that path when signing.
+  const endpointPath = endpoint.pathname.replace(/\/$/, '')
+  const pathname = `${endpointPath}/${encodeURIComponent(env.s3Bucket)}/${encodeKey(storageKey)}`
   const query = new URLSearchParams({
     'X-Amz-Algorithm': 'AWS4-HMAC-SHA256',
     'X-Amz-Credential': `${env.s3AccessKeyId}/${scope}`,
@@ -40,4 +43,3 @@ export function createPresignedPutUrl(storageKey, expiresInSeconds = 900) {
   query.set('X-Amz-Signature', crypto.createHmac('sha256', signingKey).update(stringToSign).digest('hex'))
   return `${endpoint.origin}${pathname}?${query.toString()}`
 }
-
