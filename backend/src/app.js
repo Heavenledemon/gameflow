@@ -5,6 +5,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import authRoutes from './routes/authRoutes.js'
 import env from './config/env.js'
+import { connectDatabase } from './config/database.js'
 import contentRoutes from './routes/contentRoutes.js'
 import socialRoutes from './routes/socialRoutes.js'
 import messagingRoutes from './routes/messagingRoutes.js'
@@ -24,6 +25,21 @@ const mobileBuildAvailable = fs.existsSync(path.join(mobileBuildRoot, 'index.htm
 const webBuildAvailable = fs.existsSync(path.join(webBuildRoot, 'index.html'))
 app.use(observabilityMiddleware)
 app.use(requestTimeoutMiddleware(env.requestTimeoutMs))
+
+// Vercel may detect and invoke this Express app directly instead of the
+// repository-level handler. Ensure every warm instance has an Atlas
+// connection before any route runs; connectDatabase de-duplicates concurrent
+// cold-start attempts and immediately reuses an existing connection.
+if (process.env.VERCEL) {
+  app.use(async (_request, _response, next) => {
+    try {
+      await connectDatabase()
+      next()
+    } catch (error) {
+      next(error)
+    }
+  })
+}
 
 function getUncompressedAssetPath(filePath) {
   const normalizedPath = String(filePath || '').replace(/\\/g, '/').toLowerCase()
