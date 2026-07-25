@@ -27,43 +27,37 @@
     {
       "source": "/media-storage/(.*)\\.wasm\\.br",
       "headers": [
-        { "key": "Content-Encoding", "value": "br" },
         { "key": "Content-Type", "value": "application/wasm" }
       ]
     },
     {
       "source": "/media-storage/(.*)\\.js\\.br",
       "headers": [
-        { "key": "Content-Encoding", "value": "br" },
         { "key": "Content-Type", "value": "application/javascript; charset=utf-8" }
       ]
     },
     {
       "source": "/media-storage/(.*)\\.data\\.br",
       "headers": [
-        { "key": "Content-Encoding", "value": "br" },
-        { "key": "Content-Type", "value": "application/javascript; charset=utf-8" }
+        { "key": "Content-Type", "value": "application/octet-stream" }
       ]
     },
     {
       "source": "/media-storage/(.*)\\.wasm\\.gz",
       "headers": [
-        { "key": "Content-Encoding", "value": "gzip" },
         { "key": "Content-Type", "value": "application/wasm" }
       ]
     },
     {
       "source": "/media-storage/(.*)\\.js\\.gz",
       "headers": [
-        { "key": "Content-Encoding", "value": "gzip" },
         { "key": "Content-Type", "value": "application/javascript; charset=utf-8" }
       ]
     },
     {
       "source": "/media-storage/(.*)\\.data\\.gz",
       "headers": [
-        { "key": "Content-Encoding", "value": "gzip" },
-        { "key": "Content-Type", "value": "application/javascript; charset=utf-8" }
+        { "key": "Content-Type", "value": "application/octet-stream" }
       ]
     }
   ],
