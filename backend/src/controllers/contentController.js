@@ -773,7 +773,7 @@ export function getHealth(_request, response) {
 export const getReadiness = asyncHandler(async (_request, response) => {
   const mongoReady = mongoose.connection.readyState === 1
   const redis = await getRedisReadiness()
-  const redisRequired = env.nodeEnv === 'production'
+  const redisRequired = Boolean(env.redisUrl)
   const ready = mongoReady && (!redisRequired || redis.ready)
 
   response.status(ready ? 200 : 503).json({

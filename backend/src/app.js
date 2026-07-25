@@ -30,7 +30,7 @@ app.use(requestTimeoutMiddleware(env.requestTimeoutMs))
 // repository-level handler. Ensure every warm instance has an Atlas
 // connection before any route runs; connectDatabase de-duplicates concurrent
 // cold-start attempts and immediately reuses an existing connection.
-if (process.env.VERCEL) {
+if (process.env.VERCEL || env.nodeEnv === 'production') {
   app.use(async (_request, _response, next) => {
     try {
       await connectDatabase()
