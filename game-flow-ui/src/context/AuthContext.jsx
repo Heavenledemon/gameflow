@@ -8,6 +8,7 @@ import {
   persistAuthSession,
   persistGuestSession,
   signIn as signInRequest,
+  signInWithGoogle as signInWithGoogleRequest,
   signUp as signUpRequest,
   updateProfile as updateProfileRequest,
 } from '../lib/auth';
@@ -133,6 +134,19 @@ export const AuthProvider = ({ children }) => {
     return data.user;
   };
 
+  const signInWithGoogle = async (credential) => {
+    const data = await signInWithGoogleRequest(credential);
+
+    persistAuthSession(data);
+    setUser(data.user);
+    setToken(data.token);
+    setIsAuthenticated(true);
+    setIsGuest(false);
+    setIsLoading(false);
+
+    return data.user;
+  };
+
   const logout = () => {
     clearStoredSession();
     setUser(null);
@@ -165,6 +179,7 @@ export const AuthProvider = ({ children }) => {
         token,
         loginGuest,
         signIn,
+        signInWithGoogle,
         signUp,
         logout,
         updateProfile,

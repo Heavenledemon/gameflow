@@ -56,6 +56,13 @@ export async function signIn(input) {
   })
 }
 
+export async function signInWithGoogle(credential) {
+  return request('/auth/google', {
+    method: 'POST',
+    body: { credential },
+  })
+}
+
 export async function fetchCurrentUser(token) {
   return request('/auth/me', {
     headers: {

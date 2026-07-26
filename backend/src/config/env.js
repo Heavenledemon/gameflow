@@ -9,6 +9,7 @@ const env = {
   clientOrigin: (process.env.CLIENT_ORIGIN ?? 'http://localhost:5173').replace(/\/+$/, ''),
   seedOnStart: String(process.env.SEED_ON_START ?? 'true').toLowerCase() === 'true',
   authTokenSecret: process.env.AUTH_TOKEN_SECRET ?? 'gameflow-dev-auth-secret',
+  googleClientId: process.env.GOOGLE_CLIENT_ID ?? '',
   redisUrl: process.env.REDIS_URL ?? '',
   requestTimeoutMs: Number(process.env.REQUEST_TIMEOUT_MS ?? 15000),
   objectStorageEnabled: String(process.env.OBJECT_STORAGE_ENABLED ?? 'false').toLowerCase() === 'true',

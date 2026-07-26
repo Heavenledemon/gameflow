@@ -5,8 +5,11 @@ import Follow from '../models/Follow.js'
 import Project from '../models/Project.js'
 import FeedItem from '../models/FeedItem.js'
 import PostComment from '../models/PostComment.js'
+import { OAuth2Client } from 'google-auth-library'
+import env from '../config/env.js'
 
 const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 7
+const googleClient = new OAuth2Client()
 
 function createError(statusCode, message) {
   const error = new Error(message)
@@ -119,6 +122,78 @@ export const signinUser = asyncHandler(async (request, response) => {
 
   if (!passwordMatches) {
     throw createError(401, 'Invalid username or password.')
+  }
+
+  response.json(buildAuthPayload(user))
+})
+
+async function createAvailableUsername(name, googleId) {
+  const base = String(name || 'creator')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '')
+    .slice(0, 20) || 'creator'
+  const suffix = String(googleId).slice(-6).toLowerCase()
+
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const username = attempt === 0 ? `${base}_${suffix}` : `${base}_${suffix}${attempt}`
+    if (!(await User.exists({ username }))) return username
+  }
+
+  return `creator_${String(googleId).toLowerCase()}`
+}
+
+export const signinWithGoogle = asyncHandler(async (request, response) => {
+  const { credential } = request.body ?? {}
+
+  if (!env.googleClientId) {
+    throw createError(503, 'Google sign-in is not configured on the server.')
+  }
+
+  if (!String(credential).trim()) {
+    throw createError(400, 'Google credential is required.')
+  }
+
+  let payload
+  try {
+    const ticket = await googleClient.verifyIdToken({
+      idToken: String(credential),
+      audience: env.googleClientId,
+    })
+    payload = ticket.getPayload()
+  } catch {
+    throw createError(401, 'Google could not verify this sign-in.')
+  }
+
+  if (!payload?.sub || !payload?.email || !payload.email_verified) {
+    throw createError(401, 'Google did not provide a verified email address.')
+  }
+
+  const email = String(payload.email).trim().toLowerCase()
+  let user = await User.findOne({ googleId: payload.sub })
+
+  if (!user) {
+    user = await User.findOne({ email })
+
+    if (user) {
+      const googleIsAuthoritative = email.endsWith('@gmail.com') || Boolean(payload.hd)
+      if (!googleIsAuthoritative) {
+        throw createError(409, 'Sign in with your password first before connecting this Google account.')
+      }
+
+      user.googleId = payload.sub
+      user.authProviders = [...new Set([...(user.authProviders || ['password']), 'google'])]
+      if (!user.avatar && payload.picture) user.avatar = String(payload.picture)
+      await user.save()
+    } else {
+      user = await User.create({
+        email,
+        username: await createAvailableUsername(payload.name, payload.sub),
+        name: String(payload.name || email.split('@')[0]).trim(),
+        avatar: String(payload.picture || ''),
+        googleId: payload.sub,
+        authProviders: ['google'],
+      })
+    }
   }
 
   response.json(buildAuthPayload(user))
