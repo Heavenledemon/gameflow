@@ -459,6 +459,24 @@ const SignInPage = () => {
               onClick={handleOAuthClick}
             />
 
+            {/* Keep account creation visible without expanding OAuth options. */}
+            <p style={{ margin: '2px 0 0', textAlign: 'center', fontSize: 14, color: T.muted }}>
+              Don't have an account?{' '}
+              <button
+                type="button"
+                onClick={() => navigate('/signup')}
+                style={{
+                  background: 'none', border: 'none', padding: '4px 2px',
+                  cursor: 'pointer', fontFamily: T.font,
+                  fontSize: 14, fontWeight: 700, color: T.white,
+                  textDecoration: 'underline', textUnderlineOffset: 3,
+                  textDecorationColor: 'rgba(255,255,255,0.45)',
+                }}
+              >
+                Sign Up
+              </button>
+            </p>
+
             {/* More options toggle */}
             <div style={{ display: 'flex', justifyContent: 'center' }}>
               <button
@@ -518,21 +536,6 @@ const SignInPage = () => {
           </div>
 
           {/* Tertiary — create account */}
-          <p style={{ margin: 0, textAlign: 'center', fontSize: 14, color: T.muted }}>
-            Don't have an account?{' '}
-            <button
-              onClick={() => navigate('/signup')}
-              style={{
-                background: 'none', border: 'none', padding: 0,
-                cursor: 'pointer', fontFamily: T.font,
-                fontSize: 14, fontWeight: 600, color: T.white,
-                textDecoration: 'underline',
-                textDecorationColor: 'rgba(255,255,255,0.3)',
-              }}
-            >
-              Sign Up
-            </button>
-          </p>
         </div>
       </div>
     </div>

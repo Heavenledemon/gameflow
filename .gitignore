@@ -118,4 +118,7 @@ graphify*.html
 # Local backups
 /backups/
 
+MERN_Vercel_Deployment_Guide.docx
+MongoDB_Dump_and_Restore_Guide.docx
+
 
