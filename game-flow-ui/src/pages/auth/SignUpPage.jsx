@@ -432,6 +432,7 @@ const SignUpPage = () => {
                   disabled={isSubmitting}
                 />
 
+                {showMoreOAuth && <>
                 {/* More options toggle */}
                 <div style={{ display: 'flex', justifyContent: 'center' }}>
                   <button
@@ -488,6 +489,7 @@ const SignUpPage = () => {
                     onClick={handleOAuthClick}
                   />
                 </div>
+                </>}
               </div>
 
               {/* Sign in link */}
