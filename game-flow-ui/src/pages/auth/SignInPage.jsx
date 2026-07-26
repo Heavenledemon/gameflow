@@ -486,6 +486,7 @@ const SignInPage = () => {
               </button>
             </p>
 
+            {showMoreOAuth && <>
             {/* More options toggle */}
             <div style={{ display: 'flex', justifyContent: 'center' }}>
               <button
@@ -542,6 +543,7 @@ const SignInPage = () => {
                 onClick={handleOAuthClick}
               />
             </div>
+            </>}
           </div>
 
           {/* Tertiary — create account */}
