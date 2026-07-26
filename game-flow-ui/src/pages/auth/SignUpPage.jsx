@@ -366,11 +366,11 @@ const SignUpPage = () => {
               {/* ── Step 1 ─────────────────────────────────────────────────── */}
 
               {/* Heading */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: T.textPrimary, letterSpacing: -0.5, lineHeight: 1.2 }}>
-                  Create your<br />creator profile.
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 8, marginBottom: 4 }}>
+                <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700, color: T.textPrimary, letterSpacing: '-0.4px', lineHeight: 1.35 }}>
+                  Create your creator profile.
                 </h1>
-                <p style={{ margin: 0, fontSize: 13, color: T.textMuted, fontWeight: 400 }}>
+                <p style={{ margin: 0, fontSize: 14, color: T.textMuted, fontWeight: 400, lineHeight: 1.5 }}>
                   Start with your email address.
                 </p>
               </div>
@@ -441,11 +441,11 @@ const SignUpPage = () => {
               </div>
 
               {/* Heading */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: T.textPrimary, letterSpacing: -0.5, lineHeight: 1.2 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 8, marginBottom: 4 }}>
+                <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700, color: T.textPrimary, letterSpacing: '-0.4px', lineHeight: 1.35 }}>
                   Almost there.
                 </h1>
-                <p style={{ margin: 0, fontSize: 13, color: T.textMuted }}>
+                <p style={{ margin: 0, fontSize: 14, color: T.textMuted, fontWeight: 400, lineHeight: 1.5 }}>
                   Complete your profile.
                 </p>
               </div>
