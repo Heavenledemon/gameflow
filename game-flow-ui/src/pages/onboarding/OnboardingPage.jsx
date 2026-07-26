@@ -114,7 +114,7 @@ const OnboardingPage = () => {
         }}
       />
 
-      {/* ── Full-screen cinematic vignette — preserves artwork, improves readability ── */}
+      {/* ── Full-screen cinematic vignette ── */}
       <div
         aria-hidden="true"
         style={{
@@ -168,7 +168,7 @@ const OnboardingPage = () => {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          paddingTop: '50dvh',
+          paddingTop: '25dvh',
           opacity: visible ? 1 : 0,
           transition: 'opacity 0.7s ease',
         }}
@@ -230,7 +230,7 @@ const OnboardingPage = () => {
         </span>
       </div>
 
-      {/* ── MIDDLE: Let the video breathe ─────────────────────────────────── */}
+      {/* ── MIDDLE: Spacer ───────────────────────────────────────────────── */}
       <div style={{ flex: 1 }} />
 
       {/* ── BOTTOM: Role + CTA ────────────────────────────────────────────── */}
@@ -238,7 +238,7 @@ const OnboardingPage = () => {
         style={{
           position: 'relative',
           zIndex: 3,
-          padding: '0 24px 44px',
+          padding: '0 24px 130px',
           display: 'flex',
           flexDirection: 'column',
           gap: 12,
@@ -305,7 +305,6 @@ const OnboardingPage = () => {
           <span style={{ fontSize: 16, lineHeight: 1, opacity: 0.6 }}>→</span>
         </button>
       </div>
-
     </div>
   );
 };
