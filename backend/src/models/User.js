@@ -40,7 +40,19 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
+      required() {
+        return !this.googleId
+      },
+    },
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
+    authProviders: {
+      type: [String],
+      enum: ['password', 'google'],
+      default: ['password'],
     },
     headline: {
       type: String,
@@ -126,7 +138,7 @@ const userSchema = new mongoose.Schema(
 )
 
 userSchema.pre('save', async function hashUserPassword() {
-  if (!this.isModified('password')) {
+  if (!this.isModified('password') || !this.password) {
     return
   }
 
@@ -136,6 +148,10 @@ userSchema.pre('save', async function hashUserPassword() {
 })
 
 userSchema.methods.matchPassword = async function matchPassword(enteredPassword) {
+  if (!this.password) {
+    return false
+  }
+
   const [salt, storedKey] = String(this.password).split(':')
 
   if (!salt || !storedKey) {

@@ -2,6 +2,7 @@ import { Router } from 'express'
 import {
   getCurrentUser,
   signinUser,
+  signinWithGoogle,
   signupUser,
   updateCurrentUserProfile,
 } from '../controllers/authController.js'
@@ -13,6 +14,7 @@ const router = Router()
 
 router.post('/signup', signupUser)
 router.post('/signin', signinUser)
+router.post('/google', signinWithGoogle)
 router.get('/me', protect, getCurrentUser)
 router.put('/profile', protect, updateCurrentUserProfile)
 router.get('/social/collaboration-candidates', protect, getCollaborationCandidates)
