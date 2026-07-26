@@ -105,6 +105,8 @@ export default function CreatorProfilePage() {
       description: publicProfile.description,
       website: publicProfile.website,
       skills: publicProfile.skills,
+      followersCount: publicProfile.followersCount ?? 0,
+      followingCount: publicProfile.followingCount ?? 0,
       socialLinks: [['GitHub', publicProfile.github], ['Itch.io', publicProfile.itchio], ['Behance', publicProfile.behance], ['ArtStation', publicProfile.artstation], ['Instagram', publicProfile.instagram], ['LinkedIn', publicProfile.linkedin]].filter(([, url]) => url).map(([label, url]) => ({ label, url })),
     } : {}),
     tools: [...new Set([...(creatorBase.tools || []), ...mappedEntries.flatMap((entry) => entry.model.tools)])],
@@ -116,6 +118,18 @@ export default function CreatorProfilePage() {
   ]
   const selectedTab = tabs.find((tab) => tab.id === activeTab) || tabs[0]
   const targetId = creator.id || (/^[a-f\d]{24}$/i.test(String(creatorId || '')) ? creatorId : null)
+  useEffect(() => {
+    const syncFollow = (event) => {
+      if (String(event.detail?.userId || '') !== String(targetId || '')) return
+      setFollowing(Boolean(event.detail?.following))
+      setPublicProfile((profile) => profile ? {
+        ...profile,
+        followersCount: event.detail?.followersCount ?? profile.followersCount,
+      } : profile)
+    }
+    window.addEventListener('gameflow:follow-changed', syncFollow)
+    return () => window.removeEventListener('gameflow:follow-changed', syncFollow)
+  }, [targetId])
   useEffect(() => {
     const controller = new AbortController()
     fetchStories(token, { signal: controller.signal }).then((data) => {
