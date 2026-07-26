@@ -26,11 +26,11 @@ const T = {
 const Field = ({ id, label, type = 'text', value, onChange, placeholder, autoFocus, rightEl }) => {
   const [focused, setFocused] = useState(false);
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
       <label
         htmlFor={id}
         style={{
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: 600,
           color: T.muted,
           letterSpacing: 0.6,
@@ -43,13 +43,13 @@ const Field = ({ id, label, type = 'text', value, onChange, placeholder, autoFoc
         style={{
           display: 'flex',
           alignItems: 'center',
-          height: 56,
+          height: 48,
           background: T.inputBg,
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
           border: `1px solid ${focused ? T.inputFocus : T.inputBorder}`,
-          borderRadius: 16,
-          padding: '0 18px',
+          borderRadius: 14,
+          padding: '0 16px',
           gap: 10,
           transition: 'border-color 0.18s ease, box-shadow 0.18s ease',
           boxShadow: focused ? '0 0 0 3px rgba(255,122,89,0.1)' : 'none',
@@ -70,7 +70,7 @@ const Field = ({ id, label, type = 'text', value, onChange, placeholder, autoFoc
             background: 'transparent',
             border: 'none',
             outline: 'none',
-            fontSize: 16,
+            fontSize: 15,
             fontWeight: 400,
             color: T.white,
             fontFamily: T.font,
@@ -95,7 +95,7 @@ const EyeBtn = ({ visible, onToggle }) => (
       flexShrink: 0,
     }}
   >
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
       stroke="rgba(255,255,255,0.3)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
     >
       {visible ? (
@@ -120,11 +120,11 @@ const CTA = ({ label, onClick, disabled, loading }) => (
     disabled={disabled || loading}
     style={{
       width: '100%',
-      height: 56,
+      height: 48,
       background: (disabled || loading) ? 'rgba(248,249,250,0.3)' : T.ctaBg,
       border: 'none',
-      borderRadius: 20,
-      fontSize: 16,
+      borderRadius: 16,
+      fontSize: 15,
       fontWeight: 600,
       color: (disabled || loading) ? 'rgba(17,24,39,0.35)' : T.ctaText,
       letterSpacing: -0.1,
@@ -146,7 +146,7 @@ const CTA = ({ label, onClick, disabled, loading }) => (
     onTouchEnd={e    => (e.currentTarget.style.transform = 'scale(1)')}
   >
     {loading ? 'Signing in...' : label}
-    {!loading && <span style={{ fontSize: 16, opacity: disabled ? 0.3 : 0.55 }}>→</span>}
+    {!loading && <span style={{ fontSize: 15, opacity: disabled ? 0.3 : 0.55 }}>→</span>}
   </button>
 );
 
@@ -338,12 +338,12 @@ const SignInPage = () => {
       >
         {/* ── Header ──────────────────────────────────────────────────── */}
         <div style={{
-          padding: '56px 24px 0',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+          padding: '24px 20px 0',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
         }}>
           {/* Glass logo */}
           <div style={{
-            width: 64, height: 64, borderRadius: '50%',
+            width: 48, height: 48, borderRadius: '50%',
             background: 'rgba(11,13,18,0.5)',
             backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
             border: '1px solid rgba(255,255,255,0.13)',
@@ -351,40 +351,40 @@ const SignInPage = () => {
             boxShadow: '0 4px 20px rgba(0,0,0,0.35)',
           }}>
             <img src={logoImg} alt="CreativeVerse"
-              style={{ width: 54, height: 54, borderRadius: '50%', objectFit: 'cover' }}
+              style={{ width: 38, height: 38, borderRadius: '50%', objectFit: 'cover' }}
             />
           </div>
-          <span style={{ fontSize: 20, fontWeight: 700, color: T.white, letterSpacing: -0.4 }}>
+          <span style={{ fontSize: 18, fontWeight: 700, color: T.white, letterSpacing: -0.4 }}>
             CreativeVerse
           </span>
         </div>
 
-        {/* ── Spacer: let video breathe ────────────────────────────────── */}
-        <div style={{ flex: 1 }} />
+        {/* ── Spacer ───────────────────────────────────────────────────── */}
+        <div style={{ flex: 1, minHeight: 8 }} />
 
         {/* ── Bottom content ───────────────────────────────────────────── */}
         <div style={{
-          padding: '0 24px 44px',
-          display: 'flex', flexDirection: 'column', gap: 20,
+          padding: '0 20px 24px',
+          display: 'flex', flexDirection: 'column', gap: 12,
         }}>
           {/* Heading */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <h1 style={{
               margin: 0,
-              fontSize: 30,
+              fontSize: 24,
               fontWeight: 700,
               color: T.white,
-              letterSpacing: -0.7,
+              letterSpacing: -0.6,
               lineHeight: 1.2,
             }}>
               Welcome Back
             </h1>
             <p style={{
               margin: 0,
-              fontSize: 14,
+              fontSize: 13,
               color: T.muted,
               fontWeight: 400,
-              lineHeight: 1.5,
+              lineHeight: 1.4,
             }}>
               Sign in to continue.
             </p>

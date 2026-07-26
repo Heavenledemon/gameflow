@@ -30,10 +30,10 @@ const T = {
 const Field = ({ id, label, type = 'text', value, onChange, placeholder, autoFocus, rightEl }) => {
   const [focused, setFocused] = useState(false);
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
       <label
         htmlFor={id}
-        style={{ fontSize: 12, fontWeight: 600, color: T.textMuted, letterSpacing: 0.6, textTransform: 'uppercase' }}
+        style={{ fontSize: 11, fontWeight: 600, color: T.textMuted, letterSpacing: 0.6, textTransform: 'uppercase' }}
       >
         {label}
       </label>
@@ -41,13 +41,13 @@ const Field = ({ id, label, type = 'text', value, onChange, placeholder, autoFoc
         style={{
           display: 'flex',
           alignItems: 'center',
-          height: 56,
+          height: 48,
           background: T.inputBg,
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
           border: `1px solid ${focused ? T.inputFocus : T.inputBorder}`,
-          borderRadius: 16,
-          padding: '0 18px',
+          borderRadius: 14,
+          padding: '0 16px',
           gap: 10,
           transition: 'border-color 0.18s ease',
           boxShadow: focused ? '0 0 0 3px rgba(255,122,89,0.1)' : 'none',
@@ -67,7 +67,7 @@ const Field = ({ id, label, type = 'text', value, onChange, placeholder, autoFoc
             background: 'transparent',
             border: 'none',
             outline: 'none',
-            fontSize: 16,
+            fontSize: 15,
             fontWeight: 400,
             color: T.textPrimary,
             fontFamily: T.font,
@@ -88,7 +88,7 @@ const EyeBtn = ({ visible, onToggle }) => (
     aria-label={visible ? 'Hide password' : 'Show password'}
     style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center' }}
   >
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="1.8" strokeLinecap="round">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="1.8" strokeLinecap="round">
       {visible
         ? <><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></>
         : <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>
@@ -103,11 +103,11 @@ const CTA = ({ label, onClick, disabled, loading }) => (
     disabled={disabled || loading}
     style={{
       width: '100%',
-      height: 56,
+      height: 48,
       background: (disabled || loading) ? 'rgba(248,249,250,0.35)' : T.ctaBg,
       border: 'none',
-      borderRadius: 20,
-      fontSize: 16,
+      borderRadius: 16,
+      fontSize: 15,
       fontWeight: 600,
       color: (disabled || loading) ? 'rgba(17,24,39,0.4)' : T.ctaText,
       letterSpacing: -0.1,
@@ -129,7 +129,7 @@ const CTA = ({ label, onClick, disabled, loading }) => (
     onTouchEnd={e    => (e.currentTarget.style.transform = 'scale(1)')}
   >
     {loading ? 'Creating Account...' : label}
-    {!loading && <span style={{ fontSize: 16, opacity: disabled ? 0.4 : 0.55 }}>→</span>}
+    {!loading && <span style={{ fontSize: 15, opacity: disabled ? 0.4 : 0.55 }}>→</span>}
   </button>
 );
 
@@ -140,47 +140,29 @@ const OAuthButton = ({ label, icon, onClick }) => (
     onClick={onClick}
     style={{
       width: '100%',
-      height: 52,
+      height: 44,
       background: 'rgba(255,255,255,0.06)',
       backdropFilter: 'blur(12px)',
       WebkitBackdropFilter: 'blur(12px)',
       border: '1px solid rgba(255,255,255,0.1)',
-      borderRadius: 16,
+      borderRadius: 14,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       gap: 10,
+      color: T.textPrimary,
+      fontSize: 14,
+      fontWeight: 500,
+      fontFamily: T.font,
       cursor: 'pointer',
       outline: 'none',
-      WebkitTapHighlightColor: 'transparent',
-      transition: 'background 0.18s ease, border-color 0.18s ease, transform 0.1s ease',
-      fontFamily: T.font,
+      transition: 'background 0.2s ease, transform 0.2s ease',
     }}
-    onMouseEnter={e => {
-      e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.18)';
-    }}
-    onMouseLeave={e => {
-      e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
-      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)';
-    }}
-    onMouseDown={e => {
-      e.currentTarget.style.transform = 'scale(0.99)';
-    }}
-    onMouseUp={e => {
-      e.currentTarget.style.transform = 'none';
-    }}
-    onTouchStart={e => {
-      e.currentTarget.style.transform = 'scale(0.99)';
-    }}
-    onTouchEnd={e => {
-      e.currentTarget.style.transform = 'none';
-    }}
+    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+    onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
   >
     {icon}
-    <span style={{ fontSize: 15, fontWeight: 500, color: 'rgba(255,255,255,0.75)', letterSpacing: -0.1 }}>
-      {label}
-    </span>
+    <span>{label}</span>
   </button>
 );
 
@@ -189,7 +171,6 @@ const SignUpPage = () => {
   const location = useLocation();
   const { signUp, signInWithGoogle } = useAuth();
   const [step, setStep]             = useState(1);        // 1 | 2
-  const [showMoreOAuth, setShowMoreOAuth] = useState(false);
   const [visible, setVisible]       = useState(false);
   const [activeSlide, setActiveSlide] = useState(0);
   const slides = [slide1, slide2, slide3];
@@ -217,7 +198,7 @@ const SignUpPage = () => {
 
   useEffect(() => {
     const t = setInterval(() => setActiveSlide(p => (p + 1) % slides.length), 5000);
-    return () => clearInterval(t);
+    return () => clearTimeout(t);
   }, [slides.length]);
 
   const goToStep2 = () => {
@@ -260,10 +241,6 @@ const SignUpPage = () => {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleOAuthClick = () => {
-    setErrorMessage('This sign-up provider is not connected yet.');
   };
 
   // ── Shared overlay styles ──────────────────────────────────────────────────
@@ -310,7 +287,7 @@ const SignUpPage = () => {
       <div aria-hidden="true" style={{ ...overlayBase, inset: 0, background: 'rgba(11,13,18,0.55)' }} />
 
       {/* ── Top scrim ──────────────────────────────────────────────────────── */}
-      <div aria-hidden="true" style={{ ...overlayBase, top: 0, height: '45%',
+      <div aria-hidden="true" style={{ ...overlayBase, top: 0, height: '35%',
         background: 'linear-gradient(180deg, rgba(11,13,18,0.9) 0%, transparent 100%)' }}
       />
 
@@ -327,40 +304,41 @@ const SignUpPage = () => {
           flex: 1,
           display: 'flex',
           flexDirection: 'column',
+          justifyContent: 'space-between',
           opacity: visible ? 1 : 0,
           transition: 'opacity 0.6s ease',
         }}
       >
         {/* ── Header ───────────────────────────────────────────────────────── */}
-        <div style={{ padding: '56px 24px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+        <div style={{ padding: '24px 20px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
           {/* Glass logo */}
           <div style={{
-            width: 64, height: 64, borderRadius: '50%',
+            width: 48, height: 48, borderRadius: '50%',
             background: 'rgba(11,13,18,0.5)',
             backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
             border: '1px solid rgba(255,255,255,0.13)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 4px 20px rgba(0,0,0,0.35)',
           }}>
-            <img src={logoImg} alt="CreativeVerse" style={{ width: 54, height: 54, borderRadius: '50%', objectFit: 'cover' }} />
+            <img src={logoImg} alt="CreativeVerse" style={{ width: 38, height: 38, borderRadius: '50%', objectFit: 'cover' }} />
           </div>
 
           {/* Wordmark */}
-          <span style={{ fontSize: 20, fontWeight: 700, color: T.textPrimary, letterSpacing: -0.4 }}>
+          <span style={{ fontSize: 18, fontWeight: 700, color: T.textPrimary, letterSpacing: -0.4 }}>
             CreativeVerse
           </span>
         </div>
 
         {/* ── Spacer ───────────────────────────────────────────────────────── */}
-        <div style={{ flex: 1 }} />
+        <div style={{ flex: 1, minHeight: 8 }} />
 
         {/* ── Step Content ─────────────────────────────────────────────────── */}
         <div
           style={{
-            padding: '0 24px 44px',
+            padding: '0 20px 24px',
             display: 'flex',
             flexDirection: 'column',
-            gap: 20,
+            gap: 12,
             opacity: stepVisible ? 1 : 0,
             transform: stepVisible ? 'translateY(0)' : 'translateY(10px)',
             transition: 'opacity 0.22s ease, transform 0.22s ease',
@@ -369,13 +347,13 @@ const SignUpPage = () => {
           {errorMessage ? (
             <div
               style={{
-                padding: '12px 14px',
-                borderRadius: 16,
+                padding: '10px 12px',
+                borderRadius: 14,
                 background: 'rgba(255,122,89,0.14)',
                 border: '1px solid rgba(255,122,89,0.28)',
                 color: '#FFD9CF',
                 fontSize: 13,
-                lineHeight: 1.45,
+                lineHeight: 1.4,
               }}
             >
               {errorMessage}
@@ -387,11 +365,11 @@ const SignUpPage = () => {
               {/* ── Step 1 ─────────────────────────────────────────────────── */}
 
               {/* Heading */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <h1 style={{ margin: 0, fontSize: 28, fontWeight: 700, color: T.textPrimary, letterSpacing: -0.6, lineHeight: 1.2 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: T.textPrimary, letterSpacing: -0.5, lineHeight: 1.2 }}>
                   Create your<br />creator profile.
                 </h1>
-                <p style={{ margin: 0, fontSize: 14, color: T.textMuted, fontWeight: 400 }}>
+                <p style={{ margin: 0, fontSize: 13, color: T.textMuted, fontWeight: 400 }}>
                   Start with your email address.
                 </p>
               </div>
@@ -415,11 +393,11 @@ const SignUpPage = () => {
               />
 
               {/* OAuth Section */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {/* OR divider */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
-                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.24)', fontWeight: 500, letterSpacing: 0.5 }}>
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.24)', fontWeight: 500, letterSpacing: 0.5 }}>
                     OR
                   </span>
                   <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
@@ -431,75 +409,16 @@ const SignUpPage = () => {
                   onError={setErrorMessage}
                   disabled={isSubmitting}
                 />
-
-                {showMoreOAuth && <>
-                {/* More options toggle */}
-                <div style={{ display: 'flex', justifyContent: 'center' }}>
-                  <button
-                    type="button"
-                    onClick={() => setShowMoreOAuth(p => !p)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      padding: '4px 8px',
-                      cursor: 'pointer',
-                      fontSize: 13,
-                      fontWeight: 500,
-                      color: 'rgba(255,255,255,0.4)',
-                      fontFamily: T.font,
-                      letterSpacing: -0.1,
-                      transition: 'color 0.2s ease',
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.color = 'rgba(255,255,255,0.7)'}
-                    onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.4)'}
-                  >
-                    {showMoreOAuth ? 'Fewer sign up options' : 'More sign up options'}
-                  </button>
-                </div>
-
-                {/* Secondary OAuth options */}
-                <div
-                  style={{
-                    maxHeight: showMoreOAuth ? '120px' : '0px',
-                    opacity: showMoreOAuth ? 1 : 0,
-                    overflow: 'hidden',
-                    transition: 'max-height 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), margin-top 0.25s ease',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 10,
-                    marginTop: showMoreOAuth ? 4 : 0,
-                  }}
-                >
-                  <OAuthButton
-                    label="Continue with Apple"
-                    icon={
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style={{ fill: '#FFFFFF' }}>
-                        <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 4.17c.66-.81 1.11-1.93.99-3.06-1 .04-2.22.67-2.94 1.51-.64.74-1.2 1.88-1.05 2.99 1.11.09 2.26-.54 3-1.44z"/>
-                      </svg>
-                    }
-                    onClick={handleOAuthClick}
-                  />
-                  <OAuthButton
-                    label="Continue with GitHub"
-                    icon={
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style={{ fill: '#FFFFFF' }}>
-                        <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.579.688.481C19.137 20.164 22 16.418 22 12c0-5.523-4.477-10-10-10z"/>
-                      </svg>
-                    }
-                    onClick={handleOAuthClick}
-                  />
-                </div>
-                </>}
               </div>
 
               {/* Sign in link */}
-              <p style={{ margin: 0, textAlign: 'center', fontSize: 14, color: T.textMuted }}>
+              <p style={{ margin: '2px 0 0', textAlign: 'center', fontSize: 13, color: T.textMuted }}>
                 Already have an account?{' '}
                 <button
                   onClick={() => navigate('/signin')}
                   style={{
                     background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-                    fontSize: 14, fontWeight: 600, color: T.textPrimary,
+                    fontSize: 13, fontWeight: 600, color: T.textPrimary,
                     fontFamily: T.font, textDecoration: 'underline', textDecorationColor: 'rgba(255,255,255,0.3)',
                   }}
                 >
@@ -512,20 +431,20 @@ const SignUpPage = () => {
               {/* ── Step 2 ─────────────────────────────────────────────────── */}
 
               {/* Progress */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div style={{ display: 'flex', gap: 4 }}>
-                  <div style={{ width: 20, height: 3, borderRadius: 100, background: 'rgba(255,255,255,0.25)' }} />
-                  <div style={{ width: 20, height: 3, borderRadius: 100, background: T.textPrimary }} />
+                  <div style={{ width: 16, height: 3, borderRadius: 100, background: 'rgba(255,255,255,0.25)' }} />
+                  <div style={{ width: 16, height: 3, borderRadius: 100, background: T.textPrimary }} />
                 </div>
-                <span style={{ fontSize: 12, color: T.textMuted, letterSpacing: 0.3 }}>Step 2 of 2</span>
+                <span style={{ fontSize: 11, color: T.textMuted, letterSpacing: 0.3 }}>Step 2 of 2</span>
               </div>
 
               {/* Heading */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <h1 style={{ margin: 0, fontSize: 28, fontWeight: 700, color: T.textPrimary, letterSpacing: -0.6, lineHeight: 1.2 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: T.textPrimary, letterSpacing: -0.5, lineHeight: 1.2 }}>
                   Almost there.
                 </h1>
-                <p style={{ margin: 0, fontSize: 14, color: T.textMuted }}>
+                <p style={{ margin: 0, fontSize: 13, color: T.textMuted }}>
                   Complete your profile.
                 </p>
               </div>
