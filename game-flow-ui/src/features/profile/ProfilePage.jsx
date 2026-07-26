@@ -110,6 +110,16 @@ export default function ProfilePage() {
     }).catch(() => {})
     return () => controller.abort()
   }, [token, userId])
+  useEffect(() => {
+    const syncFollow = (event) => {
+      setSocialCounts((counts) => ({
+        ...counts,
+        following: event.detail?.followingCount ?? counts.following,
+      }))
+    }
+    window.addEventListener('gameflow:follow-changed', syncFollow)
+    return () => window.removeEventListener('gameflow:follow-changed', syncFollow)
+  }, [])
   const handleRealtime = useCallback((eventName) => { if (eventName.startsWith('project.member.')) loadCollaborations() }, [loadCollaborations])
   useMessagingRealtime(token, { onEvent: handleRealtime, onReady: loadCollaborations })
 
