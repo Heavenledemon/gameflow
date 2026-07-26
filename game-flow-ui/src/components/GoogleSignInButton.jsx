@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 const GOOGLE_SCRIPT_ID = 'google-identity-services'
 
@@ -6,6 +6,7 @@ const GoogleSignInButton = ({ onCredential, onError, disabled = false }) => {
   const containerRef = useRef(null)
   const credentialHandlerRef = useRef(onCredential)
   const errorHandlerRef = useRef(onError)
+  const [isHovered, setIsHovered] = useState(false)
 
   useEffect(() => {
     credentialHandlerRef.current = onCredential
@@ -79,7 +80,32 @@ const GoogleSignInButton = ({ onCredential, onError, disabled = false }) => {
         pointerEvents: disabled ? 'none' : 'auto',
       }}
     >
-      <div ref={containerRef} style={{ width: '100%', display: 'flex', justifyContent: 'center' }} />
+      <div
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        style={{
+          width: 'min(100%, 400px)',
+          borderRadius: 20,
+          position: 'relative',
+          transition: 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+          transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
+          boxShadow: isHovered
+            ? '0 6px 20px -2px rgba(66, 133, 244, 0.35), 0 2px 8px rgba(0, 0, 0, 0.4)'
+            : '0 2px 10px rgba(0, 0, 0, 0.25)',
+        }}
+      >
+        <div
+          ref={containerRef}
+          style={{
+            width: '100%',
+            minHeight: 40,
+            display: 'flex',
+            justifyContent: 'center',
+            borderRadius: 20,
+            overflow: 'hidden',
+          }}
+        />
+      </div>
     </div>
   )
 }
