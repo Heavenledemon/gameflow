@@ -304,46 +304,47 @@ const SignUpPage = () => {
           flex: 1,
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'space-between',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: '24px 20px',
+          boxSizing: 'border-box',
           opacity: visible ? 1 : 0,
           transition: 'opacity 0.6s ease',
         }}
       >
-        {/* ── Header ───────────────────────────────────────────────────────── */}
-        <div style={{ padding: '24px 20px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-          {/* Glass logo */}
-          <div style={{
-            width: 48, height: 48, borderRadius: '50%',
-            background: 'rgba(11,13,18,0.5)',
-            backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
-            border: '1px solid rgba(255,255,255,0.13)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.35)',
-          }}>
-            <img src={logoImg} alt="CreativeVerse" style={{ width: 38, height: 38, borderRadius: '50%', objectFit: 'cover' }} />
+        {/* ── Center Wrapper ────────────────────────────────────────────────── */}
+        <div style={{ width: '100%', maxWidth: 400, display: 'flex', flexDirection: 'column', gap: 24 }}>
+          {/* ── Header ───────────────────────────────────────────────────────── */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+            {/* Glass logo */}
+            <div style={{
+              width: 48, height: 48, borderRadius: '50%',
+              background: 'rgba(11,13,18,0.5)',
+              backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+              border: '1px solid rgba(255,255,255,0.13)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.35)',
+            }}>
+              <img src={logoImg} alt="CreativeVerse" style={{ width: 38, height: 38, borderRadius: '50%', objectFit: 'cover' }} />
+            </div>
+
+            {/* Wordmark */}
+            <span style={{ fontSize: 18, fontWeight: 700, color: T.textPrimary, letterSpacing: -0.4 }}>
+              CreativeVerse
+            </span>
           </div>
 
-          {/* Wordmark */}
-          <span style={{ fontSize: 18, fontWeight: 700, color: T.textPrimary, letterSpacing: -0.4 }}>
-            CreativeVerse
-          </span>
-        </div>
-
-        {/* ── Spacer ───────────────────────────────────────────────────────── */}
-        <div style={{ flex: 1, minHeight: 8 }} />
-
-        {/* ── Step Content ─────────────────────────────────────────────────── */}
-        <div
-          style={{
-            padding: '0 20px 24px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 12,
-            opacity: stepVisible ? 1 : 0,
-            transform: stepVisible ? 'translateY(0)' : 'translateY(10px)',
-            transition: 'opacity 0.22s ease, transform 0.22s ease',
-          }}
-        >
+          {/* ── Step Content ─────────────────────────────────────────────────── */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 12,
+              opacity: stepVisible ? 1 : 0,
+              transform: stepVisible ? 'translateY(0)' : 'translateY(10px)',
+              transition: 'opacity 0.22s ease, transform 0.22s ease',
+            }}
+          >
           {errorMessage ? (
             <div
               style={{
@@ -499,6 +500,7 @@ const SignUpPage = () => {
               </button>
             </>
           )}
+          </div>
         </div>
       </div>
     </div>
