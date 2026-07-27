@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Avatar from '../../../components/ui/Avatar'
 import Chip from '../../../components/ui/Chip'
 import IconButton from '../../../components/ui/IconButton'
@@ -6,7 +6,6 @@ import {
   ChevronLeftIcon,
   DotsIcon,
   ShareIcon2,
-  VerifiedIcon,
   LinkIcon,
   GithubIcon,
   LinkedinIcon,
@@ -40,6 +39,8 @@ export default function CreatorHeader({
   onStatSelect,
 }) {
   const [bioExpanded, setBioExpanded] = useState(false)
+  const [animateSocialBorders, setAnimateSocialBorders] = useState(false)
+  const animatedProfiles = useRef(new Set())
   const website = safeExternalUrl(creator.website)
   const socialLinks = (creator.socialLinks || [])
     .map((link) => ({ ...link, href: safeExternalUrl(link.url) }))
@@ -49,6 +50,21 @@ export default function CreatorHeader({
 
   const avatarSize = capability === 'self' ? '2xl' : 'xl'
   const isAvailableForCollab = creator.collaborationOpen === true || creator.openToCollaboration === true
+
+  useEffect(() => {
+    if (!socialLinks.length) return
+
+    const profileIdentity = creator.id || creator.username
+    if (!profileIdentity || animatedProfiles.current.has(profileIdentity)) return
+    animatedProfiles.current.add(profileIdentity)
+
+    const startTimer = window.setTimeout(() => setAnimateSocialBorders(true), 0)
+    const endTimer = window.setTimeout(() => setAnimateSocialBorders(false), 1900)
+    return () => {
+      window.clearTimeout(startTimer)
+      window.clearTimeout(endTimer)
+    }
+  }, [creator.id, creator.username, socialLinks.length])
 
   return (
     <div className="creator-header-container">
@@ -163,7 +179,7 @@ export default function CreatorHeader({
           {/* Social Portfolio Links (Second Line - Icon Only) */}
           {socialLinks.length ? (
             <div className="creator-header__social-icons-row">
-              {socialLinks.map((link) => {
+              {socialLinks.map((link, index) => {
                 const IconComponent = SOCIAL_ICONS[String(link.label).toLowerCase()] || LinkIcon
                 return (
                   <a
@@ -174,8 +190,14 @@ export default function CreatorHeader({
                     aria-label={link.label}
                     className="creator-social-icon-btn"
                     title={link.label}
+                    style={{ '--social-icon-index': index }}
                   >
                     <IconComponent size={20} />
+                    {animateSocialBorders ? (
+                      <svg className="creator-social-icon-btn__border" viewBox="0 0 36 36" aria-hidden="true">
+                        <circle cx="18" cy="18" r="16" />
+                      </svg>
+                    ) : null}
                   </a>
                 )
               })}
