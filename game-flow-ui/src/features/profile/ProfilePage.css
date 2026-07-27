@@ -91,7 +91,7 @@
 .creator-header__social-icons-row { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 4px; }
 .creator-social-icon-btn { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: var(--gf-surface); border: 1px solid var(--gf-border); transition: all 0.2s ease; box-shadow: var(--gf-shadow-xs); cursor: pointer; }
 .creator-social-icon-btn__border { position: absolute; inset: -3px; width: 36px; height: 36px; overflow: visible; pointer-events: none; transform: rotate(-90deg); }
-.creator-social-icon-btn__border circle { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-dasharray: 101; stroke-dashoffset: 101; animation: creator-social-border-draw 900ms cubic-bezier(.22, 1, .36, 1) calc(var(--social-icon-index) * 120ms) both; filter: drop-shadow(0 0 2px currentColor); }
+.creator-social-icon-btn__border circle { fill: none; stroke: currentColor; stroke-width: 1; stroke-linecap: round; stroke-dasharray: 101; stroke-dashoffset: 101; animation: creator-social-border-draw 900ms cubic-bezier(.22, 1, .36, 1) calc(var(--social-icon-index) * 120ms) both; filter: drop-shadow(0 0 1px currentColor) drop-shadow(0 0 3px currentColor); }
 
 @keyframes creator-social-border-draw {
   0% { stroke-dashoffset: 101; opacity: 0; }
