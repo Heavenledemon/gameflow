@@ -190,25 +190,45 @@
 .project-management__menu button { min-height: 44px; border: 1px solid var(--gf-border); border-radius: var(--gf-radius-sm); color: var(--gf-text); background: var(--gf-control); font-weight: 700; }
 .project-management__menu .project-management__danger { color: var(--gf-danger); }
 
-.profile-form-dialog { min-height: min(70dvh, 560px); }
+.profile-form-dialog { min-height: min(60dvh, 480px); }
 .profile-form { display: grid; gap: var(--gf-space-4); }
-.profile-form__error { margin: 0; color: var(--gf-danger); }
+.profile-form__error { margin: 0; padding: 10px 14px; border-radius: 10px; background: rgba(217, 75, 98, 0.08); color: var(--gf-danger); font-size: 0.83rem; font-weight: 600; }
+
+/* Media section — Avatar + Banner */
 .profile-form__media { display: grid; grid-template-columns: 1fr; gap: var(--gf-space-4); }
-.profile-form__media > div { display: grid; justify-items: center; gap: var(--gf-space-2); }
-.profile-form__banner img, .profile-form__preview { width: 100%; max-height: 180px; border-radius: var(--gf-radius-sm); object-fit: cover; }
-.profile-form__banner > span { min-height: 88px; width: 100%; display: grid; place-items: center; border-radius: var(--gf-radius-sm); color: var(--gf-text-muted); background: var(--gf-control); }
-.profile-form__file { position: relative; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; padding: 0 var(--gf-space-3); border: 1px solid var(--gf-border); border-radius: var(--gf-radius-pill); color: var(--gf-text); background: var(--gf-control); font-size: var(--gf-text-caption); font-weight: 800; cursor: pointer; }
+.profile-form__media > div { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: var(--gf-space-3); border-radius: 16px; background: rgba(0,0,0,0.03); border: 1px dashed rgba(0,0,0,0.1); }
+.profile-form__banner { display: flex; flex-direction: column; gap: 10px; padding: var(--gf-space-3); border-radius: 16px; background: rgba(0,0,0,0.03); border: 1px dashed rgba(0,0,0,0.1); }
+.profile-form__banner img, .profile-form__preview { width: 100%; max-height: 140px; border-radius: 12px; object-fit: cover; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.profile-form__banner > span { min-height: 72px; width: 100%; display: grid; place-items: center; border-radius: 10px; color: var(--gf-text-muted); font-size: 0.82rem; background: rgba(0,0,0,0.04); }
+
+/* Upload file buttons */
+.profile-form__file { position: relative; min-height: 36px; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; padding: 0 16px; border: 1.5px solid rgba(0,0,0,0.12); border-radius: 20px; color: var(--gf-text); background: rgba(255,255,255,0.7); font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: background 0.2s ease, border-color 0.2s ease; backdrop-filter: blur(4px); }
+.profile-form__file:hover { background: rgba(255,255,255,0.95); border-color: rgba(0,0,0,0.22); }
 .profile-form__file input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 .profile-form__file:has(input:focus-visible) { outline: 3px solid var(--gf-focus); outline-offset: 2px; }
+
+/* Form fields grid */
 .profile-form__grid { display: grid; grid-template-columns: 1fr; gap: var(--gf-space-3); }
-.profile-form__actions { position: sticky; bottom: calc(-1 * var(--gf-space-4)); display: grid; grid-template-columns: 1fr 1.25fr; gap: var(--gf-space-2); padding: var(--gf-space-3) 0; background: var(--gf-surface); }
+
+/* Sticky action bar */
+.profile-form__actions { position: sticky; bottom: calc(-1 * var(--gf-space-5)); display: grid; grid-template-columns: 1fr 1.4fr; gap: var(--gf-space-2); padding: var(--gf-space-3) 0 var(--gf-space-1); margin-top: var(--gf-space-2); border-top: 1px solid rgba(0,0,0,0.07); }
+.profile-form__actions .gf-button { height: 44px; border-radius: 14px; font-size: 0.88rem; font-weight: 700; justify-content: center; }
+.profile-form__actions .gf-button--secondary { background: rgba(0,0,0,0.06) !important; border: 1px solid rgba(0,0,0,0.1) !important; color: var(--gf-text) !important; }
+.profile-form__actions .gf-button--secondary:hover { background: rgba(0,0,0,0.1) !important; }
+.profile-form__actions .gf-button--primary { background: linear-gradient(135deg, var(--gf-brand, #ff7e7e), var(--gf-brand-end, #ff9a6e)) !important; color: #fff !important; border: none !important; box-shadow: 0 2px 10px rgba(255, 126, 126, 0.35) !important; }
+.profile-form__actions .gf-button--primary:hover { box-shadow: 0 4px 16px rgba(255, 126, 126, 0.45) !important; }
+
 .profile-safety { display: grid; gap: var(--gf-space-4); }
 .profile-safety label { display: grid; gap: var(--gf-space-2); color: var(--gf-text-muted); font-weight: 700; }
 .profile-safety__notice { margin: 0; color: var(--gf-text-muted); }
 
+@media (min-width: 480px) {
+  .profile-form__grid { grid-template-columns: 1fr 1fr; }
+  .profile-form__media { grid-template-columns: auto 1fr; align-items: start; }
+}
+
 @media (min-width: 768px) {
   .creator-header { max-width: 640px; margin: 0 auto; width: 100%; }
-  .profile-form__grid, .profile-form__media { grid-template-columns: 1fr 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce) {
