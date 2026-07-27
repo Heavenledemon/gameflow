@@ -196,19 +196,24 @@
 
 .gf-route-loading--viewport { min-height: 100dvh; }
 
-.gf-overlay { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; padding: var(--gf-space-4); background: var(--gf-backdrop); }
+.gf-overlay { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; padding: var(--gf-space-4); background: rgba(13, 11, 24, 0.55); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 .gf-dialog,
-.gf-sheet { width: min(100%, 560px); max-height: min(90dvh, 720px); display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--gf-border); border-radius: var(--gf-radius-lg); background: var(--gf-surface); color: var(--gf-text); box-shadow: var(--gf-shadow-modal); outline: none; }
-.gf-dialog__header { display: flex; align-items: center; justify-content: space-between; gap: var(--gf-space-3); min-height: 60px; padding: var(--gf-space-2) var(--gf-space-2) var(--gf-space-2) var(--gf-space-4); border-bottom: 1px solid var(--gf-border); }
+.gf-sheet { width: min(100%, 260px); min-height: 180px; max-height: min(90dvh, 720px); display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.22); border-radius: 24px; background: rgba(255, 255, 255, 0.72); color: var(--gf-text); box-shadow: 0 8px 32px rgba(15, 23, 42, 0.18), 0 1.5px 6px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6); backdrop-filter: blur(20px) saturate(1.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); outline: none; animation: gf-dialog-pop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.gf-dialog__header { display: flex; align-items: center; justify-content: space-between; gap: var(--gf-space-3); min-height: 56px; padding: var(--gf-space-3) var(--gf-space-2) var(--gf-space-3) var(--gf-space-4); border-bottom: 1px solid rgba(0, 0, 0, 0.07); }
 .gf-dialog__heading { min-width: 0; }
-.gf-dialog__title { margin: 0; font-size: var(--gf-text-body); line-height: var(--gf-leading-tight); }
+.gf-dialog__title { margin: 0; font-size: 1.05rem; font-weight: 800; line-height: var(--gf-leading-tight); letter-spacing: -0.01em; }
 .gf-dialog__description { margin: 4px 0 0; color: var(--gf-text-muted); font-size: var(--gf-text-caption); }
 .gf-dialog__content { overflow-y: auto; overscroll-behavior: contain; padding: var(--gf-space-4); }
 .gf-sheet__handle { display: none; }
 .gf-sheet { animation: gf-sheet-enter var(--gf-motion-sheet); }
-.gf-confirm-dialog { display: grid; gap: var(--gf-space-5); }
-.gf-confirm-dialog__message { margin: 0; color: var(--gf-text-muted); }
-.gf-confirm-dialog__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--gf-space-3); }
+.gf-confirm-dialog { display: grid; gap: var(--gf-space-4); }
+.gf-confirm-dialog__message { margin: 0; color: var(--gf-text-muted); font-size: 0.93rem; line-height: 1.55; }
+.gf-confirm-dialog__actions { display: flex; flex-direction: column; gap: var(--gf-space-2); }
+.gf-confirm-dialog__actions .gf-button { flex: 1; height: 44px; border-radius: 14px; font-size: 0.9rem; font-weight: 700; justify-content: center; }
+.gf-confirm-dialog__actions .gf-button--secondary { background: rgba(0, 0, 0, 0.06) !important; border: 1px solid rgba(0, 0, 0, 0.1) !important; color: var(--gf-text) !important; backdrop-filter: blur(4px); }
+.gf-confirm-dialog__actions .gf-button--secondary:hover { background: rgba(0, 0, 0, 0.1) !important; }
+.gf-confirm-dialog__actions .gf-button--danger { background: linear-gradient(135deg, #ff5c5c, #e63946) !important; color: #fff !important; border: none !important; box-shadow: 0 2px 10px rgba(230, 57, 70, 0.35) !important; }
+.gf-confirm-dialog__actions .gf-button--danger:hover { background: linear-gradient(135deg, #ff3c3c, #c1121f) !important; box-shadow: 0 4px 16px rgba(230, 57, 70, 0.45) !important; }
 
 .gf-toast-viewport { position: fixed; right: var(--gf-space-4); bottom: calc(var(--nav-height) + var(--gf-space-4)); z-index: 11000; display: grid; gap: var(--gf-space-2); width: min(360px, calc(100vw - 32px)); }
 .gf-toast { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-radius: var(--gf-radius-md); color: #fff; background: var(--gf-surface-dark); box-shadow: var(--gf-shadow-floating); }
@@ -233,6 +238,7 @@
 @keyframes gf-shimmer { to { background-position: -200% 0; } }
 @keyframes gf-spin { to { transform: rotate(360deg); } }
 @keyframes gf-sheet-enter { from { opacity: 0; transform: translateY(16px); } }
+@keyframes gf-dialog-pop { from { opacity: 0; transform: scale(0.93) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
 
 @media (prefers-reduced-motion: reduce) {
   .gf-skeleton { background-position: 0 0; }
