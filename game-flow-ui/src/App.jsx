@@ -2,6 +2,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import { AppShellProvider } from './context/AppShellContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { useToast } from './context/ToastContext';
 import AppRoutes from './routes/AppRoutes';
 import ErrorReportingBoundary from './components/ErrorReportingBoundary';
@@ -15,18 +16,20 @@ function AppToastViewport() {
 const App = () => {
   return (
     <AuthProvider>
-      <ToastProvider>
-        <AppShellProvider>
-          <ErrorReportingBoundary>
-            <BrowserRouter>
-              <div className="app-shell">
-                <AppRoutes />
-                <AppToastViewport />
-              </div>
-            </BrowserRouter>
-          </ErrorReportingBoundary>
-        </AppShellProvider>
-      </ToastProvider>
+      <ThemeProvider>
+        <ToastProvider>
+          <AppShellProvider>
+            <ErrorReportingBoundary>
+              <BrowserRouter>
+                <div className="app-shell">
+                  <AppRoutes />
+                  <AppToastViewport />
+                </div>
+              </BrowserRouter>
+            </ErrorReportingBoundary>
+          </AppShellProvider>
+        </ToastProvider>
+      </ThemeProvider>
     </AuthProvider>
   );
 };

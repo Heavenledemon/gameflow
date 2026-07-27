@@ -4,6 +4,7 @@ import { Field, Input, Select, Textarea } from '../../../components/ui/Form'
 import { Dialog } from '../../../components/ui/Overlay'
 import { Avatar } from '../../../components/ui/Surface'
 import { safeExternalUrl } from '../profileAdapters'
+import ThemeCustomizer from './ThemeCustomizer'
 
 const FIELDS = ['email', 'username', 'name', 'headline', 'location', 'bio', 'description', 'creatorType', 'website', 'github', 'itchio', 'behance', 'artstation', 'instagram', 'linkedin', 'skills', 'avatar', 'banner']
 
@@ -63,6 +64,7 @@ export default function EditProfileForm({ open, user, saving, onClose, onSave })
         <Field label="Instagram"><Input value={values.instagram} onChange={update('instagram')} /></Field>
         <Field label="LinkedIn"><Input value={values.linkedin} onChange={update('linkedin')} /></Field>
       </div>
+      <ThemeCustomizer />
       <div className="profile-form__actions"><Button variant="secondary" disabled={saving} onClick={onClose}>Cancel</Button><Button type="submit" loading={saving}>Save profile</Button></div>
     </form>
   </Dialog>
