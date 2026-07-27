@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import Avatar from '../../../components/ui/Avatar'
 import MediaFrame from '../../../components/ui/MediaFrame'
 import './ProjectTile.css'
@@ -11,7 +12,9 @@ function formatProjectType(project, mediaKind) {
   return labels[value] || value.replace(/[-_]+/g, ' ').toUpperCase()
 }
 
-export default function ProjectTile({ project, onOpen, actions, actionsPlacement = 'overlay', selected = false, variant = 'card', fallbackAspectRatio = '1 / 1' }) {
+export default function ProjectTile({ project, onOpen, onLongPress, actions, actionsPlacement = 'overlay', selected = false, variant = 'card', fallbackAspectRatio = '1 / 1' }) {
+  const holdTimerRef = useRef(null)
+  const holdTriggeredRef = useRef(false)
   const creatorName = project.creator?.name || project.creator?.handle || project.creator?.username || 'Creator'
   const creatorHandle = project.creator?.handle || project.creator?.username || creatorName
   const routeTarget = project.canonicalRoute || project.routeTarget
@@ -22,7 +25,27 @@ export default function ProjectTile({ project, onOpen, actions, actionsPlacement
     || (project.media?.mode === 'portrait' ? '3 / 4' : project.media?.mode === 'landscape' ? '4 / 3' : fallbackAspectRatio)
 
   const handleClick = () => {
+    if (holdTriggeredRef.current) {
+      holdTriggeredRef.current = false
+      return
+    }
     if (onOpen) onOpen(project)
+  }
+
+  const cancelHold = () => {
+    if (holdTimerRef.current) window.clearTimeout(holdTimerRef.current)
+    holdTimerRef.current = null
+  }
+
+  const startHold = (event) => {
+    if (!onLongPress || (event.pointerType === 'mouse' && event.button !== 0)) return
+    holdTriggeredRef.current = false
+    cancelHold()
+    holdTimerRef.current = window.setTimeout(() => {
+      holdTriggeredRef.current = true
+      onLongPress(project)
+      if (navigator.vibrate) navigator.vibrate(18)
+    }, 500)
   }
 
   return (
@@ -60,6 +83,11 @@ export default function ProjectTile({ project, onOpen, actions, actionsPlacement
           className="project-tile__open"
           aria-label={`View project details for ${project.title} by ${creatorName}`}
           onClick={handleClick}
+          onPointerDown={startHold}
+          onPointerUp={cancelHold}
+          onPointerCancel={cancelHold}
+          onPointerLeave={cancelHold}
+          onContextMenu={(event) => { if (onLongPress) event.preventDefault() }}
         />
       )}
     </article>

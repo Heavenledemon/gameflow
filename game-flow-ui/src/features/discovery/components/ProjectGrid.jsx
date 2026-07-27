@@ -1,5 +1,7 @@
+import { useCallback, useState } from 'react'
 import Skeleton from '../../../components/ui/Skeleton'
 import ProjectTile from '../../project/components/ProjectTile'
+import ProjectPreviewModal from './ProjectPreviewModal'
 import './ProjectGrid.css'
 
 function ProjectGridSkeleton() {
@@ -27,6 +29,8 @@ export default function ProjectGrid({
   actionsPlacement = 'overlay',
 }) {
   const projectList = items || projects || []
+  const [previewProject, setPreviewProject] = useState(null)
+  const closePreview = useCallback(() => setPreviewProject(null), [])
 
   if (loading) return <ProjectGridSkeleton />
 
@@ -38,6 +42,7 @@ export default function ProjectGrid({
             key={`${project.contentType || 'project'}:${project.contentId ?? project.id}`}
             project={project}
             onOpen={onOpenProject ? () => onOpenProject(project) : undefined}
+            onLongPress={setPreviewProject}
             actions={renderActions?.(project) || null}
             actionsPlacement={actionsPlacement}
             variant="masonry"
@@ -45,6 +50,14 @@ export default function ProjectGrid({
           />
         ))}
       </div>
+      {previewProject ? (
+        <ProjectPreviewModal
+          project={previewProject}
+          actions={renderActions?.(previewProject) || null}
+          onClose={closePreview}
+          onOpen={onOpenProject ? () => { closePreview(); onOpenProject(previewProject) } : undefined}
+        />
+      ) : null}
     </div>
   )
 }
