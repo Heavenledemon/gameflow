@@ -140,6 +140,7 @@ export default function PublishPage() {
   const selectType = (type) => {
     invalidateServerDraft()
     const categories = CATEGORY_OPTIONS[type] || CATEGORY_OPTIONS.game
+    setAssets([])
     if (type === 'video') setCover(null)
     if (type !== 'game') setGameplayGif(null)
     setDraft((current) => ({ ...current, type, category: categories[0], mode: type === '2d' ? 'portrait' : 'landscape' }))
@@ -255,8 +256,9 @@ export default function PublishPage() {
       setPublishStatus('')
       setStep(5)
       window.dispatchEvent(new CustomEvent('projectPublished', { detail: result.project }))
-    } catch {
-      setErrors({ publish: serverProjectIdRef.current ? 'Publishing paused. Retry to continue this server draft without re-uploading completed files.' : 'The project could not be created. Try publishing again.' })
+    } catch (error) {
+      const reason = error?.message && error.message !== 'Request failed.' ? ` ${error.message}` : ''
+      setErrors({ publish: serverProjectIdRef.current ? `Publishing paused.${reason} Retry to continue this server draft without re-uploading completed files.` : `The project could not be created.${reason} Try publishing again.` })
       setPublishStatus('')
       showError('Project publishing paused. Your selected files and completed uploads are still tracked on this screen.')
       window.requestAnimationFrame(() => errorSummaryRef.current?.focus())
@@ -312,7 +314,7 @@ export default function PublishPage() {
       <ErrorSummary errors={errors} summaryRef={errorSummaryRef} />
       {step < 5 ? <section className="publish-card"><header><h2>{STEP_COPY[step][0]}</h2><p>{STEP_COPY[step][1]}</p></header><div className="publish-card__body">
         {step === 1 ? <ProjectTypeStep type={draft.type} mode={draft.mode} error={errors.type} onTypeChange={selectType} onModeChange={(mode) => changeDraft('mode', mode)} /> : null}
-        {step === 2 ? <><MediaPicker type={draft.type} error={errors.assets} onAssetsChange={handleAssets} onCoverChange={handleCover} onGameplayGifChange={handleGameplayGif} /><FilesStep assets={assets} cover={cover} gameplayGif={draft.type === 'game' ? gameplayGif : null} showCover={draft.type !== 'video'} statuses={fileStatuses} onRemoveAsset={removeAsset} onRemoveCover={removeCover} onRemoveGameplayGif={removeGameplayGif} /></> : null}
+        {step === 2 ? <><MediaPicker type={draft.type} error={errors.assets} onAssetsChange={handleAssets} onCoverChange={handleCover} onGameplayGifChange={handleGameplayGif} /><FilesStep assets={assets} cover={cover} gameplayGif={draft.type === 'game' ? gameplayGif : null} statuses={fileStatuses} onRemoveAsset={removeAsset} onRemoveCover={removeCover} onRemoveGameplayGif={removeGameplayGif} /></> : null}
         {step === 3 ? <ProjectDetailsStep draft={draft} errors={errors} tagInput={tagInput} softwareInput={softwareInput} onChange={changeDraft} onTagInputChange={setTagInput} onSoftwareInputChange={setSoftwareInput} onAddTag={() => addToken('tags', tagInput, setTagInput)} onAddSoftware={() => addToken('software', softwareInput, setSoftwareInput)} onRemoveTag={(value) => removeToken('tags', value)} onRemoveSoftware={(value) => removeToken('software', value)} /> : null}
         {step === 4 ? <PublishPreview model={previewModel} draft={draft} assets={assets} cover={cover} statuses={fileStatuses} publishStatus={publishStatus} onRetry={publish} retrying={publishing} /> : null}
       </div></section> : <section className="publish-success"><span className="publish-success__icon" aria-hidden="true"><CheckIcon size={28} color="currentColor" /></span><h2>Project published</h2><p><strong>{published?.title || draft.title}</strong> is live and ready to view or play.</p><div className="publish-success__actions">{publishedId ? <Button onClick={() => navigate(`/app/project/${encodeURIComponent(String(publishedId))}`)}>View project</Button> : null}<Button variant="secondary" onClick={() => navigate('/app/home')}>Go to Feed</Button></div></section>}
