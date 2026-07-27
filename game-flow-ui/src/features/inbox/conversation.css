@@ -283,7 +283,7 @@
 .mobile-app-shell:has(.conversation-page) .mobile-app-shell__top-bar { border-bottom: 1px solid #e2e8f0; background: #ffffff; color: #0f172a; }
 .mobile-app-shell:has(.conversation-page) .inbox-top-bar__copy span { color: #64748b; }
 .mobile-app-shell:has(.conversation-page) .inbox-top-bar .gf-icon-button { color: #0f172a; background: transparent; }
-.mobile-app-shell:has(.conversation-page) .bottom-nav { border-top-color: #e2e8f0; background: rgba(255, 255, 255, 0.96); }
+.mobile-app-shell:has(.conversation-page) .bottom-nav { border-top: 1px solid rgba(0, 0, 0, 0.08); background: #fdf0d5; border-radius: 20px 20px 0 0; }
 .mobile-app-shell:has(.conversation-page) .bottom-nav__item { color: #64748b; }
 .conversation-page button:focus-visible, .conversation-safety-sheet textarea:focus-visible { outline: 2px solid #ff5c5c; outline-offset: 2px; }
 
