@@ -5,7 +5,7 @@
   ═══════════════════════════════════════════════════════════ */
 
   /* Semantic GameFlow palette (legacy names) */
-  --gf-bg: #f4f5fa;
+  --gf-bg: #ffecd1;
   --gf-surface: #ffffff;
   --gf-surface-raised: #ffffff;
   --gf-surface-dark: #151525;
@@ -74,10 +74,10 @@
   --gf-safe-area-top: env(safe-area-inset-top, 0px);
   --gf-safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --gf-shell-bottom-clearance: calc(var(--gf-shell-bottom-nav-height) + var(--gf-shell-nav-bottom-gap) + var(--gf-safe-area-bottom));
-  --gf-shell-surface: #f3f4f8;
-  --gf-shell-outer-surface: #e9ebf1;
-  --gf-shell-top-bar-surface: rgb(247 248 251 / 96%);
-  --gf-shell-navigation-surface: rgb(248 249 252 / 96%);
+  --gf-shell-surface: #ffecd1;
+  --gf-shell-outer-surface: #ffecd1;
+  --gf-shell-top-bar-surface: rgb(255 236 209 / 96%);
+  --gf-shell-navigation-surface: rgb(255 236 209 / 96%);
   --gf-shell-navigation-border: #d9dce5;
   --gf-shell-navigation-text: #555b6e;
   --gf-shell-text: #171827;
