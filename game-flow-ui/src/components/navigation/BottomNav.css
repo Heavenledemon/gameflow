@@ -18,7 +18,7 @@
   padding-bottom: env(safe-area-inset-bottom, 0px);
   border-top: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 20px 20px 0 0;
-  background: #fdf0d5;
+  background: var(--gf-shell-navigation-surface);
   box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.08);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
@@ -35,14 +35,15 @@
   gap: 3px;
   padding-block: 6px;
   border-radius: 8px;
-  color: #555b6e;
+  color: var(--gf-navbar-text, var(--gf-shell-navigation-text));
   transition:
     color var(--gf-duration-fast) var(--gf-ease-standard),
     transform var(--gf-duration-instant) var(--gf-ease-standard);
 }
 
 .bottom-nav__item:hover {
-  color: #1a1a2e;
+  color: var(--gf-navbar-text, var(--gf-shell-navigation-text));
+  opacity: 0.8;
 }
 
 .bottom-nav__item--active {

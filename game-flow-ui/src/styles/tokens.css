@@ -80,6 +80,8 @@
   --gf-shell-navigation-surface: rgb(254 250 224 / 96%);
   --gf-shell-navigation-border: #d9dce5;
   --gf-shell-navigation-text: #555b6e;
+  --gf-background-text: #171827;
+  --gf-navbar-text: #171827;
   --gf-shell-text: #171827;
   --gf-shell-shadow: 0 0 60px rgb(15 23 42 / 12%);
   --gf-shell-navigation-layer: 100;
