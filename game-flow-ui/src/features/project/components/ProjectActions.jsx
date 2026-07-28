@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Button, IconButton } from '../../../components/ui/Button'
-import { BookmarkIcon, CommentIcon, HeartIcon, ShareIcon } from '../../../components/icons/Icons'
+import { BookmarkIcon, CommentIcon, HeartIcon, ShareIcon, FolderIcon, WorkspaceIcon } from '../../../components/icons/Icons'
 
 function formatCount(value = 0) {
   if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}m`
@@ -44,13 +44,14 @@ export default function ProjectActions({
     <section className="project-actions" aria-label="Project actions">
       {/* 1. Project Actions Hierarchy: Play CTA -> View Files -> Collaborate */}
       <div className="project-actions__primary">
-        <Button className="project-actions__cta-btn gradient-brand" onClick={onPrimary}>
+        <Button className="project-actions__cta-btn" onClick={onPrimary}>
           {primaryActionLabel(model)}
         </Button>
 
         {canViewFiles && onViewFiles ? (
           <Button variant="secondary" onClick={onViewFiles}>
-            View Files
+            <FolderIcon size={16} />
+            <span>View Files</span>
           </Button>
         ) : null}
 
@@ -61,7 +62,8 @@ export default function ProjectActions({
             disabled={collaborationBusy}
             onClick={onCollaboration}
           >
-            {collaborationLabel}
+            <WorkspaceIcon size={16} />
+            <span>{collaborationLabel}</span>
           </Button>
         ) : null}
       </div>

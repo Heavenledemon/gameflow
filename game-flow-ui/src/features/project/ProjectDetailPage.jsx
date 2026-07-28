@@ -23,6 +23,7 @@ import {
   toggleUserFollow,
 } from '../../lib/content'
 import { removeProjectMember, updateProjectMember } from '../../lib/collaboration'
+import { EditIcon, LockIcon, EyeIcon, TrashIcon } from '../../components/icons/Icons'
 import { fromProject } from './model/projectCardModel'
 import ProjectMedia from './components/ProjectMedia'
 import ProjectIdentity from './components/ProjectIdentity'
@@ -37,6 +38,17 @@ import { Avatar } from '../../components/ui/Surface'
 import { ErrorState, Skeleton } from '../../components/ui/Feedback'
 import { Sheet, ConfirmDialog } from '../../components/ui/Overlay'
 import './ProjectDetailPage.css'
+
+function formatBadgeLabel(model) {
+  const mediaKind = model.mediaKind || model.media?.kind
+  if (mediaKind === 'video') return 'video'
+  if (mediaKind === 'webgl') return 'game'
+  if (mediaKind === 'gltf') return '3d asset'
+  if (mediaKind === 'image') return '2d art'
+  const type = model.projectType || model.category
+  if (type && type !== 'other') return type
+  return 'video'
+}
 
 export default function ProjectDetailPage() {
   const navigate = useNavigate()
@@ -400,7 +412,7 @@ export default function ProjectDetailPage() {
         <div className="project-detail__main">
           <section id="project-media" ref={mediaRegionRef} className="project-detail__media" aria-label="Project preview">
             <ProjectMedia media={model.media} title={model.title} active interactive activationRequested={mediaActivationRequested} onDeactivate={clearMediaActivation} />
-            <span className="project-detail__media-badge">{model.projectType || model.category || 'Project'}</span>
+            <span className="project-detail__media-badge">{formatBadgeLabel(model)}</span>
           </section>
           <ProjectIdentity model={model} creatorRole={creatorRole} isOwner={isOwner} viewer={user} isFollowing={isFollowing} onBack={() => navigate(-1)} onCreator={creatorTarget} onFollow={guard(toggleFollowing)} onManage={() => setShowOwnerSheet(true)} />
           <div className="project-detail__content">
@@ -464,7 +476,22 @@ export default function ProjectDetailPage() {
       </Sheet>
 
       <Sheet open={showGuestAuthSheet} title="Sign in required" description="This action is available to signed-in members." onClose={() => setShowGuestAuthSheet(false)}><div className="project-detail__sheet-actions"><Button onClick={() => navigate('/signin')}>Sign in</Button><Button variant="secondary" onClick={() => setShowGuestAuthSheet(false)}>Cancel</Button></div></Sheet>
-      <Sheet open={showOwnerSheet} title="Manage project" onClose={() => setShowOwnerSheet(false)}><div className="project-detail__sheet-stack"><Button variant="secondary" onClick={() => navigate(`/app/upload?edit=${projectId}`)}>Edit project metadata</Button><Button variant="secondary" onClick={() => { setShowOwnerSheet(false); toggleVisibility() }}>Make {project.visibility === 'public' ? 'private' : 'public'}</Button><Button variant="danger" onClick={() => { setShowOwnerSheet(false); setShowDeleteDialog(true) }}>Delete project</Button></div></Sheet>
+      <Sheet open={showOwnerSheet} title="Manage project" onClose={() => setShowOwnerSheet(false)}>
+        <div className="project-detail__sheet-stack">
+          <Button variant="secondary" onClick={() => navigate(`/app/upload?edit=${projectId}`)}>
+            <EditIcon size={16} />
+            <span>Edit project</span>
+          </Button>
+          <Button variant="secondary" onClick={() => { setShowOwnerSheet(false); toggleVisibility() }}>
+            {project.visibility === 'public' ? <LockIcon size={16} /> : <EyeIcon size={16} />}
+            <span>Make {project.visibility === 'public' ? 'private' : 'public'}</span>
+          </Button>
+          <Button variant="danger" onClick={() => { setShowOwnerSheet(false); setShowDeleteDialog(true) }}>
+            <TrashIcon size={16} />
+            <span>Delete project</span>
+          </Button>
+        </div>
+      </Sheet>
 
       <ConfirmDialog open={Boolean(pendingRoleChange)} title="Change member role?" confirmLabel="Change role" onConfirm={applyRoleChange} onClose={() => setPendingRoleChange(null)} message={pendingRoleChange ? `Make @${pendingRoleChange.member.username || 'this member'} a ${pendingRoleChange.role}?` : ''} />
       <ConfirmDialog open={Boolean(pendingRemoval)} title="Remove collaborator?" confirmLabel="Remove member" onConfirm={removeMember} onClose={() => setPendingRemoval(null)} message={pendingRemoval ? `Remove @${pendingRemoval.username || 'this member'} from this project and its private workspace?` : ''} />

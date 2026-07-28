@@ -1,5 +1,6 @@
 import Avatar from '../../../components/ui/Avatar'
 import { Button } from '../../../components/ui/Button'
+import { UsersIcon, UserPlusIcon } from '../../../components/icons/Icons'
 
 export default function CollaborationPanel({
   isOwner,
@@ -16,7 +17,10 @@ export default function CollaborationPanel({
 
   return (
     <section className="project-panel project-collaboration-panel" aria-labelledby="collaboration-title">
-      <h2 id="collaboration-title">Project Collaboration</h2>
+      <div className="project-collaboration-panel__header">
+        <UsersIcon size={20} />
+        <h2 id="collaboration-title">Project Collaboration</h2>
+      </div>
 
       {/* Team Avatars & Open Seats Row */}
       {teamMembers.length > 0 && (
@@ -47,7 +51,8 @@ export default function CollaborationPanel({
         <div className="project-collaboration-panel__action">
           <p>Invite someone you follow, or someone who follows you, to collaborate.</p>
           <Button loading={busy} onClick={onInvite}>
-            Choose a collaborator
+            <UserPlusIcon size={16} />
+            <span>Choose a collaborator</span>
           </Button>
         </div>
       ) : request ? (
@@ -63,7 +68,8 @@ export default function CollaborationPanel({
         <div className="project-collaboration-panel__action">
           <p>This project is actively accepting new team collaborators.</p>
           <Button loading={busy} disabled={busy} onClick={onRequest}>
-            Request to collaborate
+            <UserPlusIcon size={16} />
+            <span>Request to collaborate</span>
           </Button>
         </div>
       ) : (
