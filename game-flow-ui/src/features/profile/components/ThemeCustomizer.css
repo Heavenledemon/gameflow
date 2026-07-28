@@ -10,7 +10,12 @@
   box-shadow: var(--gf-shadow-card);
 }
 
-.profile-form .theme-customizer { margin: 0; }
+.profile-form .theme-customizer {
+  margin: 0;
+  border-color: #d9dbe5;
+  background: #f4f5fa;
+  color: #1a1a2e;
+}
 
 .theme-customizer h2 { margin: 0; font-size: 1rem; }
 .theme-customizer p { margin: 4px 0 0; color: currentColor; font-size: .82rem; opacity: .72; }
