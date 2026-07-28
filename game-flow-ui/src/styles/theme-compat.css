@@ -17,21 +17,24 @@
 :root[data-color-scheme='dark'] .gf-dialog,
 :root[data-color-scheme='dark'] .gf-sheet,
 :root[data-color-scheme='dark'] .gf-sheet-panel {
-  --gf-bg: var(--gf-shell-surface);
-  --gf-surface: color-mix(in srgb, var(--gf-shell-surface) 82%, black);
-  --gf-surface-raised: color-mix(in srgb, var(--gf-shell-surface) 68%, black);
-  --gf-text: var(--gf-background-text);
-  --gf-text-primary: var(--gf-background-text);
-  --gf-text-secondary: color-mix(in srgb, var(--gf-background-text) 75%, var(--gf-shell-surface));
-  --gf-text-tertiary: color-mix(in srgb, var(--gf-background-text) 58%, var(--gf-shell-surface));
-  --gf-text-muted: color-mix(in srgb, var(--gf-background-text) 70%, var(--gf-shell-surface));
-  --gf-border: rgb(255 255 255 / 22%);
-  --gf-control: rgb(255 255 255 / 10%);
-  --gf-control-hover: rgb(255 255 255 / 16%);
-  color-scheme: dark;
+  /* Dialogs are a neutral UI layer and must not inherit the user's profile
+     background. Keeping explicit values also avoids mobile color-mix quirks. */
+  --gf-bg: #ffffff;
+  --gf-surface: #ffffff;
+  --gf-surface-raised: #f7f7fa;
+  --gf-text: #1a1a2e;
+  --gf-text-primary: #1a1a2e;
+  --gf-text-secondary: #5f6072;
+  --gf-text-tertiary: #85869a;
+  --gf-text-muted: #5f6072;
+  --gf-background-text: #1a1a2e;
+  --gf-border: #d9dbe5;
+  --gf-control: #f0f1f6;
+  --gf-control-hover: #e7e8f0;
+  color-scheme: light;
   color: var(--gf-text);
   border-color: var(--gf-border);
-  background: color-mix(in srgb, var(--gf-shell-surface) 82%, black 18%);
+  background: rgb(255 255 255 / 96%);
 }
 :root[data-color-scheme='dark'] .gf-dialog__header { border-color: var(--gf-border); }
 
@@ -41,6 +44,20 @@
   background-color: var(--gf-surface) !important;
 }
 :root[data-color-scheme='dark'] :is(input, textarea)::placeholder { color: var(--gf-text-muted) !important; opacity: .82; }
+
+/* The global dark-control compatibility rule above also matches controls in
+   neutral dialogs. Reassert the dialog palette after it in the cascade. */
+:root[data-color-scheme='dark'] :is(.gf-dialog, .gf-sheet, .gf-sheet-panel) :is(input, textarea, select):not([type='range']):not([type='checkbox']):not([type='radio']) {
+  color: #1a1a2e !important;
+  border-color: #d9dbe5 !important;
+  background-color: #ffffff !important;
+  -webkit-text-fill-color: #1a1a2e;
+}
+:root[data-color-scheme='dark'] :is(.gf-dialog, .gf-sheet, .gf-sheet-panel) :is(input, textarea)::placeholder {
+  color: #5f6072 !important;
+  -webkit-text-fill-color: #5f6072;
+  opacity: 1;
+}
 
 :root[data-color-scheme='dark'] :is(
   .publish-page, .publish-stepper, .publish-card, .publish-success, .publish-files,
