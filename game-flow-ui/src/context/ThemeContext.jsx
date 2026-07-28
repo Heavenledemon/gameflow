@@ -49,6 +49,9 @@ export function ThemeProvider({ children }) {
     const navbar = navbarOptions.find(({ color }) => color === preferences.navbar) || navbarOptions[0]
 
     root.dataset.backgroundTheme = background.color
+    const darkBackground = background.text === '#ffffff'
+    root.dataset.colorScheme = darkBackground ? 'dark' : 'light'
+    root.style.colorScheme = darkBackground ? 'dark' : 'light'
     root.style.setProperty('--gf-bg', background.color)
     root.style.setProperty('--gf-shell-surface', background.color)
     root.style.setProperty('--gf-shell-outer-surface', background.color)
@@ -63,19 +66,37 @@ export function ThemeProvider({ children }) {
     root.style.setProperty('--gf-shell-navigation-surface', navbar.color)
     root.style.setProperty('--gf-shell-navigation-text', navbar.text)
     root.style.setProperty('--gf-navbar-text', navbar.text)
-    if (background.text === '#ffffff') {
-      root.style.setProperty('--gf-surface', `color-mix(in srgb, ${background.color} 88%, white)`)
-      root.style.setProperty('--gf-surface-raised', `color-mix(in srgb, ${background.color} 80%, white)`)
-      root.style.setProperty('--gf-control', `color-mix(in srgb, ${background.color} 76%, white)`)
-      root.style.setProperty('--gf-control-hover', `color-mix(in srgb, ${background.color} 68%, white)`)
-      root.style.setProperty('--gf-border', 'rgb(255 255 255 / 22%)')
+    if (darkBackground) {
+      root.style.setProperty('--gf-surface', `color-mix(in srgb, ${background.color} 82%, black)`)
+      root.style.setProperty('--gf-surface-raised', `color-mix(in srgb, ${background.color} 70%, black)`)
+      root.style.setProperty('--gf-control', `color-mix(in srgb, ${background.color} 72%, white)`)
+      root.style.setProperty('--gf-control-hover', `color-mix(in srgb, ${background.color} 62%, white)`)
+      root.style.setProperty('--gf-control-active', `color-mix(in srgb, ${background.color} 54%, white)`)
+      root.style.setProperty('--gf-border', 'rgb(255 255 255 / 26%)')
+      root.style.setProperty('--gf-glass-surface', 'rgb(0 0 0 / 24%)')
+      root.style.setProperty('--gf-glass-surface-strong', 'rgb(0 0 0 / 38%)')
+      root.style.setProperty('--gf-glass-border', 'rgb(255 255 255 / 22%)')
+      root.style.setProperty('--gf-glass-highlight', 'rgb(255 255 255 / 12%)')
     } else {
       root.style.setProperty('--gf-surface', '#ffffff')
       root.style.setProperty('--gf-surface-raised', '#ffffff')
       root.style.setProperty('--gf-control', '#f0f1f6')
       root.style.setProperty('--gf-control-hover', '#e7e8f0')
       root.style.setProperty('--gf-border', '#e8e8f0')
+      root.style.setProperty('--gf-control-active', '#dedfe9')
+      root.style.setProperty('--gf-glass-surface', 'rgb(255 255 255 / 58%)')
+      root.style.setProperty('--gf-glass-surface-strong', 'rgb(255 255 255 / 78%)')
+      root.style.setProperty('--gf-glass-border', 'rgb(255 255 255 / 72%)')
+      root.style.setProperty('--gf-glass-highlight', 'rgb(255 255 255 / 62%)')
     }
+    root.style.setProperty('--gf-page-bg', background.color)
+    root.style.setProperty('--color-bg-page', background.color)
+    root.style.setProperty('--color-bg-card', 'var(--gf-surface)')
+    root.style.setProperty('--color-bg-muted', 'var(--gf-control)')
+    root.style.setProperty('--color-border', 'var(--gf-border)')
+    root.style.setProperty('--color-text-dark', background.text)
+    root.style.setProperty('--color-text-mid', 'var(--gf-text-secondary)')
+    root.style.setProperty('--color-text-light', 'var(--gf-text-tertiary)')
     localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences))
   }, [preferences])
 
