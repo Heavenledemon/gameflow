@@ -12,7 +12,6 @@ import { createModerationReport, toggleUserBlock } from '../../lib/moderation'
 import { ChevronLeftIcon, DotsIcon } from '../../components/icons/Icons'
 import ConversationComposer from './components/ConversationComposer'
 import ConversationSafety from './components/ConversationSafety'
-import InboxTopBar from './components/InboxTopBar'
 import MessageThread from './components/MessageThread'
 import './conversation.css'
 
@@ -31,7 +30,7 @@ export default function ConversationPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const { token, user } = useAuth()
-  const { setTopBar, clearTopBar } = useAppShell()
+  const { clearTopBar } = useAppShell()
   const { success: showSuccess, error: showError } = useToast()
   const scrollRef = useRef(null)
   const nearBottomRef = useRef(true)

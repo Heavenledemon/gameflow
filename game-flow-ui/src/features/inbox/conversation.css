@@ -393,3 +393,72 @@
 }
 @media (prefers-reduced-motion: reduce) { .conversation-stream { scroll-behavior: auto; } }
 @media (prefers-reduced-transparency: reduce) { .conversation-composer-region { background: #ffffff; } }
+
+/* Dark custom-background chat palette */
+:root[data-color-scheme='dark'] .conversation-page__header {
+  color: var(--gf-text-primary);
+  background: color-mix(in srgb, var(--gf-bg) 76%, black);
+  border-bottom-color: var(--gf-border);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 22%);
+}
+:root[data-color-scheme='dark'] .conversation-page__title-group h1 { color: var(--gf-text-primary); }
+:root[data-color-scheme='dark'] .conversation-page__title-group span { color: var(--gf-text-secondary); }
+:root[data-color-scheme='dark'] :is(.conversation-page__back-btn, .conversation-page__action-btn) {
+  color: var(--gf-text-primary);
+  background: var(--gf-control);
+  border-color: var(--gf-border);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 22%), inset 0 1px 0 var(--gf-glass-highlight);
+}
+:root[data-color-scheme='dark'] :is(.conversation-page__back-btn, .conversation-page__action-btn):hover {
+  background: var(--gf-control-hover);
+}
+:root[data-color-scheme='dark'] .conversation-connection {
+  color: #ffd2ad;
+  background: color-mix(in srgb, #ff8c42 20%, var(--gf-bg));
+  border-bottom: 1px solid rgb(255 178 112 / 24%);
+}
+:root[data-color-scheme='dark'] .conversation-notice {
+  color: #ffd2ad;
+  background: color-mix(in srgb, #ff8c42 14%, var(--gf-surface));
+  border-color: rgb(255 178 112 / 28%);
+}
+:root[data-color-scheme='dark'] .conversation-stream { color: var(--gf-text-primary); background: var(--gf-bg); }
+:root[data-color-scheme='dark'] .message__sender { color: var(--gf-text-secondary); }
+:root[data-color-scheme='dark'] .message:not(.message--mine) .message__bubble {
+  color: var(--gf-text-primary) !important;
+  background: color-mix(in srgb, var(--gf-surface-raised) 92%, black) !important;
+  border-color: var(--gf-border) !important;
+  box-shadow: 0 5px 18px rgb(0 0 0 / 26%), inset 0 1px 0 var(--gf-glass-highlight);
+}
+:root[data-color-scheme='dark'] .message:not(.message--mine) .message__asset {
+  color: var(--gf-text-primary);
+  background: var(--gf-control);
+  border-color: var(--gf-border);
+}
+:root[data-color-scheme='dark'] .conversation-composer-region {
+  color: var(--gf-text-primary);
+  background: color-mix(in srgb, var(--gf-bg) 78%, black);
+  border-top-color: var(--gf-border);
+}
+:root[data-color-scheme='dark'] .conversation-composer__pill,
+:root[data-color-scheme='dark'] .conversation-composer__pill:focus-within {
+  color: var(--gf-text-primary);
+  background: var(--gf-surface-raised);
+  border-color: var(--gf-border);
+  box-shadow: 0 5px 18px rgb(0 0 0 / 24%), inset 0 1px 0 var(--gf-glass-highlight);
+}
+:root[data-color-scheme='dark'] .conversation-composer textarea {
+  color: var(--gf-text-primary) !important;
+  background: transparent !important;
+}
+:root[data-color-scheme='dark'] .conversation-composer textarea::placeholder { color: var(--gf-text-muted) !important; }
+:root[data-color-scheme='dark'] .conversation-composer__send-btn:disabled { color: var(--gf-text-muted); background: var(--gf-control-disabled); }
+:root[data-color-scheme='dark'] .conversation-page .gf-feedback { color: var(--gf-text-secondary); }
+:root[data-color-scheme='dark'] .conversation-page .gf-feedback__title { color: var(--gf-text-primary); }
+:root[data-color-scheme='dark'] .conversation-stream { scrollbar-color: var(--gf-control-hover) transparent; }
+:root[data-color-scheme='dark'] .conversation-stream::-webkit-scrollbar { width: 8px; }
+:root[data-color-scheme='dark'] .conversation-stream::-webkit-scrollbar-track { background: transparent; }
+:root[data-color-scheme='dark'] .conversation-stream::-webkit-scrollbar-thumb { border: 2px solid transparent; border-radius: 999px; background: var(--gf-control-hover); background-clip: padding-box; }
+@media (prefers-reduced-transparency: reduce) {
+  :root[data-color-scheme='dark'] .conversation-composer-region { background: var(--gf-surface); }
+}
