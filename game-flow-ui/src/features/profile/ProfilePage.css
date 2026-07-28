@@ -157,7 +157,7 @@
 
 /* Portfolio & Tab Navigation */
 .portfolio { display: flex; flex-direction: column; margin-top: 2px; }
-.portfolio-tabs { display: flex; align-items: center; justify-content: space-around; overflow-x: auto; border-top: 1px solid var(--gf-border); background: var(--gf-bg); width: 100%; position: sticky; top: 56px; z-index: 15; scrollbar-width: none; }
+.portfolio-tabs { display: flex; align-items: center; justify-content: space-around; overflow-x: auto; border-top: 1px solid var(--gf-border); background: var(--gf-bg); width: 100%; position: sticky; top: 0; z-index: 15; scrollbar-width: none; }
 .portfolio-tabs::-webkit-scrollbar { display: none; }
 .portfolio-tabs__tab { position: relative; flex: 1 0 44px; min-width: 44px; height: 46px; display: flex; align-items: center; justify-content: center; gap: 6px; border: 0; background: transparent; color: var(--gf-text-muted); font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: color 0.15s ease; }
 .portfolio-tabs__tab:hover { color: var(--gf-text); }
