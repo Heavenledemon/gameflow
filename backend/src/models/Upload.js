@@ -5,6 +5,7 @@ const uploadSchema = new mongoose.Schema(
     uploadId: { type: String, required: true, unique: true, index: true },
     idempotencyKey: { type: String, required: true },
     ownerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    billingOwnerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null, index: true },
     projectId: { type: mongoose.Schema.Types.ObjectId, ref: 'Project', required: true, index: true },
     storageKey: { type: String, required: true, unique: true },
     relativePath: { type: String, required: true },

@@ -27,6 +27,7 @@ import { createCollaborationRequest, getPublicUser, listUserFollows, searchUsers
 import { optionalProtect, protect } from '../middlewares/authMiddleware.js'
 import { redisRateLimit } from '../middlewares/rateLimitMiddleware.js'
 import { getFeed, getPost, getPostComments } from '../controllers/feedController.js'
+import { deleteWorkspaceAsset, getAssetDownloadUrl, getWorkspace, listWorkspaceAssets, restoreWorkspaceAsset } from '../controllers/workspaceController.js'
 
 const router = Router()
 
@@ -41,6 +42,11 @@ router.get('/users/:identity', optionalProtect, getPublicUser)
 router.get('/users/:userId/:kind', optionalProtect, listUserFollows)
 router.get('/projects', optionalProtect, getPublishedProjects)
 router.get('/projects/:projectId', optionalProtect, getProjectById)
+router.get('/projects/:projectId/workspace', protect, getWorkspace)
+router.get('/projects/:projectId/assets', protect, listWorkspaceAssets)
+router.post('/projects/:projectId/assets/:assetId/download-url', protect, getAssetDownloadUrl)
+router.delete('/projects/:projectId/assets/:assetId', protect, deleteWorkspaceAsset)
+router.post('/projects/:projectId/assets/:assetId/restore', protect, restoreWorkspaceAsset)
 router.get('/posts/:postId/engagement', protect, getPostEngagement)
 router.get('/posts/:postId/likes', protect, getProjectLikes)
 router.get('/posts/:postId/comments', optionalProtect, getPostComments)

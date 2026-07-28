@@ -26,6 +26,7 @@ const InboxPage = lazy(() => import('../pages/app/InboxPage'));
 const ConversationPage = lazy(() => import('../pages/app/ConversationPage'));
 const ProfilePage = lazy(() => import('../pages/app/ProfilePage'));
 const ProjectDetailPage = lazy(() => import('../pages/app/ProjectDetailPage'));
+const ProjectWorkspacePage = lazy(() => import('../pages/app/ProjectWorkspacePage'));
 const CreatorProfilePage = lazy(() => import('../pages/app/CreatorProfilePage'));
 
 function RouteLoading({ label = 'Loading page', viewport = false }) {
@@ -82,6 +83,8 @@ const AppRoutes = () => {
           <Route path="/app/inbox/:conversationId" element={<ProtectedPage label="Loading conversation"><ConversationPage /></ProtectedPage>} />
           <Route path="/app/profile" element={<ProtectedPage label="Loading your portfolio"><ProfilePage /></ProtectedPage>} />
           <Route path="/app/project/:projectId" element={<ProtectedPage label="Loading project"><ProjectDetailPage /></ProtectedPage>} />
+          <Route path="/app/project/:projectId/workspace" element={<ProtectedPage label="Loading project workspace"><ProjectWorkspacePage /></ProtectedPage>} />
+          <Route path="/app/project/:projectId/workspace/:section" element={<ProtectedPage label="Loading project workspace"><ProjectWorkspacePage /></ProtectedPage>} />
           <Route path="/app/creator/:creatorId" element={<ProtectedPage label="Loading creator portfolio"><CreatorProfilePage /></ProtectedPage>} />
         </Route>
       </Route>

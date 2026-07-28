@@ -16,9 +16,11 @@
     "restore-media:apply": "node src/scripts/migrateLocalUploadsToObjectStorage.js --apply",
     "restore-media:repoint": "node src/scripts/migrateLocalUploadsToObjectStorage.js --apply --skip-upload",
     "purge:messaging": "node src/scripts/purgeExpiredMessagingData.js",
+    "purge:workspace": "node src/scripts/purgeWorkspaceStorage.js",
+    "migrate:workspace-assets": "node src/scripts/migrateWorkspaceAssets.js",
     "worker": "node src/worker.js",
     "test": "node --test test/*.test.js",
-    "check": "node --check src/server.js && node --check src/app.js && node --check src/middlewares/deviceMiddleware.js && node --check src/controllers/contentController.js && node --check src/realtime/socketServer.js"
+    "check": "node --check src/server.js && node --check src/app.js && node --check src/middlewares/deviceMiddleware.js && node --check src/controllers/contentController.js && node --check src/controllers/workspaceController.js && node --check src/controllers/messagingController.js && node --check src/services/workspaceCleanup.js && node --check src/realtime/socketServer.js"
   },
   "dependencies": {
     "@socket.io/redis-adapter": "^8.3.0",

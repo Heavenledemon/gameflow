@@ -2,7 +2,7 @@ import { Button } from '../../../components/ui/Button'
 import { Avatar } from '../../../components/ui/Surface'
 import { Sheet } from '../../../components/ui/Overlay'
 
-export default function ProjectWorkspace({ open, viewerRole, members, canManageMembers, viewerId, isOwner, memberActionId, openingWorkspace, onOpen, onClose, onOpenWorkspace, onRoleChange, onRemove }) {
+export default function ProjectWorkspace({ open, viewerRole, members, canManageMembers, canUseChat, viewerId, isOwner, memberActionId, openingWorkspace, onOpen, onClose, onOpenWorkspace, onRoleChange, onRemove }) {
   if (!viewerRole) return null
 
   return (
@@ -11,7 +11,7 @@ export default function ProjectWorkspace({ open, viewerRole, members, canManageM
         <div><h2 id="workspace-title">Team workspace</h2><p>Your role: <strong>{viewerRole}</strong></p></div>
         <div className="project-workspace__actions">
           <Button variant="secondary" onClick={onOpen}>Team {members.status === 'ready' ? `(${members.items.length})` : ''}</Button>
-          <Button loading={openingWorkspace} onClick={onOpenWorkspace}>Open project chat</Button>
+          {canUseChat ? <Button loading={openingWorkspace} onClick={onOpenWorkspace}>Open project chat</Button> : <Button variant="secondary" disabled>Chat unavailable</Button>}
         </div>
       </section>
 

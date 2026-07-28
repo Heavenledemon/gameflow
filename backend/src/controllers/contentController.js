@@ -22,13 +22,14 @@ import { recordUploadMetric } from '../middlewares/observabilityMiddleware.js'
 import { removeFeedProjection, upsertFeedProjection } from '../services/feedProjection.js'
 import MutationReceipt from '../models/MutationReceipt.js'
 import { createPresignedPutUrl, immutableObjectKey, objectStorageReady, publicObjectUrl } from '../services/objectStorage.js'
-import { canManageProject, canViewProject, getProjectRole } from '../services/projectAccessService.js'
+import { canManageProject, canUploadProjectAssets, canViewProject, getProjectRole } from '../services/projectAccessService.js'
 
 const UPLOADS_ROOT = path.join(process.cwd(), 'uploads', 'projects')
 const PUBLIC_UPLOADS_PREFIX = '/api/uploads/projects'
-const MAX_UPLOAD_BYTES = 150 * 1024 * 1024
-const MAX_PROJECT_BYTES = 500 * 1024 * 1024
-const MAX_PROJECT_FILES = 100
+const MAX_UPLOAD_BYTES = env.workspaceMaxFileBytes
+const MAX_PROJECT_BYTES = env.workspaceMaxProjectBytes
+const MAX_USER_BYTES = env.workspaceMaxUserBytes
+const MAX_PROJECT_FILES = env.workspaceMaxProjectFiles
 const MAX_PATH_BYTES = 512
 const MAX_NAME_BYTES = 255
 const SAFE_TEXT_EXTENSIONS = new Set(['.html', '.htm', '.js', '.mjs', '.css', '.json', '.txt', '.svg'])
@@ -971,8 +972,8 @@ export const uploadProjectFile = asyncHandler(async (request, response) => {
     throw createError(404, 'Project not found.')
   }
 
-  if (!await canManageProject(project, request.user._id)) {
-    throw createError(403, 'You cannot modify this project.')
+  if (!await canUploadProjectAssets(project, request.user._id)) {
+    throw createError(403, 'You cannot upload assets to this project.')
   }
 
   const priorUpload = await Upload.findOne({ idempotencyKey, ownerId: request.user._id }).lean()
@@ -984,7 +985,10 @@ export const uploadProjectFile = asyncHandler(async (request, response) => {
   const normalizedPath = validateUploadMetadata(project, fileName, relativePath, buffer)
   const uploadId = crypto.randomUUID()
   const checksum = crypto.createHash('sha256').update(buffer).digest('hex')
-  const existingFiles = await ProjectFile.find({ projectId: project._id, status: 'ready' }).lean()
+  const [existingFiles, accountUsage] = await Promise.all([
+    ProjectFile.find({ projectId: project._id, status: 'ready' }).lean(),
+    ProjectFile.aggregate([{ $match: { ownerId: project.ownerId, status: 'ready' } }, { $group: { _id: null, bytes: { $sum: '$size' } } }]),
+  ])
   const existingBytes = existingFiles.reduce((total, file) => total + Number(file.size || 0), 0)
   const duplicateFile = existingFiles.find((file) => file.relativePath === normalizedPath)
 
@@ -998,6 +1002,7 @@ export const uploadProjectFile = asyncHandler(async (request, response) => {
   if (existingBytes + buffer.length > MAX_PROJECT_BYTES) {
     throw createError(413, 'The project storage quota has been exceeded.')
   }
+  if (Number(accountUsage[0]?.bytes || 0) + buffer.length > MAX_USER_BYTES) throw createError(413, 'The account storage quota has been exceeded.')
 
   let savedFile
   try {
@@ -1010,7 +1015,8 @@ export const uploadProjectFile = asyncHandler(async (request, response) => {
   try {
     projectFile = await ProjectFile.create({
     projectId: project._id,
-    ownerId: project.ownerId,
+      ownerId: project.ownerId,
+      uploadedById: request.user._id,
     name: savedFile.name,
     relativePath: savedFile.relativePath,
     url: savedFile.url,
@@ -1032,6 +1038,7 @@ export const uploadProjectFile = asyncHandler(async (request, response) => {
       uploadId,
       idempotencyKey,
       ownerId: request.user._id,
+      billingOwnerId: project.ownerId,
       projectId: project._id,
       storageKey: `${project.slug}/${normalizedPath}`,
       relativePath: normalizedPath,
@@ -1084,7 +1091,7 @@ export const initiateProjectUpload = asyncHandler(async (request, response) => {
   if (!mongoose.isValidObjectId(projectId)) throw createError(400, 'Invalid project ID.')
   const project = await Project.findById(projectId)
   if (!project) throw createError(404, 'Project not found.')
-  if (!await canManageProject(project, request.user._id)) throw createError(403, 'You cannot modify this project.')
+  if (!await canUploadProjectAssets(project, request.user._id)) throw createError(403, 'You cannot upload assets to this project.')
   const byteSize = Number(size)
   const normalizedPath = safeRelativePath(relativePath, name)
   const extension = path.posix.extname(normalizedPath).toLowerCase()
@@ -1096,11 +1103,17 @@ export const initiateProjectUpload = asyncHandler(async (request, response) => {
   if (!allowed || !Number.isFinite(byteSize) || byteSize <= 0 || byteSize > MAX_UPLOAD_BYTES || !/^[a-f\d]{64}$/i.test(String(checksum))) throw createError(400, 'Invalid upload manifest.')
   const existing = await Upload.findOne({ ownerId: request.user._id, idempotencyKey }).lean()
   if (existing) return response.json({ uploadId: existing.uploadId, status: existing.status, uploadUrl: existing.status === 'pending' ? createPresignedPutUrl(existing.storageKey) : null, storageKey: existing.storageKey })
-  const existingFiles = await ProjectFile.find({ projectId: project._id, status: 'ready' }).lean()
+  const [existingFiles, accountUsage, pendingProjectUsage, pendingAccountUsage] = await Promise.all([
+    ProjectFile.find({ projectId: project._id, status: 'ready' }).lean(),
+    ProjectFile.aggregate([{ $match: { ownerId: project.ownerId, status: 'ready' } }, { $group: { _id: null, bytes: { $sum: '$size' } } }]),
+    Upload.aggregate([{ $match: { projectId: project._id, status: 'pending', expiresAt: { $gt: new Date() } } }, { $group: { _id: null, bytes: { $sum: '$size' }, files: { $sum: 1 } } }]),
+    Upload.aggregate([{ $match: { billingOwnerId: project.ownerId, status: 'pending', expiresAt: { $gt: new Date() } } }, { $group: { _id: null, bytes: { $sum: '$size' } } }]),
+  ])
   if (existingFiles.some((file) => file.relativePath === normalizedPath)) throw createError(409, 'A file with this relative path already exists.')
-  if (existingFiles.length >= MAX_PROJECT_FILES || existingFiles.reduce((total, file) => total + Number(file.size || 0), 0) + byteSize > MAX_PROJECT_BYTES) throw createError(413, 'Project storage quota exceeded.')
+  if (existingFiles.length + Number(pendingProjectUsage[0]?.files || 0) >= MAX_PROJECT_FILES || existingFiles.reduce((total, file) => total + Number(file.size || 0), 0) + Number(pendingProjectUsage[0]?.bytes || 0) + byteSize > MAX_PROJECT_BYTES) throw createError(413, 'Project storage quota exceeded.')
+  if (Number(accountUsage[0]?.bytes || 0) + Number(pendingAccountUsage[0]?.bytes || 0) + byteSize > MAX_USER_BYTES) throw createError(413, 'Account storage quota exceeded.')
   const storageKey = immutableObjectKey(project.slug, String(checksum).toLowerCase(), normalizedPath)
-  const upload = await Upload.create({ uploadId: crypto.randomUUID(), idempotencyKey, ownerId: request.user._id, projectId: project._id, storageKey, relativePath: normalizedPath, detectedType: extension, mimeType: String(mimeType), size: byteSize, checksum: String(checksum).toLowerCase(), status: 'pending', provider: 's3', expiresAt: new Date(Date.now() + 15 * 60 * 1000) })
+  const upload = await Upload.create({ uploadId: crypto.randomUUID(), idempotencyKey, ownerId: request.user._id, billingOwnerId: project.ownerId, projectId: project._id, storageKey, relativePath: normalizedPath, detectedType: extension, mimeType: String(mimeType), size: byteSize, checksum: String(checksum).toLowerCase(), status: 'pending', provider: 's3', expiresAt: new Date(Date.now() + 15 * 60 * 1000) })
   response.status(201).json({ uploadId: upload.uploadId, status: upload.status, storageKey, uploadUrl: createPresignedPutUrl(storageKey), expiresAt: upload.expiresAt })
 })
 
@@ -1113,7 +1126,13 @@ export const completeProjectUpload = asyncHandler(async (request, response) => {
   if (!project) throw createError(404, 'Project not found.')
   const url = publicObjectUrl(upload.storageKey)
   if (!url) throw createError(503, 'Object storage public delivery URL is not configured.')
-  const file = await ProjectFile.create({ projectId: project._id, ownerId: project.ownerId, name: path.posix.basename(upload.relativePath), relativePath: upload.relativePath, url, storageKey: upload.storageKey, mimeType: upload.mimeType, size: upload.size, checksum: upload.checksum, version: 1, status: 'ready' })
+  if (!await canUploadProjectAssets(project, request.user._id)) throw createError(403, 'You cannot complete uploads for this project.')
+  const [projectUsage, accountUsage] = await Promise.all([
+    ProjectFile.aggregate([{ $match: { projectId: project._id, status: 'ready' } }, { $group: { _id: null, bytes: { $sum: '$size' }, files: { $sum: 1 } } }]),
+    ProjectFile.aggregate([{ $match: { ownerId: project.ownerId, status: 'ready' } }, { $group: { _id: null, bytes: { $sum: '$size' } } }]),
+  ])
+  if (Number(projectUsage[0]?.files || 0) >= MAX_PROJECT_FILES || Number(projectUsage[0]?.bytes || 0) + upload.size > MAX_PROJECT_BYTES || Number(accountUsage[0]?.bytes || 0) + upload.size > MAX_USER_BYTES) throw createError(413, 'Storage quota changed before upload completion.')
+  const file = await ProjectFile.create({ projectId: project._id, ownerId: project.ownerId, uploadedById: request.user._id, name: path.posix.basename(upload.relativePath), relativePath: upload.relativePath, url, storageKey: upload.storageKey, mimeType: upload.mimeType, size: upload.size, checksum: upload.checksum, version: 1, visibility: 'workspace-private', status: 'ready' })
   upload.status = 'ready'; upload.etag = String(etag); await upload.save()
   const files = await ProjectFile.find({ projectId: project._id, status: 'ready' }).lean()
   if (applyProjectMedia(project, files)) {
@@ -1163,6 +1182,7 @@ export const publishProject = asyncHandler(async (request, response) => {
   project.publishedAt = project.isPublished ? (project.publishedAt || new Date()) : null
 
   await project.save()
+  await ProjectFile.updateMany({ projectId: project._id, status: 'ready' }, { $set: { visibility: project.isPublished ? 'published' : 'workspace-private' } })
   await upsertFeedProjection('project', project)
 
   const collaborationMap = await getProjectCollaborationMap([project], String(request.user._id))
