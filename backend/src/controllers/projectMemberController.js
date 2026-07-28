@@ -48,6 +48,18 @@ export const updateProjectMember = asyncHandler(async (request, response) => {
   if (member.role === 'owner') throw error(403, 'The project owner role cannot be changed.')
   if (String(member.userId) === String(request.user._id) && String(project.ownerId) !== String(request.user._id)) throw error(403, 'Editors cannot change their own role.')
   member.role = role; await member.save(); await member.populate('userId', 'username name avatar')
+  const workspace = await Conversation.findOne({ kind: 'project', projectId: project._id }).select('_id').lean()
+  if (workspace) {
+    await ConversationParticipant.updateOne(
+      { conversationId: workspace._id, userId },
+      role === 'viewer'
+        ? { $set: { hiddenAt: new Date() } }
+        : { $set: { hiddenAt: null }, $setOnInsert: { conversationId: workspace._id, userId } },
+      { upsert: role !== 'viewer' },
+    )
+    if (role === 'viewer') await Conversation.updateOne({ _id: workspace._id }, { $pull: { participantIds: userId } })
+    else await Conversation.updateOne({ _id: workspace._id }, { $addToSet: { participantIds: userId } })
+  }
   recordAudit(request.user._id, 'project.member.role_updated', 'projectMember', member._id, { projectId: String(project._id), role })
   response.json({ member: memberDto(member) })
 })

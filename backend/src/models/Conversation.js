@@ -11,5 +11,6 @@ const conversationSchema = new mongoose.Schema({
 }, { timestamps: true, versionKey: false })
 
 conversationSchema.index({ lastMessageAt: -1 })
+conversationSchema.index({ kind: 1, projectId: 1 }, { unique: true, partialFilterExpression: { kind: 'project' } })
 
 export default mongoose.model('Conversation', conversationSchema)

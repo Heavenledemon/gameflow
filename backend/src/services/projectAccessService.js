@@ -24,6 +24,22 @@ export async function canManageProject(project, userId) {
   return hasProjectRole(project, userId, ['owner', 'editor'])
 }
 
+export async function canUseProjectChat(project, userId) {
+  return hasProjectRole(project, userId, ['owner', 'editor', 'contributor'])
+}
+
+export async function canViewProjectAssets(project, userId) {
+  return hasProjectRole(project, userId, PROJECT_ROLES)
+}
+
+export async function canUploadProjectAssets(project, userId) {
+  return hasProjectRole(project, userId, ['owner', 'editor', 'contributor'])
+}
+
+export async function canManageProjectAssets(project, userId) {
+  return hasProjectRole(project, userId, ['owner', 'editor'])
+}
+
 export async function canViewProject(project, userId) {
   if (!project) return false
   if (project.visibility === 'public' && project.isPublished) return true

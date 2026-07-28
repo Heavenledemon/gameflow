@@ -276,7 +276,7 @@ export default function ProjectDetailPage() {
   const workspaceConversation = conversations.items.find((conversation) => conversation.kind === 'project' && String(conversation.projectId) === String(projectId))
   const openRequest = () => projectRequest?.conversationId && navigate(`/app/inbox/${projectRequest.conversationId}`, { state: { conversation: { id: projectRequest.conversationId, kind: 'collaboration_request', projectId, collaborationRequestId: projectRequest.id }, request: projectRequest } })
 
-  const openWorkspace = async () => {
+  const openProjectChat = async () => {
     if (!isActiveMember || isOpeningWorkspace) return
     setIsOpeningWorkspace(true)
     try {
@@ -285,6 +285,11 @@ export default function ProjectDetailPage() {
       navigate(`/app/inbox/${conversation.id}`, { state: { conversation } })
     } catch (error) { showError(error.message || 'Unable to open the project workspace.') }
     finally { setIsOpeningWorkspace(false) }
+  }
+
+  const openWorkspace = () => {
+    if (!isActiveMember) return
+    navigate(`/app/project/${projectId}/workspace`)
   }
 
   const applyRoleChange = async () => {
@@ -422,7 +427,7 @@ export default function ProjectDetailPage() {
               liked={liked}
               saved={saved}
               canViewFiles={isOwner || isActiveMember}
-              onViewFiles={isOwner || isActiveMember ? openWorkspace : undefined}
+              onViewFiles={isOwner || isActiveMember ? () => navigate(`/app/project/${projectId}/workspace/assets`) : undefined}
               collaborationLabel={collaborationLabel}
               collaborationAllowed={collaborationAllowed}
               collaborationBusy={isSendingCollaborationRequest || isOpeningWorkspace}
@@ -442,9 +447,10 @@ export default function ProjectDetailPage() {
               isOwner={isOwner}
               memberActionId={memberActionId}
               openingWorkspace={isOpeningWorkspace}
+              canUseChat={['owner', 'editor', 'contributor'].includes(viewerRole)}
               onOpen={() => setShowMembersSheet(true)}
               onClose={() => setShowMembersSheet(false)}
-              onOpenWorkspace={openWorkspace}
+              onOpenWorkspace={openProjectChat}
               onRoleChange={(member, role) => setPendingRoleChange({ member, role })}
               onRemove={setPendingRemoval}
             />

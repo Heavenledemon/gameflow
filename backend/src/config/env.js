@@ -19,6 +19,11 @@ const env = {
   s3AccessKeyId: process.env.S3_ACCESS_KEY_ID ?? '',
   s3SecretAccessKey: process.env.S3_SECRET_ACCESS_KEY ?? '',
   s3PublicBaseUrl: process.env.S3_PUBLIC_BASE_URL ?? '',
+  workspaceMaxFileBytes: Number(process.env.WORKSPACE_MAX_FILE_BYTES ?? 50 * 1024 * 1024),
+  workspaceMaxProjectBytes: Number(process.env.WORKSPACE_MAX_PROJECT_BYTES ?? 150 * 1024 * 1024),
+  workspaceMaxUserBytes: Number(process.env.WORKSPACE_MAX_USER_BYTES ?? 500 * 1024 * 1024),
+  workspaceMaxProjectFiles: Number(process.env.WORKSPACE_MAX_PROJECT_FILES ?? 100),
+  privateUrlExpiresSeconds: Number(process.env.PRIVATE_URL_EXPIRES_SECONDS ?? 300),
 }
 
 export default env

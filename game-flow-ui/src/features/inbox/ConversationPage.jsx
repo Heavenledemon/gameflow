@@ -9,6 +9,7 @@ import { useConversations } from '../../hooks/useConversations'
 import { useCollaborationRequest } from '../../hooks/useCollaborationRequest'
 import { useMessagingRealtime } from '../../hooks/useMessagingRealtime'
 import { createModerationReport, toggleUserBlock } from '../../lib/moderation'
+import { ChevronLeftIcon, DotsIcon } from '../../components/icons/Icons'
 import ConversationComposer from './components/ConversationComposer'
 import ConversationSafety from './components/ConversationSafety'
 import InboxTopBar from './components/InboxTopBar'
@@ -61,9 +62,9 @@ export default function ConversationPage() {
   const reloadRequest = requestState.reload
 
   useEffect(() => {
-    setTopBar(<InboxTopBar title={header.title} subtitle={header.subtitle} onBack={() => navigate('/app/inbox')} onAction={() => setShowSafetySheet(true)} />)
+    clearTopBar()
     return clearTopBar
-  }, [clearTopBar, header.subtitle, header.title, navigate, setTopBar])
+  }, [clearTopBar])
 
   const handleRealtimeEvent = useCallback((eventName, event) => {
     const eventConversationId = event?.message?.conversationId || event?.conversationId || event?.payload?.conversationId
@@ -143,9 +144,21 @@ export default function ConversationPage() {
   }
 
   return <main className="conversation-page">
+    <header className="conversation-page__header">
+      <button type="button" className="conversation-page__back-btn" onClick={() => navigate('/app/inbox')} aria-label="Back to inbox">
+        <ChevronLeftIcon size={20} />
+      </button>
+      <div className="conversation-page__title-group">
+        <h1>{header.title}</h1>
+        <span>{header.subtitle}</span>
+      </div>
+      <button type="button" className="conversation-page__action-btn" onClick={() => setShowSafetySheet(true)} aria-label="Conversation safety options">
+        <DotsIcon size={20} />
+      </button>
+    </header>
     {connectionState === 'reconnecting' ? <div className="conversation-connection" role="status">Reconnecting. Messages will refresh when you’re back online.</div> : null}
     {isReadOnly ? <div className="conversation-notice" role="status">{isBlocked ? 'You blocked this creator. This conversation is read-only.' : `This request is ${request.status}. Its messages are available to read, but replies are closed.`}</div> : null}
-    <MessageThread title={header.title} items={items} status={status} nextCursor={nextCursor} userId={user?.id || user?._id} retryingIds={retryingIds} onLoadOlder={loadOlder} onRetryLoad={reload} onRetryMessage={retry} scrollRef={scrollRef} onScroll={onScroll} />
+    <MessageThread title={header.title} items={items} status={status} nextCursor={nextCursor} userId={user?.id || user?._id} retryingIds={retryingIds} onLoadOlder={loadOlder} onRetryLoad={reload} onRetryMessage={retry} onOpenAsset={(attachment) => navigate(`/app/project/${attachment.projectId}/workspace/assets`)} scrollRef={scrollRef} onScroll={onScroll} />
     <ConversationComposer draft={draft} sending={sending} disabled={isReadOnly} blocked={isBlocked} sendError={sendError} onChange={setDraft} onSend={submit} />
     <ConversationSafety open={showSafetySheet} targetAvailable={Boolean(moderationTarget?.id)} blocked={isBlocked} busy={isSafetyAction} reportReason={reportReason} onReportReasonChange={setReportReason} onRequestBlock={() => setShowBlockConfirm(true)} onReport={submitReport} onClose={() => { if (!isSafetyAction) setShowSafetySheet(false) }} />
     <ConfirmDialog open={showBlockConfirm} title={isBlocked ? 'Unblock creator?' : 'Block creator?'} message={isBlocked ? 'You will be able to message and collaborate with this creator again.' : 'Blocking prevents new messages and collaboration requests between you and this creator.'} confirmLabel={isBlocked ? 'Unblock' : 'Block'} confirmLoading={isSafetyAction} onConfirm={toggleBlock} onClose={() => { if (!isSafetyAction) setShowBlockConfirm(false) }} />

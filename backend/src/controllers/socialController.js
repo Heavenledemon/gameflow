@@ -335,17 +335,21 @@ export const acceptCollaborationRequest = asyncHandler(async (request, response)
   if (!workspace) {
     workspace = await Conversation.create({ kind: 'project', projectId: current.projectId, participantIds: [], createdBy: request.user._id, lastMessageAt: new Date(), lastMessagePreview: 'Project room created.' })
   }
-  for (const participantId of [workspaceProject.ownerId, memberId]) {
+  const chatParticipantIds = current.proposedRole === 'viewer' ? [workspaceProject.ownerId] : [workspaceProject.ownerId, memberId]
+  for (const participantId of chatParticipantIds) {
     if (!workspace.participantIds.some((id) => String(id) === String(participantId))) workspace.participantIds.push(participantId)
   }
   workspace.lastMessageAt = new Date()
   workspace.lastMessagePreview = 'Collaboration accepted. Project room is ready.'
   await workspace.save()
-  await Promise.all([workspaceProject.ownerId, memberId].map((userId) => ConversationParticipant.updateOne(
+  await Promise.all(chatParticipantIds.map((userId) => ConversationParticipant.updateOne(
     { conversationId: workspace._id, userId },
     { $set: { hiddenAt: null }, $setOnInsert: { conversationId: workspace._id, userId } },
     { upsert: true },
   )))
+  if (current.proposedRole === 'viewer') {
+    await ConversationParticipant.updateOne({ conversationId: workspace._id, userId: memberId }, { $set: { hiddenAt: new Date() } })
+  }
 
   current.status = 'accepted'; current.resolvedBy = request.user._id; current.resolvedAt = new Date(); current.resolutionEvent = 'accepted'
   await current.save()
@@ -353,5 +357,5 @@ export const acceptCollaborationRequest = asyncHandler(async (request, response)
   recordAudit(request.user._id, 'collaboration.request.accepted', 'collaborationRequest', record._id, { memberId: String(memberId) })
   publishRealtimeEvent({ eventType: 'collaboration.request.updated', aggregateId: record._id, audiences: { userIds: [record.requesterId._id || record.requesterId, record.recipientId._id || record.recipientId] }, payload: { request: requestDto(updated) } }).catch(() => {})
   publishRealtimeEvent({ eventType: 'project.member.added', aggregateId: updated.projectId._id || updated.projectId, audiences: { userIds: [memberId], projectId: updated.projectId._id || updated.projectId }, payload: { projectId: String(updated.projectId._id || updated.projectId), userId: String(memberId) } }).catch(() => {})
-  response.json({ request: requestDto(updated), workspace: { id: String(workspace._id), kind: 'project', projectId: String(current.projectId), project: { id: String(current.projectId), title: workspaceProject.title, previewUrl: workspaceProject.previewUrl || '' } } })
+  response.json({ request: requestDto(updated), workspace: current.proposedRole === 'viewer' ? null : { id: String(workspace._id), kind: 'project', projectId: String(current.projectId), project: { id: String(current.projectId), title: workspaceProject.title, previewUrl: workspaceProject.previewUrl || '' } } })
 })
