@@ -179,7 +179,14 @@ export function toProjectCardModel(rawInput, options = {}) {
   // Resolve projectType
   const rawType = firstValue(raw.projectType, raw.category, raw.type, options.projectTypeHint)
   const normalizedTypeKey = rawType ? String(rawType).trim().toLowerCase() : ''
-  const projectType = PROJECT_TYPE_ALIASES.get(normalizedTypeKey) ?? 'other'
+  let projectType = PROJECT_TYPE_ALIASES.get(normalizedTypeKey) ?? null
+  if (!projectType) {
+    if (mediaKind === 'video') projectType = 'video'
+    else if (mediaKind === 'webgl') projectType = 'game'
+    else if (mediaKind === 'gltf') projectType = '3d-asset'
+    else if (mediaKind === 'image') projectType = '2d-art'
+    else projectType = 'other'
+  }
 
   // Resolve creator
   const creatorObj = raw.creator && typeof raw.creator === 'object' ? raw.creator : {}

@@ -20,7 +20,7 @@ export default function ProjectIdentity({
 
   return (
     <header className="project-detail__identity">
-      <IconButton label="Go back" variant="light" onClick={onBack}>
+      <IconButton label="Go back" variant="soft" onClick={onBack}>
         <ChevronLeftIcon size={20} />
       </IconButton>
 
@@ -43,7 +43,7 @@ export default function ProjectIdentity({
       <span className="project-detail__type-badge">{projectTypeLabel}</span>
 
       {isOwner ? (
-        <IconButton label="Manage project" variant="light" onClick={onManage}>
+        <IconButton label="Manage project" variant="soft" onClick={onManage}>
           <DotsIcon size={20} />
         </IconButton>
       ) : model.creator?.id ? (
