@@ -8,7 +8,7 @@ import { fetchStories, getViewedStoryIds, markStoryViewed } from '../../lib/stor
 import { useMessagingRealtime } from '../../hooks/useMessagingRealtime'
 import GuestBanner from '../../components/layout/GuestBanner'
 import GuestToast from '../../components/layout/GuestToast'
-import { EditIcon, LogoutIcon, SettingsIcon, PlusIcon, TrashIcon } from '../../components/icons/Icons'
+import { TrashIcon } from '../../components/icons/Icons'
 import { Button } from '../../components/ui/Button'
 import { ConfirmDialog } from '../../components/ui/Overlay'
 import { EmptyState, ErrorState } from '../../components/ui/Feedback'
