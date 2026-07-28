@@ -169,8 +169,48 @@
   .portfolio-tabs__label { display: inline; }
 }
 
-.portfolio__panel { min-height: 240px; padding: var(--gf-space-3) var(--gf-space-3) var(--gf-space-5); }
-.portfolio__clear { display: flex; margin: 0 0 var(--gf-space-3) auto; }
+.portfolio__panel { display: flex; flex-direction: column; min-height: 240px; padding: var(--gf-space-3) var(--gf-space-3) var(--gf-space-5); }
+.portfolio__clear, .portfolio__panel .gf-button.portfolio__clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 var(--gf-space-3) auto;
+  height: 34px;
+  min-height: 34px;
+  padding: 0 16px;
+  border-radius: 8px !important;
+  font-size: 0.76rem !important;
+  font-weight: 800 !important;
+  background: color-mix(in srgb, var(--gf-background-text) 12%, var(--gf-bg)) !important;
+  color: var(--gf-background-text) !important;
+  border: 1.5px solid color-mix(in srgb, var(--gf-background-text) 68%, transparent) !important;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 16%) !important;
+  transition: all 0.2s ease !important;
+}
+
+.portfolio__clear:hover, .portfolio__panel .gf-button.portfolio__clear:hover {
+  background: color-mix(in srgb, var(--gf-background-text) 20%, var(--gf-bg)) !important;
+  color: var(--gf-background-text) !important;
+  border-color: var(--gf-background-text) !important;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 22%) !important;
+  transform: translateY(-1px) !important;
+}
+
+:root[data-background-theme="#fefae0"] .portfolio__clear,
+:root[data-background-theme="#fefae0"] .portfolio__panel .gf-button.portfolio__clear {
+  background: #fff4ee !important;
+  color: #c94722 !important;
+  border-color: #ff684f !important;
+  box-shadow: 0 1px 4px rgb(201 71 34 / 12%) !important;
+}
+
+:root[data-background-theme="#fefae0"] .portfolio__clear:hover,
+:root[data-background-theme="#fefae0"] .portfolio__panel .gf-button.portfolio__clear:hover {
+  background: #ffe8dd !important;
+  color: #a93618 !important;
+  border-color: #e94f37 !important;
+  box-shadow: 0 3px 10px rgb(201 71 34 / 20%) !important;
+}
 
 /* Profile portfolios stay as a two-column Pinterest-style masonry wall at
    every canvas width. Each tile keeps its own media aspect ratio. */

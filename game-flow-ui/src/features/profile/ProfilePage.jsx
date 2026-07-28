@@ -8,6 +8,7 @@ import { fetchStories, getViewedStoryIds, markStoryViewed } from '../../lib/stor
 import { useMessagingRealtime } from '../../hooks/useMessagingRealtime'
 import GuestBanner from '../../components/layout/GuestBanner'
 import GuestToast from '../../components/layout/GuestToast'
+import { EditIcon, LogoutIcon, SettingsIcon, PlusIcon, TrashIcon } from '../../components/icons/Icons'
 import { Button } from '../../components/ui/Button'
 import { ConfirmDialog } from '../../components/ui/Overlay'
 import { EmptyState, ErrorState } from '../../components/ui/Feedback'
@@ -243,7 +244,12 @@ export default function ProfilePage() {
       <h2 id="portfolio-heading" className="gf-sr-only">Creator portfolio</h2>
       <PortfolioTabs tabs={tabs} selected={selectedTab.id} onSelect={setActiveTab} panelId="profile-portfolio-panel" />
       <div id="profile-portfolio-panel" role="tabpanel" aria-label={`${selectedTab.label} portfolio`} className="portfolio__panel">
-        {selectedTab.id === 'liked' && liked.length ? <Button className="portfolio__clear" variant="secondary" onClick={clearLiked}>Clear liked items</Button> : null}
+        {selectedTab.id === 'liked' && liked.length ? (
+          <Button className="portfolio__clear" variant="secondary" onClick={clearLiked}>
+            <TrashIcon size={14} />
+            <span>Clear liked items</span>
+          </Button>
+        ) : null}
         {status === 'error' ? <ErrorState title="Portfolio unavailable" description={loadError} onRetry={retryContent} /> : null}
         {status === 'ready' && selectedTab.projects.length === 0 ? <EmptyState title={emptyCopy[0]} description={isGuest ? 'Sign in to manage your creator portfolio.' : emptyCopy[1]} actionLabel={!isGuest && selectedTab.id === 'projects' ? 'Publish first project' : undefined} onAction={!isGuest && selectedTab.id === 'projects' ? () => navigate('/app/upload') : undefined} /> : null}
         {status !== 'error' && selectedTab.projects.length ? <ProjectGrid projects={selectedTab.projects} loading={status === 'loading'} onOpenProject={(project) => navigate(project.routeTarget)} actionsPlacement="below" renderActions={(model) => <DiscoveryProjectActions project={model} onComment={() => navigate(model.routeTarget)} />} /> : status === 'loading' ? <ProjectGrid projects={[]} loading /> : null}
