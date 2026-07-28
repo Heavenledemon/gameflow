@@ -31,6 +31,10 @@
   --gf-media-fallback: #1a1826;
   --gf-skeleton-base: #e5e6ed;
   --gf-skeleton-highlight: #f7f7fa;
+  --gf-glass-surface: rgb(255 255 255 / 58%);
+  --gf-glass-surface-strong: rgb(255 255 255 / 78%);
+  --gf-glass-border: rgb(255 255 255 / 72%);
+  --gf-glass-highlight: rgb(255 255 255 / 62%);
 
   /* Spacing — legacy scale (consumed by primitives.css; do not change values) */
   --gf-space-1: 4px;
