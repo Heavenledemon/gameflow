@@ -137,6 +137,7 @@ export default function FeedPage() {
   const activeIndexRef = useRef(0)
   const localIdRef = useRef(0)
   const pendingEngagementRef = useRef(new Set())
+  const toggleQueuesRef = useRef(new Map())
 
   const nextLocalId = () => {
     localIdRef.current += 1
@@ -218,46 +219,64 @@ export default function FeedPage() {
     }))
   }, [updateProject])
 
-  const mutateProjectToggle = async (project, action, requestFn) => {
+  const mutateProjectToggle = (project, action, requestFn) => {
     const target = getProjectKey(project)
-    const previous = getEngagement(project)
     updateProject(target, (item) => applyLocalEngagement(item, action))
 
-    try {
-      const result = await requestFn()
-      syncProjectEngagement(project.contentId, result.engagement)
-    } catch (error) {
-      // A Vercel request can time out after Atlas has already committed the
-      // mutation. Reconcile with the server before rolling back optimistic UI.
+    const mutationKey = `project:${project.contentId}:${action}`
+    const existing = toggleQueuesRef.current.get(mutationKey)
+    const queue = existing || { queued: 0, running: false }
+    queue.queued += 1
+    toggleQueuesRef.current.set(mutationKey, queue)
+
+    if (queue.running) return queue.promise
+
+    queue.running = true
+    queue.promise = (async () => {
       try {
-        const current = await fetchPostEngagement(token, project.contentId)
-        if (current?.engagement) {
-          syncProjectEngagement(project.contentId, current.engagement)
-          return
+        while (queue.queued > 0) {
+          queue.queued -= 1
+          const result = await requestFn()
+          // An intermediate response represents an older click. Applying it
+          // would temporarily overwrite newer optimistic state.
+          if (queue.queued === 0 && result?.engagement) {
+            syncProjectEngagement(project.contentId, result.engagement)
+          }
         }
-      } catch {
-        // The original error is more useful when reconciliation also fails.
+      } catch (error) {
+        queue.queued = 0
+        // The mutation may have committed before a network timeout. Always
+        // reconcile instead of reversing an unknown number of queued toggles.
+        try {
+          const current = await fetchPostEngagement(token, project.contentId)
+          if (current?.engagement) syncProjectEngagement(project.contentId, current.engagement)
+        } catch {
+          // Keep the latest optimistic state when reconciliation is unavailable.
+        }
+        throw error
+      } finally {
+        queue.running = false
+        toggleQueuesRef.current.delete(mutationKey)
       }
-      updateProject(target, (item) => ({ ...item, engagement: previous }))
-      throw error
-    }
+    })()
+
+    return queue.promise
   }
 
   const mutateEngagement = async (project, action, payload = {}) => {
     const mutationKey = `${project.contentType}:${project.contentId}:${action}`
+
+    if (project.contentType === 'project' && action === 'react') {
+      return mutateProjectToggle(project, action, () => togglePostLike(token, project.contentId))
+    }
+    if (project.contentType === 'project' && action === 'save') {
+      return mutateProjectToggle(project, action, () => togglePostSave(token, project.contentId))
+    }
+
     if (pendingEngagementRef.current.has(mutationKey)) return null
     pendingEngagementRef.current.add(mutationKey)
 
     try {
-      if (project.contentType === 'project' && action === 'react') {
-        await mutateProjectToggle(project, action, () => togglePostLike(token, project.contentId))
-        return null
-      }
-      if (project.contentType === 'project' && action === 'save') {
-        await mutateProjectToggle(project, action, () => togglePostSave(token, project.contentId))
-        return null
-      }
-
       const result = await updateContentEngagement(token, project.contentType, project.contentId, {
         action,
         ...payload,
