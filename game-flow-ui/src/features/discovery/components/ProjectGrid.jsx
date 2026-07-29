@@ -31,12 +31,23 @@ export default function ProjectGrid({
   actionsPlacement = 'overlay',
 }) {
   const projectList = items || projects || []
-  const [previewProject, setPreviewProject] = useState(null)
+  const [preview, setPreview] = useState(null)
   const [showLongPressHint, setShowLongPressHint] = useState(() => {
     if (typeof window === 'undefined') return false
     try { return !window.localStorage.getItem(LONG_PRESS_HINT_KEY) } catch { return true }
   })
-  const closePreview = useCallback(() => setPreviewProject(null), [])
+  const openPreview = useCallback((project, originRect) => {
+    setPreview({
+      project,
+      originRect: originRect ? {
+        left: originRect.left,
+        top: originRect.top,
+        width: originRect.width,
+        height: originRect.height,
+      } : null,
+    })
+  }, [])
+  const closePreview = useCallback(() => setPreview(null), [])
   const dismissLongPressHint = useCallback(() => {
     setShowLongPressHint(false)
     try { window.localStorage.setItem(LONG_PRESS_HINT_KEY, 'true') } catch { /* Storage may be unavailable. */ }
@@ -58,8 +69,8 @@ export default function ProjectGrid({
             key={`${project.contentType || 'project'}:${project.contentId ?? project.id}`}
             project={project}
             onOpen={onOpenProject ? () => onOpenProject(project) : undefined}
-            onPreview={setPreviewProject}
-            onLongPress={setPreviewProject}
+            onPreview={openPreview}
+            onLongPress={openPreview}
             showLongPressHint={showLongPressHint && index === 0}
             onLongPressHintDismiss={dismissLongPressHint}
             actions={renderActions?.(project) || null}
@@ -69,12 +80,13 @@ export default function ProjectGrid({
           />
         ))}
       </div>
-      {previewProject ? (
+      {preview ? (
         <ProjectPreviewModal
-          project={previewProject}
-          actions={renderActions?.(previewProject) || null}
+          project={preview.project}
+          originRect={preview.originRect}
+          actions={renderActions?.(preview.project) || null}
           onClose={closePreview}
-          onOpen={onOpenProject ? () => { closePreview(); onOpenProject(previewProject) } : undefined}
+          onOpen={onOpenProject ? () => { closePreview(); onOpenProject(preview.project) } : undefined}
         />
       ) : null}
     </div>

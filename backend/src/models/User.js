@@ -130,6 +130,77 @@ const userSchema = new mongoose.Schema(
       default: '',
       trim: true,
     },
+    companionType: {
+      type: String,
+      enum: ['none', 'cosmic', 'mood', 'white-cat', 'pixel-cat', 'aurora'],
+      default: 'cosmic',
+    },
+    companionMotion: {
+      type: String,
+      enum: ['off', 'subtle', 'playful'],
+      default: 'subtle',
+    },
+    companionEmotion: {
+      type: String,
+      enum: ['off', 'natural', 'expressive'],
+      default: 'natural',
+    },
+    companionBubble: {
+      type: String,
+      enum: ['off', 'greeting', 'building', 'work', 'custom'],
+      default: 'work',
+    },
+    companionBubbleText: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 35,
+    },
+    companionBubbleBehavior: {
+      type: String,
+      enum: ['once', 'tap', 'always'],
+      default: 'once',
+    },
+    profileDisplayType: {
+      type: String,
+      enum: ['none', 'companion', 'design'],
+      default: 'companion',
+    },
+    profileDesignType: {
+      type: String,
+      enum: ['bauhaus', 'waves', 'doodles', 'botanicals', 'constellation', 'orbit', 'aurora'],
+      default: 'bauhaus',
+    },
+    profileDesignPalette: {
+      type: String,
+      enum: ['midnight', 'coral', 'electric', 'sakura', 'botanical', 'monochrome', 'aurora', 'solar'],
+      default: 'midnight',
+    },
+    profileDesignDensity: {
+      type: String,
+      enum: ['minimal', 'balanced', 'full'],
+      default: 'balanced',
+    },
+    profileDesignLineStyle: {
+      type: String,
+      enum: ['clean', 'hand-drawn'],
+      default: 'clean',
+    },
+    profileDesignMotion: {
+      type: String,
+      enum: ['off', 'subtle', 'playful', 'calm', 'dynamic'],
+      default: 'subtle',
+    },
+    profileDesignInteraction: {
+      type: String,
+      enum: ['none', 'colors', 'rearrange', 'reveal', 'touch'],
+      default: 'rearrange',
+    },
+    profileDesignDoodleTheme: {
+      type: String,
+      enum: ['Developer', 'Gamer', 'Artist', 'Music', 'General'],
+      default: 'Developer',
+    },
   },
   {
     timestamps: true,

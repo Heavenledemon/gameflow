@@ -5,11 +5,18 @@ import { Dialog } from '../../../components/ui/Overlay'
 import { Avatar } from '../../../components/ui/Surface'
 import { safeExternalUrl } from '../profileAdapters'
 import ThemeCustomizer from './ThemeCustomizer'
+import CompanionCustomizer from './CompanionCustomizer'
+import DesignCustomizer from './DesignCustomizer'
 
-const FIELDS = ['email', 'username', 'name', 'headline', 'location', 'bio', 'description', 'creatorType', 'website', 'github', 'itchio', 'behance', 'artstation', 'instagram', 'linkedin', 'skills', 'avatar', 'banner']
+const FIELDS = ['email', 'username', 'name', 'headline', 'location', 'bio', 'description', 'creatorType', 'website', 'github', 'itchio', 'behance', 'artstation', 'instagram', 'linkedin', 'skills', 'avatar', 'banner', 'companionType', 'companionMotion', 'companionEmotion', 'companionBubble', 'companionBubbleText', 'companionBubbleBehavior', 'profileDisplayType', 'profileDesignType', 'profileDesignPalette', 'profileDesignDensity', 'profileDesignLineStyle', 'profileDesignMotion', 'profileDesignInteraction', 'profileDesignDoodleTheme']
 
 function initialValues(user) {
-  return Object.fromEntries(FIELDS.map((field) => [field, field === 'skills' ? (user?.skills || []).join(', ') : user?.[field] || (field === 'creatorType' ? 'Game Developer' : '')]))
+  const defaults = { creatorType: 'Game Developer', companionType: 'cosmic', companionMotion: 'subtle', companionEmotion: 'natural', companionBubble: 'work', companionBubbleBehavior: 'once', profileDisplayType: 'companion', profileDesignType: 'bauhaus', profileDesignPalette: 'midnight', profileDesignDensity: 'balanced', profileDesignLineStyle: 'clean', profileDesignMotion: 'subtle', profileDesignInteraction: 'rearrange', profileDesignDoodleTheme: 'Developer' }
+  const values = Object.fromEntries(FIELDS.map((field) => [field, field === 'skills' ? (user?.skills || []).join(', ') : user?.[field] || defaults[field] || '']))
+  if (!['bauhaus', 'waves', 'doodles', 'botanicals'].includes(values.profileDesignType)) values.profileDesignType = 'bauhaus'
+  if (!['subtle', 'playful', 'off'].includes(values.profileDesignMotion)) values.profileDesignMotion = 'subtle'
+  if (!['none', 'colors', 'rearrange', 'reveal'].includes(values.profileDesignInteraction)) values.profileDesignInteraction = 'rearrange'
+  return values
 }
 
 function imageToDataUrl(event, onValue, onError) {
@@ -64,6 +71,9 @@ export default function EditProfileForm({ open, user, saving, onClose, onSave })
         <Field label="Instagram"><Input value={values.instagram} onChange={update('instagram')} /></Field>
         <Field label="LinkedIn"><Input value={values.linkedin} onChange={update('linkedin')} /></Field>
       </div>
+      <fieldset className="profile-display-picker"><legend>Profile display</legend><p>Choose what fills the creative space on your profile.</p><div>{[['none', 'None'], ['companion', 'Companion'], ['design', '2D design']].map(([value, label]) => <button key={value} type="button" className={values.profileDisplayType === value ? 'is-selected' : ''} onClick={() => setValues((current) => ({ ...current, profileDisplayType: value }))}>{label}</button>)}</div></fieldset>
+      {values.profileDisplayType === 'companion' ? <CompanionCustomizer type={values.companionType} motion={values.companionMotion} emotion={values.companionEmotion} bubble={values.companionBubble} bubbleText={values.companionBubbleText} bubbleBehavior={values.companionBubbleBehavior} onTypeChange={(companionType) => setValues((current) => ({ ...current, companionType }))} onMotionChange={(companionMotion) => setValues((current) => ({ ...current, companionMotion }))} onEmotionChange={(companionEmotion) => setValues((current) => ({ ...current, companionEmotion }))} onBubbleChange={(companionBubble) => setValues((current) => ({ ...current, companionBubble }))} onBubbleTextChange={(companionBubbleText) => setValues((current) => ({ ...current, companionBubbleText }))} onBubbleBehaviorChange={(companionBubbleBehavior) => setValues((current) => ({ ...current, companionBubbleBehavior }))} /> : null}
+      {values.profileDisplayType === 'design' ? <DesignCustomizer type={values.profileDesignType} palette={values.profileDesignPalette} density={values.profileDesignDensity} lineStyle={values.profileDesignLineStyle} motion={values.profileDesignMotion} interaction={values.profileDesignInteraction} doodleTheme={values.profileDesignDoodleTheme} status={values.companionBubble} statusText={values.companionBubbleText} statusBehavior={values.companionBubbleBehavior} onChange={(field, value) => setValues((current) => ({ ...current, [field]: value }))}/> : null}
       <ThemeCustomizer />
       <div className="profile-form__actions"><Button variant="secondary" disabled={saving} onClick={onClose}>Cancel</Button><Button type="submit" loading={saving}>Save profile</Button></div>
     </form>

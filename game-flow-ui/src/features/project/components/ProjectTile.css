@@ -24,21 +24,34 @@
 .project-tile__video { width: 100%; height: 100%; display: block; object-fit: cover; pointer-events: none; }
 
 .project-tile--masonry {
-  overflow: visible;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
+  --project-tile-glass-radius: 16px;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: var(--project-tile-glass-radius);
+  background:
+    linear-gradient(145deg, rgb(255 255 255 / 13%), rgb(255 255 255 / 4%)),
+    rgb(8 32 54 / 42%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 18%),
+    0 10px 26px rgb(0 0 0 / 16%);
+  backdrop-filter: blur(14px) saturate(135%);
+  -webkit-backdrop-filter: blur(14px) saturate(135%);
 }
 
 .project-tile--masonry .project-tile__media {
   overflow: hidden;
-  border-radius: 14px;
+  border-radius: calc(var(--project-tile-glass-radius) - 1px) calc(var(--project-tile-glass-radius) - 1px) 0 0;
+}
+
+.project-tile--masonry .project-tile__media .gf-media-frame {
+  border-radius: calc(var(--project-tile-glass-radius) - 1px) calc(var(--project-tile-glass-radius) - 1px) 0 0;
 }
 
 .project-tile--masonry .project-tile__copy {
   gap: 2px;
-  padding: 7px 28px 5px 4px;
+  padding: 9px 28px 7px 10px;
+  background: linear-gradient(180deg, rgb(255 255 255 / 4%), transparent);
 }
 
 .project-tile--masonry .project-tile__title { font-size: 12px; }
@@ -47,11 +60,16 @@
 .project-tile:has(.project-tile__actions) .project-tile__more { display: none; }
 .project-tile__actions { z-index: 3; }
 .project-tile__actions--below { position: relative; padding: 0 2px 7px; }
+.project-tile--masonry .project-tile__actions--below { padding: 0 9px 8px; }
 .project-tile__actions--overlay { position: absolute; z-index: 4; top: 8px; right: 8px; }
 .project-tile__actions--overlay .project-management > .gf-icon-button { width: 34px; height: 34px; color: #fff; background: rgb(20 20 24 / 64%); box-shadow: 0 3px 12px rgb(0 0 0 / 30%); backdrop-filter: blur(8px); }
 .project-tile__actions--overlay .project-management__menu { position: absolute; top: 40px; right: 0; width: 156px; display: grid; grid-template-columns: 1fr; gap: 2px; padding: 5px; border: 1px solid var(--gf-border); border-radius: 10px; background: var(--gf-surface-raised); box-shadow: var(--gf-shadow-lg); }
 .project-tile__actions--overlay .project-management__menu button { min-height: 38px; border: 0; text-align: left; }
 .project-tile__engagement { display: flex; align-items: center; justify-content: space-between; gap: 2px; border-top: 1px solid var(--gf-border-subtle); padding-top: 5px; }
+.project-tile--masonry .project-tile__engagement {
+  border-top-color: rgb(255 255 255 / 24%);
+  padding-top: 6px;
+}
 .project-tile__engagement button { display: inline-flex; min-width: 27px; min-height: 30px; align-items: center; justify-content: center; gap: 2px; padding: 3px; border: 0; color: var(--gf-text); background: transparent; filter: none; backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none; }
 .project-tile__engagement button span { font-size: 10px; font-weight: 700; }
 .project-tile__engagement button.is-active { color: #ff4d61; }

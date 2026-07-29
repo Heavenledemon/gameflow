@@ -48,7 +48,7 @@ export const searchUsers = asyncHandler(async (request, response) => {
 export const getPublicUser = asyncHandler(async (request, response) => {
   const identity = String(request.params.identity || '').trim().toLowerCase()
   const query = mongoose.isValidObjectId(identity) ? { $or: [{ _id: identity }, { username: identity }] } : { username: identity }
-  const user = await User.findOne(query).select('username name avatar banner headline creatorType isVerified bio description location website skills github itchio behance artstation instagram linkedin').lean()
+  const user = await User.findOne(query).select('username name avatar banner headline creatorType isVerified bio description location website skills github itchio behance artstation instagram linkedin companionType companionMotion companionEmotion companionBubble companionBubbleText companionBubbleBehavior profileDisplayType profileDesignType profileDesignPalette profileDesignDensity profileDesignLineStyle profileDesignMotion profileDesignInteraction profileDesignDoodleTheme').lean()
   if (!user) throw createError(404, 'Creator not found.')
   const [followersCount, followingCount, viewerIsFollowing] = await Promise.all([
     Follow.countDocuments({ followingId: user._id }),
@@ -57,7 +57,7 @@ export const getPublicUser = asyncHandler(async (request, response) => {
       ? Follow.exists({ followerId: request.user._id, followingId: user._id })
       : null,
   ])
-  response.json({ user: { ...publicUser(user, ''), banner: user.banner || '', creatorType: user.creatorType || '', isVerified: Boolean(user.isVerified), bio: user.bio || '', description: user.description || '', location: user.location || '', website: user.website || '', skills: user.skills || [], github: user.github || '', itchio: user.itchio || '', behance: user.behance || '', artstation: user.artstation || '', instagram: user.instagram || '', linkedin: user.linkedin || '', followersCount, followingCount, viewerIsFollowing: Boolean(viewerIsFollowing) } })
+  response.json({ user: { ...publicUser(user, ''), banner: user.banner || '', creatorType: user.creatorType || '', isVerified: Boolean(user.isVerified), bio: user.bio || '', description: user.description || '', location: user.location || '', website: user.website || '', skills: user.skills || [], github: user.github || '', itchio: user.itchio || '', behance: user.behance || '', artstation: user.artstation || '', instagram: user.instagram || '', linkedin: user.linkedin || '', companionType: user.companionType || 'cosmic', companionMotion: user.companionMotion || 'subtle', companionEmotion: user.companionEmotion || 'natural', companionBubble: user.companionBubble || 'work', companionBubbleText: user.companionBubbleText || '', companionBubbleBehavior: user.companionBubbleBehavior || 'once', profileDisplayType: user.profileDisplayType || 'companion', profileDesignType: user.profileDesignType || 'bauhaus', profileDesignPalette: user.profileDesignPalette || 'midnight', profileDesignDensity: user.profileDesignDensity || 'balanced', profileDesignLineStyle: user.profileDesignLineStyle || 'clean', profileDesignMotion: user.profileDesignMotion || 'subtle', profileDesignInteraction: user.profileDesignInteraction || 'rearrange', profileDesignDoodleTheme: user.profileDesignDoodleTheme || 'Developer', followersCount, followingCount, viewerIsFollowing: Boolean(viewerIsFollowing) } })
 })
 
 export const listUserFollows = asyncHandler(async (request, response) => {

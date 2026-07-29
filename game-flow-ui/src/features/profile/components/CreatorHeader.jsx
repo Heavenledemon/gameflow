@@ -15,6 +15,8 @@ import {
 } from '../../../components/icons/Icons'
 import CreatorStats from './CreatorStats'
 import { safeExternalUrl } from '../profileAdapters'
+import ProfileCompanion from './ProfileCompanion'
+import AbstractProfileDesign from './AbstractProfileDesign'
 
 const SOCIAL_ICONS = {
   github: GithubIcon,
@@ -123,7 +125,14 @@ export default function CreatorHeader({
         </div>
 
         {/* Creator Bio & Info Section */}
-        <div className="creator-header__info">
+        <div className={`creator-header__info${creator.profileDisplayType === 'none' ? ' creator-header__info--no-display' : ''}`}>
+          {creator.profileDisplayType !== 'none' ? <div className={`creator-header__companion-slot${creator.profileDisplayType === 'design' ? ' creator-header__companion-slot--design' : ''}`}>
+            {creator.profileDisplayType === 'design' ? (
+              <AbstractProfileDesign key={`${creator.profileDesignType}-${creator.profileDesignPalette}-${creator.companionBubble}-${creator.companionBubbleText}`} type={creator.profileDesignType} palette={creator.profileDesignPalette} density={creator.profileDesignDensity} lineStyle={creator.profileDesignLineStyle} motion={creator.profileDesignMotion} interaction={creator.profileDesignInteraction} doodleTheme={creator.profileDesignDoodleTheme} status={creator.companionBubble} statusText={creator.companionBubbleText} statusBehavior={creator.companionBubbleBehavior}/>
+            ) : (
+              <ProfileCompanion key={`${creator.companionType}-${creator.companionBubble}-${creator.companionBubbleText}-${creator.companionBubbleBehavior}`} type={creator.companionType} motion={creator.companionMotion} emotion={creator.companionEmotion} bubble={creator.companionBubble} bubbleText={creator.companionBubbleText} bubbleBehavior={creator.companionBubbleBehavior}/>
+            )}
+          </div> : null}
           {creator.username ? (
             <p className="creator-header__username-text">
               @{creator.username}
