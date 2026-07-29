@@ -191,6 +191,12 @@ export async function fetchPostComments(token, postId, { cursor = '', limit = 30
   return request(`/posts/${encodeURIComponent(postId)}/comments?${params.toString()}`, { headers: authHeaders(token) })
 }
 
+export async function fetchContentComments(token, contentType, contentId) {
+  return request(`/content/${encodeURIComponent(contentType)}/${encodeURIComponent(contentId)}/comments`, {
+    headers: authHeaders(token),
+  })
+}
+
 export async function togglePostLike(token, postId) {
   return requestMutation(`/posts/${encodeURIComponent(postId)}/like`, {
     method: 'POST',

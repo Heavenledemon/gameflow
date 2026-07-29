@@ -84,3 +84,99 @@
 :root[data-color-scheme='dark'] .publish-card > header,
 :root[data-color-scheme='dark'] .publish-stepper,
 :root[data-color-scheme='dark'] .workspace-asset__actions { border-color: var(--gf-border); }
+
+/* Dark-blue profile palette: replace the default coral/orange treatment with
+   a readable cyan surface and cyan foreground/border across shared controls. */
+:root[data-background-theme="#003566"] {
+  --gf-brand: #00b4d8;
+  --gf-brand-end: #00b4d8;
+  --gf-brand-coral: #00b4d8;
+  --gf-brand-coral-light: #48cae4;
+  --gf-brand-coral-dark: #0096c7;
+  --gf-brand-orange: #00b4d8;
+  --gf-brand-gradient: linear-gradient(135deg, #caf0f8, #caf0f8);
+  --gf-border-brand: #00b4d8;
+  --gf-text-on-brand: #0096c7;
+  --grad-primary: linear-gradient(135deg, #caf0f8, #caf0f8);
+}
+
+:root[data-background-theme="#003566"] :is(
+  .gf-button--primary,
+  .publish-actions .gf-button.gradient-brand,
+  .publish-actions .gf-button:not(.gf-button--secondary),
+  .story-upload__share,
+  .project-preview__open
+) {
+  color: #0096c7 !important;
+  border: 1.5px solid #00b4d8 !important;
+  background: #caf0f8 !important;
+  box-shadow: none !important;
+}
+
+:root[data-background-theme="#003566"] :is(
+  .gf-button--primary,
+  .publish-actions .gf-button.gradient-brand,
+  .publish-actions .gf-button:not(.gf-button--secondary),
+  .story-upload__share,
+  .project-preview__open
+):hover {
+  color: #0077b6 !important;
+  border-color: #0096c7 !important;
+  background: #caf0f8 !important;
+}
+
+:root[data-background-theme="#003566"] .message--mine .message__bubble {
+  color: #0096c7 !important;
+  border: 1px solid #00b4d8 !important;
+  background: #caf0f8 !important;
+}
+
+:root[data-background-theme="#003566"] :is(
+  .publish-step--active .publish-step__marker,
+  .publish-type-option--selected .publish-type-option__check,
+  .conversation-row__unread-badge
+) {
+  color: #0096c7 !important;
+  border-color: #00b4d8 !important;
+  background: #caf0f8 !important;
+  box-shadow: none !important;
+}
+
+/* Feature styles load in separate chunks and some use high-specificity
+   !important coral declarations. This selector intentionally outranks them. */
+html:root[data-background-theme="#003566"] body .gf-button.gf-button--primary,
+html:root[data-background-theme="#003566"] body button.gf-button.gf-button--primary {
+  color: #0096c7 !important;
+  border: 1.5px solid #00b4d8 !important;
+  background: #caf0f8 !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+html:root[data-background-theme="#003566"] body .gf-button.gf-button--primary:hover,
+html:root[data-background-theme="#003566"] body button.gf-button.gf-button--primary:hover {
+  color: #0077b6 !important;
+  border-color: #0096c7 !important;
+  background: #caf0f8 !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+/* Usernames and @handles use one consistent accent on the dark-blue UI. */
+:root[data-background-theme="#003566"] :is(
+  .creator-header__handle-title,
+  .creator-header__username-text,
+  .instagram-story__username,
+  .story-viewer__header strong,
+  .discovery-creators small,
+  .conversation-row__context,
+  .project-detail__creator-copy > span,
+  .project-tile__creator-name,
+  .comments-sheet__comment-body p strong,
+  .likes-sheet__person small,
+  .follow-list__identity small,
+  .workspace-team article span,
+  .project-team__identity span
+) {
+  color: #00b4d8 !important;
+}

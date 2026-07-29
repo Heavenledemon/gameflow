@@ -252,7 +252,7 @@ export default function ProfilePage() {
         ) : null}
         {status === 'error' ? <ErrorState title="Portfolio unavailable" description={loadError} onRetry={retryContent} /> : null}
         {status === 'ready' && selectedTab.projects.length === 0 ? <EmptyState title={emptyCopy[0]} description={isGuest ? 'Sign in to manage your creator portfolio.' : emptyCopy[1]} actionLabel={!isGuest && selectedTab.id === 'projects' ? 'Publish first project' : undefined} onAction={!isGuest && selectedTab.id === 'projects' ? () => navigate('/app/upload') : undefined} /> : null}
-        {status !== 'error' && selectedTab.projects.length ? <ProjectGrid projects={selectedTab.projects} loading={status === 'loading'} onOpenProject={(project) => navigate(project.routeTarget)} actionsPlacement="below" renderActions={(model) => <DiscoveryProjectActions project={model} onComment={() => navigate(model.routeTarget)} />} /> : status === 'loading' ? <ProjectGrid projects={[]} loading /> : null}
+        {status !== 'error' && selectedTab.projects.length ? <ProjectGrid projects={selectedTab.projects} loading={status === 'loading'} onOpenProject={(project) => navigate(project.routeTarget)} actionsPlacement="below" renderActions={(model) => <DiscoveryProjectActions project={model} />} /> : status === 'loading' ? <ProjectGrid projects={[]} loading /> : null}
       </div>
     </section>
     {guestAction ? <GuestToast message={`Sign in to ${guestAction}.`} onSignIn={() => navigate('/signin')} onDismiss={() => setGuestAction('')} /> : null}

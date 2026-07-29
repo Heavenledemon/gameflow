@@ -187,6 +187,17 @@ export function toProjectCardModel(rawInput, options = {}) {
     else if (mediaKind === 'image') projectType = '2d-art'
     else projectType = 'other'
   }
+  // The visual project type (for example, a playable project shown with a
+  // GAME badge) is not necessarily the backend collection that owns it.
+  // Preserve the API-provided content type for engagement and comments.
+  const declaredContentType = String(firstValue(raw.contentType, options.contentType, '')).trim().toLowerCase()
+  const contentType = ['project', 'game', 'asset'].includes(declaredContentType)
+    ? declaredContentType
+    : projectType === 'game'
+      ? 'game'
+      : ['asset', '3d-asset'].includes(projectType)
+        ? 'asset'
+        : 'project'
 
   // Resolve creator
   const creatorObj = raw.creator && typeof raw.creator === 'object' ? raw.creator : {}
@@ -255,7 +266,7 @@ export function toProjectCardModel(rawInput, options = {}) {
 
     // Legacy fields for backward compatibility with existing features
     projectId,
-    contentType: projectType === 'game' ? 'game' : ['asset', '3d-asset'].includes(projectType) ? 'asset' : 'project',
+    contentType,
     routeTarget: canonicalRoute,
     media: {
       kind: mediaKind,

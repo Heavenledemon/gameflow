@@ -30,6 +30,11 @@
   transform: translateY(-1px) !important;
 }
 
+.workspace-header .workspace-chat-btn span {
+  color: inherit;
+  font-size: inherit;
+}
+
 :root[data-background-theme="#fefae0"] .workspace-chat-btn,
 :root[data-background-theme="#fefae0"] .workspace-header .gf-button.workspace-chat-btn {
   background: #fff4ee !important;
@@ -44,6 +49,24 @@
   color: #a93618 !important;
   border-color: #e94f37 !important;
   box-shadow: 0 3px 10px rgb(201 71 34 / 20%) !important;
+}
+
+:root[data-background-theme="#003566"] .workspace-chat-btn,
+:root[data-background-theme="#003566"] .workspace-header .gf-button.workspace-chat-btn {
+  color: #005f73 !important;
+  border-color: #00b4d8 !important;
+  background: #caf0f8 !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+:root[data-background-theme="#003566"] .workspace-chat-btn:hover,
+:root[data-background-theme="#003566"] .workspace-header .gf-button.workspace-chat-btn:hover {
+  color: #004e64 !important;
+  border-color: #0096c7 !important;
+  background: #caf0f8 !important;
+  background-image: none !important;
+  box-shadow: none !important;
 }
 .workspace-tabs {
   position: relative;

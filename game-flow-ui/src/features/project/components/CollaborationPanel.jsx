@@ -14,6 +14,8 @@ export default function CollaborationPanel({
   onOpenRequest,
 }) {
   const teamMembers = members || []
+  const visibleTeamMembers = teamMembers.slice(0, 5)
+  const hiddenTeamMemberCount = Math.max(teamMembers.length - visibleTeamMembers.length, 0)
 
   return (
     <section className="project-panel project-collaboration-panel" aria-labelledby="collaboration-title">
@@ -27,7 +29,7 @@ export default function CollaborationPanel({
         <div className="project-collaboration-panel__team">
           <span className="project-collaboration-panel__label">Team Members</span>
           <div className="project-collaboration-panel__avatars">
-            {teamMembers.map((member) => (
+            {visibleTeamMembers.map((member) => (
               <Avatar
                 key={member.userId || member.username}
                 src={member.avatar}
@@ -36,6 +38,15 @@ export default function CollaborationPanel({
                 size="sm"
               />
             ))}
+            {hiddenTeamMemberCount > 0 ? (
+              <span
+                className="project-collaboration-panel__avatar-overflow"
+                aria-label={`${hiddenTeamMemberCount} more team ${hiddenTeamMemberCount === 1 ? 'member' : 'members'}`}
+                title={`${hiddenTeamMemberCount} more team ${hiddenTeamMemberCount === 1 ? 'member' : 'members'}`}
+              >
+                +{hiddenTeamMemberCount}
+              </span>
+            ) : null}
           </div>
         </div>
       )}

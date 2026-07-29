@@ -66,6 +66,16 @@ export default function SegmentedControl({
       aria-label={label}
       aria-orientation={isTabs ? 'horizontal' : undefined}
     >
+      {selectedIndex >= 0 && options.length > 0 ? (
+        <div
+          className="gf-segmented-control__indicator"
+          style={{
+            width: `calc((100% - 8px) / ${options.length})`,
+            transform: `translateX(${selectedIndex * 100}%)`,
+          }}
+          aria-hidden="true"
+        />
+      ) : null}
       {options.map((opt, index) => {
         const isSelected = activeValue === opt.value
         const tabId = `${generatedId}-tab-${index}`

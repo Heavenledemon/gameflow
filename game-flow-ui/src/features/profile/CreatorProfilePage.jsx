@@ -215,7 +215,7 @@ export default function CreatorProfilePage() {
       <PortfolioTabs tabs={tabs} selected={selectedTab.id} onSelect={setActiveTab} panelId="creator-portfolio-panel" />
       <div id="creator-portfolio-panel" role="tabpanel" aria-label={`${selectedTab.label} portfolio`} className="portfolio__panel">
         {status === 'loading' ? <ProjectGrid projects={[]} loading /> : null}
-        {status === 'ready' && selectedTab.projects.length ? <ProjectGrid projects={selectedTab.projects} onOpenProject={(project) => navigate(project.routeTarget)} actionsPlacement="below" renderActions={(project) => <DiscoveryProjectActions project={project} onComment={() => navigate(project.routeTarget)} />} /> : null}
+        {status === 'ready' && selectedTab.projects.length ? <ProjectGrid projects={selectedTab.projects} onOpenProject={(project) => navigate(project.routeTarget)} actionsPlacement="below" renderActions={(project) => <DiscoveryProjectActions project={project} />} /> : null}
         {status === 'ready' && !selectedTab.projects.length ? <EmptyState title="No public projects found" description="This route has no public portfolio items in the current content collection." /> : null}
       </div>
     </section>

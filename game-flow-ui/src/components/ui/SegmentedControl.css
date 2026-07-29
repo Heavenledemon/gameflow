@@ -1,7 +1,7 @@
 .gf-segmented-control {
+  position: relative;
   display: flex;
   width: 100%;
-  gap: var(--gf-space-1);
   padding: 3px;
   border: 1px solid var(--gf-border-subtle);
   border-radius: var(--gf-radius-pill);
@@ -9,7 +9,22 @@
   box-sizing: border-box;
 }
 
+.gf-segmented-control__indicator {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 4px;
+  border-radius: var(--gf-radius-pill);
+  background-color: var(--gf-surface-base);
+  box-shadow: var(--gf-shadow-xs);
+  transition: transform 0.35s cubic-bezier(0.34, 1.3, 0.64, 1), width 0.35s cubic-bezier(0.34, 1.3, 0.64, 1);
+  pointer-events: none;
+  z-index: 1;
+}
+
 .gf-segmented-control__item {
+  position: relative;
+  z-index: 2;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -26,19 +41,16 @@
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   outline: none;
-  transition: background-color 200ms var(--gf-ease-standard),
-              box-shadow 200ms var(--gf-ease-standard),
-              color 200ms var(--gf-ease-standard);
+  white-space: nowrap;
+  transition: color 200ms var(--gf-ease-standard);
 }
 
 /* Active Segment State */
 .gf-segmented-control__item--active,
 .gf-segmented-control__item[aria-pressed='true'],
 .gf-segmented-control__item[aria-selected='true'] {
-  background-color: var(--gf-surface-base) !important;
-  color: var(--gf-brand-coral) !important;
+  color: var(--gf-brand-coral);
   font-weight: var(--gf-weight-semibold);
-  box-shadow: var(--gf-shadow-xs);
 }
 
 /* Focus outline */

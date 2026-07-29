@@ -11,6 +11,7 @@
   opacity: 0;
   transition: opacity var(--gf-duration-normal) var(--gf-ease-standard);
   box-sizing: border-box;
+  isolation: isolate;
 }
 
 .gf-sheet-backdrop--active {
@@ -32,6 +33,23 @@
   box-sizing: border-box;
   transform: translateY(100%);
   transition: transform var(--gf-duration-normal) var(--gf-ease-exit);
+  color: var(--gf-text-primary);
+}
+
+/* Sheets render above the app shell and use an opaque content surface so
+   navigation and project controls never bleed through the panel. */
+.gf-sheet-panel,
+.gf-sheet__header,
+.gf-sheet__content {
+  background-color: var(--gf-surface-raised);
+}
+
+@media (max-width: 767px) {
+  .gf-sheet-backdrop { z-index: var(--gf-z-modal); }
+  .gf-sheet-panel {
+    width: 100%;
+    max-height: calc(100dvh - max(12px, var(--gf-safe-area-top)));
+  }
 }
 
 .gf-sheet-backdrop--active .gf-sheet-panel--active {
@@ -39,15 +57,47 @@
   transition: transform var(--gf-duration-slow) var(--gf-ease-enter);
 }
 
+.gf-sheet-panel--dragging,
+.gf-sheet-backdrop--active .gf-sheet-panel--dragging {
+  transition: none;
+}
+
 /* Drag Handle */
 .gf-sheet__handle {
+  position: relative;
   display: block;
-  width: 32px;
-  height: 4px;
-  background-color: var(--gf-border-default);
-  border-radius: var(--gf-radius-pill);
-  margin: 8px auto 0;
+  width: 64px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  margin: 0 auto;
   flex-shrink: 0;
+  cursor: grab;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.gf-sheet__handle::after {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  width: 40px;
+  height: 4px;
+  border-radius: var(--gf-radius-pill);
+  background-color: var(--gf-border-default);
+  transform: translateX(-50%);
+}
+
+.gf-sheet__handle:active {
+  cursor: grabbing;
+}
+
+.gf-sheet__handle:focus-visible {
+  outline: 2px solid var(--gf-focus-ring);
+  outline-offset: -4px;
+  border-radius: var(--gf-radius-pill);
 }
 
 /* Header */

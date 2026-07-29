@@ -24,21 +24,62 @@
 .feed-page__header > * { pointer-events: auto; }
 
 .feed-page__brand {
-  display: flex;
-  align-items: center;
-  gap: var(--gf-space-2);
+  display: block;
 }
 
-.feed-page__brand img {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  object-fit: cover;
+.feed-page__brand-logo {
+  display: block;
+  width: clamp(132px, 36vw, 168px);
+  height: auto;
 }
 
-.feed-page__brand div { display: grid; line-height: 1.15; }
-.feed-page__brand strong { font-size: var(--gf-text-body); }
-.feed-page__brand span { color: rgb(255 255 255 / 68%); font-size: var(--gf-text-caption); }
+.feed-page__brand-logo--animated {
+  animation: feed-logo-settle 420ms 980ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.feed-page__brand-logo--animated .feed-page__logo-game,
+.feed-page__brand-logo--animated .feed-page__logo-flow {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: feed-logo-word-in 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.feed-page__brand-logo--animated .feed-page__logo-game { animation-delay: 80ms; }
+.feed-page__brand-logo--animated .feed-page__logo-flow { animation-delay: 720ms; }
+
+.feed-page__brand-logo--animated .feed-page__logo-stroke {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: feed-logo-stroke-in 280ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.feed-page__brand-logo--animated .feed-page__logo-stroke--1 { animation-delay: 380ms; }
+.feed-page__brand-logo--animated .feed-page__logo-stroke--2 { animation-delay: 500ms; }
+.feed-page__brand-logo--animated .feed-page__logo-stroke--3 { animation-delay: 620ms; }
+
+@keyframes feed-logo-word-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes feed-logo-stroke-in {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes feed-logo-settle {
+  0% { filter: drop-shadow(0 0 0 rgb(34 211 238 / 0%)); transform: scale(0.985); }
+  55% { filter: drop-shadow(0 0 7px rgb(34 211 238 / 32%)); transform: scale(1.018); }
+  100% { filter: drop-shadow(0 0 0 rgb(34 211 238 / 0%)); transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feed-page__brand-logo--animated,
+  .feed-page__brand-logo--animated .feed-page__logo-game,
+  .feed-page__brand-logo--animated .feed-page__logo-flow,
+  .feed-page__brand-logo--animated .feed-page__logo-stroke {
+    animation: none;
+  }
+}
 
 /* ========================================
    REELS-STYLE VERTICAL SCROLL STREAM
@@ -279,9 +320,9 @@
   padding: 10px 5px;
   border-radius: 28px;
   background: rgba(0, 0, 0, 0.30);
-  /* blur only — no saturate() which brightens the background */
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  /* Solid translucent rail; keep content behind it crisp. */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.5),
@@ -321,7 +362,7 @@
   border: 0;
   border-radius: 20px;
   /* Default color: muted white — each button has its own override below */
-  color: rgba(255, 255, 255, 0.82);
+  color: #fff;
   background: transparent;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
@@ -336,7 +377,7 @@
 .feed-action:hover {
   transform: scale(1.12);
   color: #fff;
-  background: rgba(255, 255, 255, 0.08);
+  background: transparent;
 }
 
 .feed-action:active {
@@ -375,11 +416,11 @@
 
 /* — LIKE (Heart) — red coral */
 .feed-action--like {
-  color: rgba(255, 130, 130, 0.9);
+  color: #fff;
 }
 .feed-action--like:hover {
-  color: #ff7070;
-  background: rgba(255, 80, 80, 0.10);
+  color: #fff;
+  background: transparent;
 }
 /* No colored drop-shadow — prevents color bleeding outside the rail */
 .feed-action--like svg {
@@ -390,28 +431,27 @@
 
 /* — LIKE active (filled heart) — vivid red */
 .feed-action--like.feed-action--active {
-  color: #ff4d4d;
-  background: rgba(255, 60, 60, 0.14);
+  color: #dc143c;
+  background: transparent;
 }
 .feed-action--like.feed-action--active svg {
-  /* Gentle inner glow only — no bleed */
   filter:
     drop-shadow(0 1px 4px rgba(0, 0, 0, 0.7))
-    drop-shadow(0 0 3px rgba(255, 80, 80, 0.15));
+    drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
 }
 .feed-action--like.feed-action--active .feed-action__count {
-  color: #ff8080;
+  color: #dc143c;
   text-shadow:
     0 1px 3px rgba(0, 0, 0, 0.9);
 }
 
 /* — COMMENT — sky blue */
 .feed-action--comment {
-  color: rgba(130, 195, 255, 0.88);
+  color: #fff;
 }
 .feed-action--comment:hover {
-  color: #90d0ff;
-  background: rgba(80, 160, 255, 0.10);
+  color: #fff;
+  background: transparent;
 }
 .feed-action--comment svg {
   filter:
@@ -421,11 +461,11 @@
 
 /* — BOOKMARK — amber gold */
 .feed-action--bookmark {
-  color: rgba(255, 195, 90, 0.88);
+  color: #fff;
 }
 .feed-action--bookmark:hover {
-  color: #ffd060;
-  background: rgba(255, 180, 60, 0.10);
+  color: #fff;
+  background: transparent;
 }
 .feed-action--bookmark svg {
   filter:
@@ -435,32 +475,52 @@
 
 /* — BOOKMARK active (filled) — bright gold */
 .feed-action--bookmark.feed-action--active {
-  color: #ffc040;
-  background: rgba(255, 170, 40, 0.14);
+  color: #fff;
+  background: transparent;
 }
 .feed-action--bookmark.feed-action--active svg {
-  filter:
-    drop-shadow(0 1px 4px rgba(0, 0, 0, 0.7))
-    drop-shadow(0 0 3px rgba(255, 190, 60, 0.15));
-}
-
-/* — SHARE — emerald teal */
-.feed-action--share {
-  color: rgba(80, 215, 175, 0.88);
-}
-.feed-action--share:hover {
-  color: #60e8c8;
-  background: rgba(60, 200, 160, 0.10);
-}
-.feed-action--share svg {
-  /* Strictly dark shadow only — no teal bleed */
   filter:
     drop-shadow(0 1px 4px rgba(0, 0, 0, 0.7))
     drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
 }
 
+/* — SHARE — emerald teal */
+.feed-action--share {
+  color: #fff;
+}
+.feed-action--share:hover {
+  color: #fff;
+  background: transparent;
+}
+.feed-action--share svg {
+  filter:
+    drop-shadow(0 1px 4px rgba(0, 0, 0, 0.7))
+    drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
+}
+
+/* Keep interaction controls crisp across every state and icon theme. */
+.project-action-bar .feed-action svg {
+  filter: none;
+}
+
+.project-action-bar .feed-action__count {
+  text-shadow: none;
+}
+
+/* Interaction state is communicated by icon/count color only. Do not render
+   translucent halos behind hovered, pressed, or selected controls. */
+.project-action-bar .feed-action,
+.project-action-bar .feed-action:hover,
+.project-action-bar .feed-action:active,
+.project-action-bar .feed-action.feed-action--active {
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
 /* ================================================
-   LIKE ANIMATION — springy + glow pulse
+   LIKE ANIMATION — springy (no glow pulse blur)
    ================================================ */
 @keyframes gf-like-bounce {
   0%   { transform: scale(1)    rotate(0deg); }
@@ -470,19 +530,78 @@
   100% { transform: scale(1)    rotate(0deg); }
 }
 
-@keyframes gf-like-glow-pulse {
-  0%   { box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0   0   rgba(255, 70, 70, 0);    }
-  40%  { box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 22px 8px rgba(255, 70, 70, 0.65); }
-  100% { box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0   0   rgba(255, 70, 70, 0);    }
-}
-
 .feed-action--like.feed-action--animate svg {
-  animation: gf-like-bounce 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: gf-like-bounce 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* Pulse the entire rail on like */
-.feed-action--like.feed-action--animate {
-  animation: gf-like-glow-pulse 400ms ease-out;
+.feed-like-burst {
+  position: absolute;
+  z-index: 2;
+  top: 17px;
+  left: 50%;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+.feed-like-burst__heart,
+.feed-like-burst__particle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  line-height: 1;
+  transform: translate(-50%, -50%);
+}
+
+.feed-like-burst__heart {
+  color: #ff1744;
+  font-size: 27px;
+  text-shadow: 0 0 8px rgb(255 23 68 / 58%), 0 0 14px rgb(255 64 129 / 36%);
+  animation: gf-burst-heart 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.feed-like-burst__particle {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  color: #ff4081;
+  font-size: 9px;
+  animation: gf-burst-particle 570ms cubic-bezier(0.18, 0.8, 0.24, 1) both;
+}
+
+.feed-like-burst__particle:empty { box-shadow: 0 0 5px currentColor; }
+.feed-like-burst__particle--1 { --burst-x: -27px; --burst-y: -22px; color: #ff2d55; animation-delay: 15ms; }
+.feed-like-burst__particle--2 { --burst-x: 1px; --burst-y: -31px; color: #ffb300; animation-delay: 35ms; }
+.feed-like-burst__particle--3 { --burst-x: 27px; --burst-y: -19px; color: #ff4081; animation-delay: 5ms; }
+.feed-like-burst__particle--4 { --burst-x: 31px; --burst-y: 7px; color: #b84dff; animation-delay: 45ms; }
+.feed-like-burst__particle--5 { --burst-x: -25px; --burst-y: 14px; color: #ff6d3a; animation-delay: 25ms; }
+.feed-like-burst__particle--6 { --burst-x: 16px; --burst-y: 24px; color: #ff1744; animation-delay: 55ms; }
+
+@keyframes gf-burst-heart {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.25) rotate(-12deg); }
+  35% { opacity: 1; transform: translate(-50%, -72%) scale(1.45) rotate(7deg); }
+  72% { opacity: 0.9; transform: translate(-50%, -105%) scale(0.94) rotate(0deg); }
+  100% { opacity: 0; transform: translate(-50%, -145%) scale(0.72); }
+}
+
+@keyframes gf-burst-particle {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.2); }
+  24% { opacity: 1; }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--burst-x)), calc(-50% + var(--burst-y))) scale(0.75) rotate(22deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feed-action--like.feed-action--animate svg { animation: none; }
+  .feed-like-burst__particle { display: none; }
+  .feed-like-burst__heart { animation: gf-burst-heart-reduced 220ms ease-out both; }
+}
+
+@keyframes gf-burst-heart-reduced {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+  45% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -65%) scale(1); }
 }
 
 /* ========================================
@@ -558,9 +677,9 @@
 .comments-sheet__replying { display: flex; align-items: center; justify-content: space-between; gap: var(--gf-space-2); color: var(--gf-text-muted); font-size: var(--gf-text-caption); }
 .comments-sheet__composer-error { margin: 0; color: var(--gf-danger); font-size: var(--gf-text-caption); }
 .comments-sheet__composer { display: flex; align-items: center; gap: var(--gf-space-2); padding-top: var(--gf-space-3); border-top: 1px solid var(--gf-border); }
-.comments-sheet__input-wrap { min-width: 0; min-height: 44px; display: flex; flex: 1 1 auto; align-items: center; border: 1px solid var(--gf-border); border-radius: var(--gf-radius-pill); background: var(--gf-control); }
+.comments-sheet__input-wrap { min-width: 0; min-height: 44px; display: flex; flex: 1 1 auto; align-items: center; overflow: hidden; border: 1px solid var(--gf-border); border-radius: var(--gf-radius-pill); background: var(--gf-control); }
 .comments-sheet__input-wrap:focus-within { outline: 3px solid var(--gf-focus); outline-offset: 2px; }
-.comments-sheet__input-wrap input { min-width: 0; min-height: 44px; flex: 1 1 auto; padding: 0 var(--gf-space-4); border: 0; outline: 0; color: var(--gf-text); background: transparent; }
+.comments-sheet__input-wrap input { min-width: 0; min-height: 42px; flex: 1 1 auto; padding: 0 var(--gf-space-4); border: 0 !important; border-radius: 0; outline: 0; color: var(--gf-text); background: transparent !important; }
 .comments-sheet__input-wrap button { min-height: 44px; padding: 0 var(--gf-space-3); border: 0; color: var(--gf-brand); background: transparent; font-weight: 800; }
 .comments-sheet__limit { align-self: flex-end; color: var(--gf-text-muted); font-size: var(--gf-text-caption); }
 

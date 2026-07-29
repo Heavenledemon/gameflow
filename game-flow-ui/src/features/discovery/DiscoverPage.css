@@ -23,7 +23,7 @@
   z-index: 12;
   display: grid;
   gap: var(--gf-space-3);
-  padding: calc(var(--gf-space-4) + var(--gf-safe-area-top)) var(--gf-space-4) var(--gf-space-3);
+  padding: calc(var(--gf-space-4) + var(--gf-safe-area-top)) var(--gf-space-4) var(--gf-space-4);
   border-bottom: 1px solid var(--gf-border);
   background: color-mix(in srgb, var(--gf-surface) 94%, transparent);
   backdrop-filter: blur(16px);
@@ -34,26 +34,125 @@
 .discover-page__heading p { color: var(--gf-text-muted); font-size: var(--gf-text-caption); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
 .discover-page__heading h1 { margin-top: 2px; font-size: var(--gf-text-title); line-height: var(--gf-leading-tight); }
 
-.discovery-search { display: grid; gap: 6px; }
-.discovery-search > label { font-size: var(--gf-text-label); font-weight: 700; }
+.discovery-search { display: grid; gap: 8px; }
+.discovery-search > label { font-size: var(--gf-text-label); font-weight: 700; color: var(--gf-text); letter-spacing: 0.01em; }
 .discovery-search > p { margin: 0; color: var(--gf-text-muted); font-size: var(--gf-text-caption); }
-.discovery-search__control {
+.discovery-search__control,
+:root[data-color-scheme='dark'] .discovery-search__control,
+:root[data-background-theme] .discovery-search__control {
+  position: relative;
   min-width: 0;
-  min-height: 48px;
+  height: 52px;
   display: flex;
   align-items: center;
-  gap: var(--gf-space-2);
-  padding-left: var(--gf-space-3);
-  border: 1px solid var(--gf-border);
-  border-radius: var(--gf-radius-md);
-  color: var(--gf-text-muted);
-  background: var(--gf-control);
+  gap: 12px;
+  padding: 0 20px;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  border-radius: 9999px !important;
+  color: var(--gf-text) !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
 }
 
-.discovery-search__control:focus-within { outline: 3px solid var(--gf-focus); outline-offset: 2px; }
-.discovery-search__control input { min-width: 0; min-height: 46px; flex: 1 1 auto; padding: 0; border: 0; outline: 0; color: var(--gf-text); background: transparent; }
-.discovery-search__control input::-webkit-search-cancel-button { display: none; }
-.discovery-search__control button { min-width: 54px; min-height: 44px; padding: 0 var(--gf-space-3); border: 0; color: var(--gf-brand); background: transparent; font-weight: 800; }
+.discovery-search__control:hover,
+:root[data-color-scheme='dark'] .discovery-search__control:hover,
+:root[data-background-theme] .discovery-search__control:hover {
+  border-color: rgba(255, 255, 255, 0.45) !important;
+  background: rgba(255, 255, 255, 0.18) !important;
+  background-color: rgba(255, 255, 255, 0.18) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+}
+
+.discovery-search__control:focus-within,
+:root[data-color-scheme='dark'] .discovery-search__control:focus-within,
+:root[data-background-theme] .discovery-search__control:focus-within {
+  border-color: var(--gf-brand-coral, #ff5c5c) !important;
+  background: rgba(255, 255, 255, 0.22) !important;
+  background-color: rgba(255, 255, 255, 0.22) !important;
+  box-shadow: 0 0 0 3.5px color-mix(in srgb, var(--gf-brand-coral, #ff5c5c) 35%, transparent), 0 8px 32px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
+  outline: none !important;
+}
+
+.discovery-search__control svg {
+  flex-shrink: 0;
+  color: var(--gf-text-muted);
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.discovery-search__control:focus-within svg {
+  color: var(--gf-brand-coral, #ff5c5c);
+  transform: scale(1.1);
+}
+
+.discovery-search__control input,
+:root[data-color-scheme] .discovery-search__control :is(input, textarea, select):not([type='range']):not([type='checkbox']):not([type='radio']),
+:root[data-color-scheme='dark'] .discovery-search__control input,
+:root[data-background-theme] .discovery-search__control input {
+  min-width: 0 !important;
+  height: 100% !important;
+  flex: 1 1 auto !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-color: transparent !important;
+  border-radius: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  color: var(--gf-text) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  font-size: var(--gf-text-body, 15px) !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.01em !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+}
+
+.discovery-search__control input::placeholder,
+:root[data-color-scheme='dark'] .discovery-search__control input::placeholder {
+  color: var(--gf-text-muted, rgba(255, 255, 255, 0.65)) !important;
+  -webkit-text-fill-color: var(--gf-text-muted, rgba(255, 255, 255, 0.65)) !important;
+  opacity: 0.85 !important;
+}
+
+.discovery-search__control input::-webkit-search-cancel-button,
+.discovery-search__control input::-webkit-search-decoration {
+  display: none !important;
+  -webkit-appearance: none !important;
+}
+
+.discovery-search__control button {
+  min-width: auto;
+  height: 32px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 9999px;
+  color: #ffffff;
+  background: var(--gf-brand-coral, #ff5c5c);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+  font-size: var(--gf-text-caption, 13px);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.discovery-search__control button:hover {
+  opacity: 0.95;
+  transform: scale(1.05);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--gf-brand-coral, #ff5c5c) 60%, transparent);
+}
+
+.discovery-search__control button:active {
+  transform: scale(0.95);
+}
 
 .discovery-filters { position: relative; display: flex; justify-content: flex-end; padding: 0; }
 .discovery-filters h2 { margin: 0; font-size: var(--gf-text-body); }

@@ -583,6 +583,35 @@ async function buildProjectCommentsTree(postId) {
   return buildBranch('root')
 }
 
+async function buildContentCommentsTree(contentType, contentId, viewerId = '') {
+  const comments = await PostComment.find({ contentType, contentId: String(contentId) }).sort({ createdAt: -1, _id: -1 }).limit(200).lean()
+  const commentIds = comments.map((comment) => comment._id)
+  const [reactionRows, viewerRows] = await Promise.all([
+    commentIds.length ? CommentReaction.aggregate([
+      { $match: { commentId: { $in: commentIds } } },
+      { $group: { _id: { commentId: '$commentId', emoji: '$emoji' }, count: { $sum: 1 } } },
+    ]) : [],
+    viewerId && commentIds.length ? CommentReaction.find({ commentId: { $in: commentIds }, userId: viewerId }).lean() : [],
+  ])
+  const reactionsByComment = new Map()
+  for (const row of reactionRows) {
+    const key = String(row._id.commentId)
+    reactionsByComment.set(key, { ...(reactionsByComment.get(key) || {}), [row._id.emoji]: row.count })
+  }
+  const viewerByComment = new Map(viewerRows.map((row) => [String(row.commentId), row.emoji]))
+  const byParent = new Map()
+  for (const comment of comments) {
+    const key = comment.parentCommentId ? String(comment.parentCommentId) : 'root'
+    byParent.set(key, [...(byParent.get(key) || []), comment])
+  }
+  const buildBranch = (parentKey) => (byParent.get(parentKey) || []).map((comment) => ({
+    ...formatProjectComment(comment, buildBranch(String(comment._id))),
+    reactions: reactionsByComment.get(String(comment._id)) || {},
+    viewerReaction: viewerByComment.get(String(comment._id)) || null,
+  }))
+  return buildBranch('root')
+}
+
 async function getProjectEngagementPayload(postId, viewerId = '', options = {}) {
   const includeComments = options.includeComments !== false
   const [countsMap, comments] = await Promise.all([
@@ -1476,6 +1505,17 @@ export const updateContentEngagement = asyncHandler(async (request, response) =>
   const action = String(request.body?.action || '').trim()
   const commentText = String(request.body?.commentText || '').trim()
   response.json(await mutateGeneralEngagement(request, contentType, contentId, action, commentText))
+})
+
+export const getContentComments = asyncHandler(async (request, response) => {
+  const { contentType, contentId } = request.params
+  const target = await loadEngagementTarget(contentType, contentId)
+  if (contentType === 'project') await ensureProjectEngagementAccess(target, request.user?._id)
+  const items = await buildContentCommentsTree(contentType, target._id, getViewerId(request))
+  response.json({
+    items,
+    commentsCount: Number(target.engagement?.commentsCount ?? items.length),
+  })
 })
 
 export const deleteProject = asyncHandler(async (request, response) => {

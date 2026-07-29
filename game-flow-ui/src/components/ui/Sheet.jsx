@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import IconButton from './IconButton'
+import { createPortal } from 'react-dom'
 import './Sheet.css'
 
 const FOCUSABLE_SELECTOR = [
@@ -46,9 +46,12 @@ export default function Sheet({
   const descriptionId = description ? `${generatedId}-description` : undefined
   const modalIdRef = useRef(Symbol('gameflow-sheet'))
   const onCloseRef = useRef(onClose)
+  const dragRef = useRef({ startY: 0, startTime: 0, moved: false })
 
   const [shouldRender, setShouldRender] = useState(open)
   const [active, setActive] = useState(open)
+  const [dragOffset, setDragOffset] = useState(0)
+  const [dragging, setDragging] = useState(false)
 
   useEffect(() => {
     onCloseRef.current = onClose
@@ -59,6 +62,7 @@ export default function Sheet({
     let timerId
     if (open) {
       frameId = requestAnimationFrame(() => {
+        setDragOffset(0)
         setShouldRender(true)
         frameId = requestAnimationFrame(() => {
           setActive(true)
@@ -77,6 +81,35 @@ export default function Sheet({
       clearTimeout(timerId)
     }
   }, [open])
+
+  const startDrag = (event) => {
+    if (event.button !== undefined && event.button !== 0) return
+    dragRef.current = { startY: event.clientY, startTime: performance.now(), moved: false }
+    setDragging(true)
+    event.currentTarget.setPointerCapture?.(event.pointerId)
+  }
+
+  const moveDrag = (event) => {
+    if (!dragging) return
+    const distance = Math.max(0, event.clientY - dragRef.current.startY)
+    if (distance > 6) dragRef.current.moved = true
+    setDragOffset(distance)
+  }
+
+  const finishDrag = (event) => {
+    if (!dragging) return
+    event.currentTarget.releasePointerCapture?.(event.pointerId)
+    const elapsed = Math.max(1, performance.now() - dragRef.current.startTime)
+    const finalOffset = Math.max(dragOffset, event.clientY - dragRef.current.startY)
+    const velocity = finalOffset / elapsed
+    const threshold = Math.min(120, (containerRef.current?.offsetHeight || 480) * 0.22)
+    setDragging(false)
+    if (finalOffset >= threshold || (finalOffset > 32 && velocity > 0.55)) {
+      onCloseRef.current?.()
+    } else {
+      setDragOffset(0)
+    }
+  }
 
   useEffect(() => {
     if (!shouldRender || !active) return undefined
@@ -135,7 +168,7 @@ export default function Sheet({
 
   if (!shouldRender) return null
 
-  return (
+  return createPortal(
     <div
       className={`gf-sheet-backdrop ${active ? 'gf-sheet-backdrop--active' : ''}`}
       onMouseDown={(event) => {
@@ -149,9 +182,25 @@ export default function Sheet({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
-        className={`gf-sheet-panel ${active ? 'gf-sheet-panel--active' : ''} ${className}`.trim()}
+        className={`gf-sheet-panel ${active ? 'gf-sheet-panel--active' : ''} ${dragging ? 'gf-sheet-panel--dragging' : ''} ${className}`.trim()}
+        style={dragOffset ? { transform: `translateY(${dragOffset}px)` } : undefined}
       >
-        <span className="gf-sheet__handle" aria-hidden="true" />
+        <button
+          type="button"
+          className="gf-sheet__handle"
+          aria-label={`${closeLabel}. Drag down to dismiss.`}
+          onClick={() => {
+            if (!dragRef.current.moved) onClose?.()
+            dragRef.current.moved = false
+          }}
+          onPointerDown={startDrag}
+          onPointerMove={moveDrag}
+          onPointerUp={finishDrag}
+          onPointerCancel={() => {
+            setDragging(false)
+            setDragOffset(0)
+          }}
+        />
         <header className="gf-sheet__header">
           <div className="gf-sheet__heading">
             <h2 id={titleId} className="gf-sheet__title">
@@ -163,14 +212,12 @@ export default function Sheet({
               </p>
             ) : null}
           </div>
-          <IconButton label={closeLabel} onClick={onClose} size="sm">
-            <span aria-hidden="true">&times;</span>
-          </IconButton>
         </header>
         <div className={`gf-sheet__content ${contentClassName}`.trim()}>
           {children}
         </div>
       </section>
-    </div>
+    </div>,
+    document.body,
   )
 }

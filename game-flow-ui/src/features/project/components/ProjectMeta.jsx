@@ -40,28 +40,29 @@ export default function ProjectMeta({ model, project, expanded, onToggle }) {
 
   return (
     <section className="project-meta" aria-labelledby="project-meta-title">
-      <div className="project-meta__heading">
-        <div>
-          <h1 id="project-meta-title">{model.title}</h1>
-          <p>
-            {model.category || model.projectType || 'Project'}{' '}
-            <span aria-hidden="true">·</span> {createdLabel}
-          </p>
+      <div className="project-meta__box">
+        <div className="project-meta__heading">
+          <div>
+            <h1 id="project-meta-title">{model.title}</h1>
+            <p>
+              {model.category || model.projectType || 'Project'}{' '}
+              <span aria-hidden="true">·</span> {createdLabel}
+            </p>
+          </div>
+          {hasDetails && (
+            <button
+              type="button"
+              className="project-meta__toggle-btn"
+              aria-expanded={expanded}
+              aria-controls="project-metadata-details"
+              onClick={onToggle}
+            >
+              {expanded ? 'Hide details' : 'About this project'}
+            </button>
+          )}
         </div>
-        {hasDetails && (
-          <button
-            type="button"
-            className="project-meta__toggle-btn"
-            aria-expanded={expanded}
-            aria-controls="project-metadata-details"
-            onClick={onToggle}
-          >
-            {expanded ? 'Hide project details' : 'About this project'}
-          </button>
-        )}
-      </div>
 
-      <div id="project-metadata-details" hidden={!expanded} className="project-meta__details">
+        <div id="project-metadata-details" hidden={!expanded} className="project-meta__details">
         {model.summary ? (
           <p className="project-meta__summary">{model.summary}</p>
         ) : (
@@ -91,6 +92,7 @@ export default function ProjectMeta({ model, project, expanded, onToggle }) {
             ))}
           </div>
         ) : null}
+        </div>
       </div>
     </section>
   )
