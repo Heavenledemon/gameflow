@@ -17,7 +17,7 @@ export default function ProjectPreviewModal({ project, originRect, actions, onCl
     }
     closingRef.current = true
     setClosing(true)
-    closeTimerRef.current = window.setTimeout(onClose, 280)
+    closeTimerRef.current = window.setTimeout(onClose, 340)
   }, [onClose])
 
   const originStyle = useMemo(() => {
@@ -28,8 +28,7 @@ export default function ProjectPreviewModal({ project, originRect, actions, onCl
     return {
       '--preview-origin-x': `${originCenterX - window.innerWidth / 2}px`,
       '--preview-origin-y': `${originCenterY - window.innerHeight / 2}px`,
-      '--preview-origin-scale': Math.max(0.2, Math.min(0.96, originRect.width / targetWidth)),
-      '--preview-origin-radius': '16px',
+      '--preview-origin-scale': Math.max(0.42, Math.min(0.96, originRect.width / targetWidth)),
     }
   }, [originRect])
 

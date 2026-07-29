@@ -8,7 +8,7 @@
   background: rgb(8 9 12 / 56%);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  animation: project-preview-fade 260ms ease-out both;
+  animation: project-preview-fade 320ms cubic-bezier(.16, 1, .3, 1) both;
 }
 
 .project-preview__dialog {
@@ -21,13 +21,15 @@
   box-shadow: 0 24px 80px rgb(0 0 0 / 44%);
   outline: none;
   transform-origin: center;
-  animation: project-preview-expand 360ms cubic-bezier(.2, .82, .2, 1) both;
+  backface-visibility: hidden;
+  will-change: transform, opacity;
+  animation: project-preview-expand 440ms cubic-bezier(.16, 1, .3, 1) both;
 }
 
-.project-preview--closing { animation: project-preview-fade-out 280ms ease-in both; }
+.project-preview--closing { animation: project-preview-fade-out 340ms cubic-bezier(.4, 0, 1, 1) both; }
 .project-preview--closing .project-preview__dialog {
   pointer-events: none;
-  animation: project-preview-collapse 280ms cubic-bezier(.4, 0, .7, .2) both;
+  animation: project-preview-collapse 340ms cubic-bezier(.4, 0, .6, 1) both;
 }
 
 .project-preview__dialog::before {
@@ -55,8 +57,10 @@
   pointer-events: none;
   opacity: 1;
   filter: drop-shadow(0 0 4px rgb(76 201 240 / 42%)) drop-shadow(0 0 8px rgb(240 68 197 / 22%));
-  animation: rainbow-border-flow 3s linear infinite;
+  animation: rainbow-border-flow 3s 440ms linear infinite;
 }
+
+.project-preview--closing .project-preview__dialog::before { animation-play-state: paused; }
 
 @keyframes rainbow-border-flow {
   from { background-position: 0% 0; }
@@ -113,18 +117,17 @@
 @keyframes project-preview-fade-out { to { opacity: 0; } }
 @keyframes project-preview-expand {
   from {
-    opacity: .5;
-    border-radius: var(--preview-origin-radius, 18px);
-    transform: translate(var(--preview-origin-x, 0), var(--preview-origin-y, 14px)) scale(var(--preview-origin-scale, .94));
+    opacity: .35;
+    transform: translate3d(var(--preview-origin-x, 0), var(--preview-origin-y, 14px), 0) scale(var(--preview-origin-scale, .94));
   }
-  to { opacity: 1; border-radius: 18px; transform: translate(0, 0) scale(1); }
+  72% { opacity: 1; }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
 }
 @keyframes project-preview-collapse {
-  from { opacity: 1; transform: translate(0, 0) scale(1); }
+  from { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
   to {
-    opacity: .25;
-    border-radius: var(--preview-origin-radius, 18px);
-    transform: translate(var(--preview-origin-x, 0), var(--preview-origin-y, 14px)) scale(var(--preview-origin-scale, .94));
+    opacity: .2;
+    transform: translate3d(var(--preview-origin-x, 0), var(--preview-origin-y, 14px), 0) scale(var(--preview-origin-scale, .94));
   }
 }
 
