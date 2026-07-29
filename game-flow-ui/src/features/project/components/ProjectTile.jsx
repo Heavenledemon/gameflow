@@ -14,6 +14,7 @@ function formatProjectType(project, mediaKind) {
 
 export default function ProjectTile({ project, onOpen, onPreview, onLongPress, showLongPressHint = false, onLongPressHintDismiss, actions, actionsPlacement = 'overlay', selected = false, variant = 'card', fallbackAspectRatio = '1 / 1' }) {
   const holdTimerRef = useRef(null)
+  const holdOriginRef = useRef(null)
   const holdTriggeredRef = useRef(false)
   const [isHolding, setIsHolding] = useState(false)
   const creatorName = project.creator?.name || project.creator?.handle || project.creator?.username || 'Creator'
@@ -44,18 +45,20 @@ export default function ProjectTile({ project, onOpen, onPreview, onLongPress, s
     holdTriggeredRef.current = false
     cancelHold()
     setIsHolding(true)
+    holdOriginRef.current = event.currentTarget.closest('.project-tile')?.getBoundingClientRect() || null
     holdTimerRef.current = window.setTimeout(() => {
       holdTriggeredRef.current = true
       setIsHolding(false)
       onLongPressHintDismiss?.()
-      onLongPress(project)
+      onLongPress(project, holdOriginRef.current)
       if (navigator.vibrate) navigator.vibrate(18)
     }, 500)
   }
 
   const openPreview = (event) => {
     event.stopPropagation()
-    onPreview?.(project)
+    const origin = event.currentTarget.closest('.project-tile')?.getBoundingClientRect() || null
+    onPreview?.(project, origin)
   }
 
   return (

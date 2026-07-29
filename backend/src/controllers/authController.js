@@ -39,6 +39,20 @@ function sanitizeUser(user) {
     artstation: user.artstation || '',
     instagram: user.instagram || '',
     linkedin: user.linkedin || '',
+    companionType: user.companionType || 'cosmic',
+    companionMotion: user.companionMotion || 'subtle',
+    companionEmotion: user.companionEmotion || 'natural',
+    companionBubble: user.companionBubble || 'work',
+    companionBubbleText: user.companionBubbleText || '',
+    companionBubbleBehavior: user.companionBubbleBehavior || 'once',
+    profileDisplayType: user.profileDisplayType || 'companion',
+    profileDesignType: user.profileDesignType || 'bauhaus',
+    profileDesignPalette: user.profileDesignPalette || 'midnight',
+    profileDesignDensity: user.profileDesignDensity || 'balanced',
+    profileDesignLineStyle: user.profileDesignLineStyle || 'clean',
+    profileDesignMotion: user.profileDesignMotion || 'subtle',
+    profileDesignInteraction: user.profileDesignInteraction || 'rearrange',
+    profileDesignDoodleTheme: user.profileDesignDoodleTheme || 'Developer',
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   }
@@ -212,7 +226,7 @@ export const getCurrentUser = asyncHandler(async (request, response) => {
 export const updateCurrentUserProfile = asyncHandler(async (request, response) => {
   const {
     email, username, name, headline, skills, avatar, banner, bio, description, location, website,
-    creatorType, github, itchio, behance, artstation, instagram, linkedin
+    creatorType, github, itchio, behance, artstation, instagram, linkedin, companionType, companionMotion, companionEmotion, companionBubble, companionBubbleText, companionBubbleBehavior, profileDisplayType, profileDesignType, profileDesignPalette, profileDesignDensity, profileDesignLineStyle, profileDesignMotion, profileDesignInteraction, profileDesignDoodleTheme
   } = request.body ?? {}
 
   if (name !== undefined && !String(name).trim()) {
@@ -287,6 +301,20 @@ export const updateCurrentUserProfile = asyncHandler(async (request, response) =
   if (artstation !== undefined) user.artstation = String(artstation).trim()
   if (instagram !== undefined) user.instagram = String(instagram).trim()
   if (linkedin !== undefined) user.linkedin = String(linkedin).trim()
+  if (companionType !== undefined) user.companionType = String(companionType).trim()
+  if (companionMotion !== undefined) user.companionMotion = String(companionMotion).trim()
+  if (companionEmotion !== undefined) user.companionEmotion = String(companionEmotion).trim()
+  if (companionBubble !== undefined) user.companionBubble = String(companionBubble).trim()
+  if (companionBubbleText !== undefined) user.companionBubbleText = String(companionBubbleText).trim().slice(0, 35)
+  if (companionBubbleBehavior !== undefined) user.companionBubbleBehavior = String(companionBubbleBehavior).trim()
+  if (profileDisplayType !== undefined) user.profileDisplayType = String(profileDisplayType).trim()
+  if (profileDesignType !== undefined) user.profileDesignType = String(profileDesignType).trim()
+  if (profileDesignPalette !== undefined) user.profileDesignPalette = String(profileDesignPalette).trim()
+  if (profileDesignDensity !== undefined) user.profileDesignDensity = String(profileDesignDensity).trim()
+  if (profileDesignLineStyle !== undefined) user.profileDesignLineStyle = String(profileDesignLineStyle).trim()
+  if (profileDesignMotion !== undefined) user.profileDesignMotion = String(profileDesignMotion).trim()
+  if (profileDesignInteraction !== undefined) user.profileDesignInteraction = String(profileDesignInteraction).trim()
+  if (profileDesignDoodleTheme !== undefined) user.profileDesignDoodleTheme = String(profileDesignDoodleTheme).trim()
 
   await user.save()
 

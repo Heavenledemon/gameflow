@@ -8,7 +8,7 @@
   background: rgb(8 9 12 / 56%);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  animation: project-preview-fade 180ms ease-out;
+  animation: project-preview-fade 260ms ease-out both;
 }
 
 .project-preview__dialog {
@@ -20,7 +20,14 @@
   background: var(--gf-surface-raised);
   box-shadow: 0 24px 80px rgb(0 0 0 / 44%);
   outline: none;
-  animation: project-preview-rise 220ms var(--gf-ease-standard);
+  transform-origin: center;
+  animation: project-preview-expand 360ms cubic-bezier(.2, .82, .2, 1) both;
+}
+
+.project-preview--closing { animation: project-preview-fade-out 280ms ease-in both; }
+.project-preview--closing .project-preview__dialog {
+  pointer-events: none;
+  animation: project-preview-collapse 280ms cubic-bezier(.4, 0, .7, .2) both;
 }
 
 .project-preview__dialog::before {
@@ -103,7 +110,23 @@
 }
 
 @keyframes project-preview-fade { from { opacity: 0; } }
-@keyframes project-preview-rise { from { opacity: 0; transform: scale(.94) translateY(14px); } }
+@keyframes project-preview-fade-out { to { opacity: 0; } }
+@keyframes project-preview-expand {
+  from {
+    opacity: .5;
+    border-radius: var(--preview-origin-radius, 18px);
+    transform: translate(var(--preview-origin-x, 0), var(--preview-origin-y, 14px)) scale(var(--preview-origin-scale, .94));
+  }
+  to { opacity: 1; border-radius: 18px; transform: translate(0, 0) scale(1); }
+}
+@keyframes project-preview-collapse {
+  from { opacity: 1; transform: translate(0, 0) scale(1); }
+  to {
+    opacity: .25;
+    border-radius: var(--preview-origin-radius, 18px);
+    transform: translate(var(--preview-origin-x, 0), var(--preview-origin-y, 14px)) scale(var(--preview-origin-scale, .94));
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .project-preview, .project-preview__dialog, .project-preview__dialog::before { animation: none; }
