@@ -1,14 +1,95 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 @import './styles/tokens.css';
 @import './styles/base.css';
 @import './styles/utilities.css';
 @import './styles/primitives.css';
-@import './styles/theme-compat.css';
+
+/* Compatibility layer for legacy screens that still contain fixed light colors. */
+:root[data-color-scheme='dark'] {
+  --gf-shadow-card: 0 8px 24px rgb(0 0 0 / 24%);
+  --gf-shadow-floating: 0 10px 30px rgb(0 0 0 / 32%);
+  --gf-shadow-modal: 0 18px 60px rgb(0 0 0 / 48%);
+  --gf-skeleton-base: rgb(255 255 255 / 9%);
+  --gf-skeleton-highlight: rgb(255 255 255 / 17%);
+}
+
+:root[data-color-scheme='dark'] body.desktop { background: color-mix(in srgb, var(--gf-bg) 58%, black); }
+:root[data-color-scheme='dark'] .mobile-frame,
+:root[data-color-scheme='dark'] .screen-nav-strip,
+:root[data-color-scheme='dark'] .mobile-app-shell,
+:root[data-color-scheme='dark'] .mobile-app-shell__content,
+:root[data-color-scheme='dark'] .mobile-app-shell__top-bar { background-color: var(--gf-bg); color: var(--gf-text); border-color: var(--gf-border); }
+
+:root[data-color-scheme='dark'] .gf-dialog,
+:root[data-color-scheme='dark'] .gf-sheet,
+:root[data-color-scheme='dark'] .gf-sheet-panel {
+  --gf-bg: #ffffff;
+  --gf-surface: #ffffff;
+  --gf-surface-raised: #f7f7fa;
+  --gf-text: #1a1a2e;
+  --gf-text-primary: #1a1a2e;
+  --gf-text-secondary: #5f6072;
+  --gf-text-tertiary: #85869a;
+  --gf-text-muted: #5f6072;
+  --gf-background-text: #1a1a2e;
+  --gf-border: #d9dbe5;
+  --gf-control: #f0f1f6;
+  --gf-control-hover: #e7e8f0;
+  color-scheme: light;
+  color: var(--gf-text);
+  border-color: var(--gf-border);
+  background: rgb(255 255 255 / 96%);
+}
+:root[data-color-scheme='dark'] .gf-dialog__header { border-color: var(--gf-border); }
+
+:root[data-color-scheme='dark'] :is(input, textarea, select):not([type='range']):not([type='checkbox']):not([type='radio']) {
+  color: var(--gf-text) !important;
+  border-color: var(--gf-border) !important;
+  background-color: var(--gf-surface) !important;
+}
+:root[data-color-scheme='dark'] :is(input, textarea)::placeholder { color: var(--gf-text-muted) !important; opacity: .82; }
+
+:root[data-color-scheme='dark'] :is(.gf-dialog, .gf-sheet, .gf-sheet-panel) :is(input, textarea, select):not([type='range']):not([type='checkbox']):not([type='radio']) {
+  color: #1a1a2e !important;
+  border-color: #d9dbe5 !important;
+  background-color: #ffffff !important;
+  -webkit-text-fill-color: #1a1a2e;
+}
+:root[data-color-scheme='dark'] :is(.gf-dialog, .gf-sheet, .gf-sheet-panel) :is(input, textarea)::placeholder {
+  color: #5f6072 !important;
+  -webkit-text-fill-color: #5f6072;
+  opacity: 1;
+}
+
+:root[data-color-scheme='dark'] :is(
+  .publish-page, .publish-stepper, .publish-card, .publish-success, .publish-files,
+  .conversation-page, .conversation-composer-region, .conversation-composer__pill, .message__bubble,
+  .discover-page__search, .discover-filter, .discovery-creators button,
+  .request-card, .request-card__footer, .conversation-row,
+  .profile-card, .profile-section, .project-panel
+) {
+  color: var(--gf-text) !important;
+  border-color: var(--gf-border) !important;
+  background-color: var(--gf-surface) !important;
+}
+
+:root[data-color-scheme='dark'] :is(
+  .publish-page, .publish-card, .publish-success, .publish-files,
+  .conversation-page, .discover-page, .profile-page, .project-detail
+) :is(h1, h2, h3, h4, label, strong, dt, dd, p) { color: inherit; }
+
+:root[data-color-scheme='dark'] .message--mine .message__bubble { color: #fff !important; background: linear-gradient(135deg, #ff5c5c, #ff7b42) !important; }
+:root[data-color-scheme='dark'] .message:not(.message--mine) .message__bubble { color: var(--gf-text) !important; background: var(--gf-surface-raised) !important; }
+:root[data-color-scheme='dark'] .conversation-row__avatar { background: var(--gf-surface-raised); border-color: var(--gf-border); }
+:root[data-color-scheme='dark'] .publish-step__marker { color: var(--gf-text-muted); border-color: var(--gf-border); background: var(--gf-control); }
+:root[data-color-scheme='dark'] .publish-step--active { color: var(--gf-text); }
+:root[data-color-scheme='dark'] .publish-card > header,
+:root[data-color-scheme='dark'] .publish-stepper,
+:root[data-color-scheme='dark'] .workspace-asset__actions { border-color: var(--gf-border); }
 
 /* =====================================================
    CreativeVerse – Global Design System
    ===================================================== */
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 /* ---------- Reset ---------- */
 *, *::before, *::after {

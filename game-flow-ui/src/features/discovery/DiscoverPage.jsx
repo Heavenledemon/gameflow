@@ -159,7 +159,7 @@ export default function DiscoverPage() {
       navigate(project.canonicalRoute || project.routeTarget)
     }
   }
-  const renderProjectActions = (project) => <DiscoveryProjectActions project={project} onComment={() => openProject(project)} />
+  const renderProjectActions = (project) => <DiscoveryProjectActions project={project} />
 
   return (
     <main className="discover-page">

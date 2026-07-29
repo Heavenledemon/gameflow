@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   BookmarkIcon,
   CommentIcon,
@@ -36,8 +36,11 @@ function ActionButton({ label, count, pressed, className = '', onClick, children
   )
 }
 
-export default function ProjectActionBar({ engagement, viewerState, onLike, onComments, onSave, onShare }) {
+export default function ProjectActionBar({ engagement, viewerState, likeBurstSignal = 0, onLike, onComments, onSave, onShare }) {
   const [animateLike, setAnimateLike] = useState(false)
+  const [likeBurstId, setLikeBurstId] = useState(0)
+  const likeTimerRef = useRef(null)
+  const hasMountedRef = useRef(false)
 
   const isLiked = engagement?.viewerHasLiked ?? viewerState?.liked
   const isSaved = engagement?.viewerHasSaved ?? viewerState?.saved
@@ -46,9 +49,25 @@ export default function ProjectActionBar({ engagement, viewerState, onLike, onCo
   const savesCount = normalizeCount(engagement?.savesCount, engagement?.saves)
   const sharesCount = normalizeCount(engagement?.sharesCount, engagement?.shares)
 
-  const handleLikeClick = (e) => {
+  const playLikeBurst = () => {
+    window.clearTimeout(likeTimerRef.current)
     setAnimateLike(true)
-    setTimeout(() => setAnimateLike(false), 300)
+    setLikeBurstId((value) => value + 1)
+    likeTimerRef.current = window.setTimeout(() => setAnimateLike(false), 650)
+  }
+
+  useEffect(() => () => window.clearTimeout(likeTimerRef.current), [])
+
+  useEffect(() => {
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true
+      return
+    }
+    playLikeBurst()
+  }, [likeBurstSignal])
+
+  const handleLikeClick = (e) => {
+    if (!isLiked) playLikeBurst()
     onLike?.(e)
   }
 
@@ -62,6 +81,17 @@ export default function ProjectActionBar({ engagement, viewerState, onLike, onCo
         onClick={handleLikeClick}
       >
         <HeartIcon filled={isLiked} size={30} />
+        {animateLike ? (
+          <span key={likeBurstId} className="feed-like-burst" aria-hidden="true">
+            <span className="feed-like-burst__heart">♥</span>
+            <span className="feed-like-burst__particle feed-like-burst__particle--1">♥</span>
+            <span className="feed-like-burst__particle feed-like-burst__particle--2" />
+            <span className="feed-like-burst__particle feed-like-burst__particle--3">♥</span>
+            <span className="feed-like-burst__particle feed-like-burst__particle--4" />
+            <span className="feed-like-burst__particle feed-like-burst__particle--5">♥</span>
+            <span className="feed-like-burst__particle feed-like-burst__particle--6" />
+          </span>
+        ) : null}
       </ActionButton>
 
       <ActionButton label="View comments" count={commentsCount} className="feed-action--comment" onClick={onComments}>

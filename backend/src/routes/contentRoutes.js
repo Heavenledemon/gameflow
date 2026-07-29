@@ -5,6 +5,7 @@ import {
   createPostComment,
   createProject,
   getContent,
+  getContentComments,
   getHealth,
   getReadiness,
   getPostEngagement,
@@ -34,6 +35,7 @@ const router = Router()
 router.get('/health', getHealth)
 router.get('/ready', getReadiness)
 router.get('/content', optionalProtect, getContent)
+router.get('/content/:contentType/:contentId/comments', optionalProtect, getContentComments)
 router.get('/feed', optionalProtect, getFeed)
 router.get('/games', optionalProtect, getPublishedGames)
 router.get('/assets', optionalProtect, getPublishedAssets)

@@ -91,7 +91,7 @@ export default function InboxPage() {
   }, [activeTab, token, userId])
 
   useEffect(() => {
-    setTopBar(<InboxTopBar title="Inbox" subtitle="Collaboration hub" />)
+    // setTopBar(<InboxTopBar title="Inbox" subtitle="Collaboration hub" />)
     return clearTopBar
   }, [clearTopBar, setTopBar])
 

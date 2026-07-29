@@ -27,6 +27,7 @@ export default function DiscoverySearch({ value, onChange, onClear }) {
           aria-describedby={helpId}
           placeholder="Projects, creators, tags, or tools"
           onChange={(event) => onChange(event.target.value)}
+          style={{ background: 'transparent', backgroundColor: 'transparent', border: 'none', boxShadow: 'none', outline: 'none' }}
         />
         {value ? <button type="button" onClick={onClear}>Clear</button> : null}
       </div>

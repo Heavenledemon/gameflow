@@ -1,8 +1,10 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Skeleton from '../../../components/ui/Skeleton'
 import ProjectTile from '../../project/components/ProjectTile'
 import ProjectPreviewModal from './ProjectPreviewModal'
 import './ProjectGrid.css'
+
+const LONG_PRESS_HINT_KEY = 'gameflow.project-preview-hint-seen-v2'
 
 function ProjectGridSkeleton() {
   return (
@@ -30,7 +32,21 @@ export default function ProjectGrid({
 }) {
   const projectList = items || projects || []
   const [previewProject, setPreviewProject] = useState(null)
+  const [showLongPressHint, setShowLongPressHint] = useState(() => {
+    if (typeof window === 'undefined') return false
+    try { return !window.localStorage.getItem(LONG_PRESS_HINT_KEY) } catch { return true }
+  })
   const closePreview = useCallback(() => setPreviewProject(null), [])
+  const dismissLongPressHint = useCallback(() => {
+    setShowLongPressHint(false)
+    try { window.localStorage.setItem(LONG_PRESS_HINT_KEY, 'true') } catch { /* Storage may be unavailable. */ }
+  }, [])
+
+  useEffect(() => {
+    if (!showLongPressHint) return undefined
+    const timer = window.setTimeout(() => setShowLongPressHint(false), 12000)
+    return () => window.clearTimeout(timer)
+  }, [showLongPressHint])
 
   if (loading) return <ProjectGridSkeleton />
 
@@ -42,7 +58,10 @@ export default function ProjectGrid({
             key={`${project.contentType || 'project'}:${project.contentId ?? project.id}`}
             project={project}
             onOpen={onOpenProject ? () => onOpenProject(project) : undefined}
+            onPreview={setPreviewProject}
             onLongPress={setPreviewProject}
+            showLongPressHint={showLongPressHint && index === 0}
+            onLongPressHintDismiss={dismissLongPressHint}
             actions={renderActions?.(project) || null}
             actionsPlacement={actionsPlacement}
             variant="masonry"

@@ -5,6 +5,7 @@ import { Button } from '../../../components/ui/Button'
 import EmptyState, { ErrorState } from '../../../components/ui/EmptyState'
 import { LoadingState } from '../../../components/ui/Feedback'
 import Sheet from '../../../components/ui/Sheet'
+import '../FeedPage.css'
 
 const COMMENT_REACTIONS = { heart: '❤️', laugh: '😂', wow: '😮', sad: '😢', fire: '🔥' }
 

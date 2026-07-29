@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import logoImg from '../../assets/logo.jpg'
 import IconButton from '../../components/ui/IconButton'
 import EmptyState, { ErrorState } from '../../components/ui/EmptyState'
 import { LoadingState } from '../../components/ui/Feedback'
@@ -25,6 +24,44 @@ import ProjectQuickActionsSheet from './components/ProjectQuickActionsSheet'
 import ProjectReelCard from './components/ProjectReelCard'
 import LikesSheet from './components/LikesSheet'
 import './FeedPage.css'
+
+function GameFlowLogo() {
+  const [shouldAnimate] = useState(() => (
+    typeof window === 'undefined' || !window.__gameFlowLogoAnimationPlayed
+  ))
+
+  useEffect(() => {
+    window.__gameFlowLogoAnimationPlayed = true
+  }, [])
+
+  return (
+    <svg
+      className={`feed-page__brand-logo${shouldAnimate ? ' feed-page__brand-logo--animated' : ''}`}
+      viewBox="10 44 865 175"
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label="Game-flow"
+    >
+      <defs>
+        <linearGradient id="feed-game-flow-gradient" x1="0%" y1="100%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#4338CA" />
+          <stop offset="50%" stopColor="#0EA5E9" />
+          <stop offset="100%" stopColor="#22D3EE" />
+        </linearGradient>
+      </defs>
+
+      <text className="feed-page__logo-game" x="20" y="165" fontFamily="Poppins, 'Century Gothic', Futura, Arial, sans-serif" fontWeight="700" fontSize="140" letterSpacing="-2" fill="url(#feed-game-flow-gradient)">game</text>
+
+      <g className="feed-page__logo-strokes" transform="translate(460,55)">
+        <path className="feed-page__logo-stroke feed-page__logo-stroke--1" pathLength="1" d="M0,90 L46,90" stroke="#F97316" strokeWidth="17" strokeLinecap="round" />
+        <path className="feed-page__logo-stroke feed-page__logo-stroke--2" pathLength="1" d="M12,58 L58,58" stroke="#F97316" strokeWidth="17" strokeLinecap="round" opacity="0.72" />
+        <path className="feed-page__logo-stroke feed-page__logo-stroke--3" pathLength="1" d="M24,26 L70,26" stroke="#F97316" strokeWidth="17" strokeLinecap="round" opacity="0.45" />
+      </g>
+
+      <text className="feed-page__logo-flow" x="565" y="165" fontFamily="Poppins, 'Century Gothic', Futura, Arial, sans-serif" fontWeight="700" fontSize="140" letterSpacing="-2" fill="url(#feed-game-flow-gradient)">flow</text>
+    </svg>
+  )
+}
 
 
 
@@ -517,8 +554,7 @@ export default function FeedPage() {
     <main className={`feed-page ${interactiveProjectId ? 'feed-page--interactive' : ''}`}>
       <header className="feed-page__header">
         <div className="feed-page__brand">
-          <img src={logoImg} alt="" />
-          <div><strong>GameFlow</strong><span>Play feed</span></div>
+          <GameFlowLogo />
         </div>
       </header>
 

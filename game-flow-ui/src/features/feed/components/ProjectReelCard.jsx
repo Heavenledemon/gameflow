@@ -125,6 +125,7 @@ export default function ProjectReelCard({
         <ProjectActionBar
           engagement={project.engagement || project.engagementCounts}
           viewerState={project.viewerState}
+          likeBurstSignal={heartBurst}
           onLike={onLike}
           onComments={onComments}
           onSave={onSave}
