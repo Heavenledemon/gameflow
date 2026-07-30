@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Sparkles } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { useAppShell } from '../../context/AppShellContext'
 import { useToast } from '../../context/ToastContext'
@@ -136,7 +137,14 @@ export default function InboxPage() {
   const directParticipantIds = new Set(conversations.items.filter((item) => item.kind === 'direct').map((item) => String(item.otherParticipant?.id || '')).filter(Boolean))
 
   return <main className="inbox-page">
-    <header className="inbox-page__intro"><p className="inbox-page__eyebrow">Work together</p><h2>Requests and conversations</h2><p>{activeDescription}</p></header>
+    <header className="inbox-page__intro">
+      <span className="inbox-page__eyebrow">
+        <Sparkles size={12} className="inbox-page__eyebrow-icon" />
+        Work together
+      </span>
+      <h2>Requests and conversations</h2>
+      <p>{activeDescription}</p>
+    </header>
     {connectionState === 'reconnecting' ? <p className="inbox-connection" role="status">Reconnecting. New activity will refresh when the connection returns.</p> : null}
     <InboxTabs activeTab={activeTab} onTabChange={setActiveTab} requestBox={box} onRequestBoxChange={setBox} />
     <section id={`inbox-panel-${activeTab}`} className="inbox-panel" role="tabpanel" aria-label={activeTab === 'requests' ? 'Collaboration requests' : activeTab === 'projects' ? 'Project chats' : 'Messages'}>
