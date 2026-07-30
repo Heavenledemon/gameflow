@@ -39,6 +39,8 @@ export default function CreatorHeader({
   storyViewed = false,
   onStoryOpen,
   onStatSelect,
+  onCompanionOpen,
+  companionActivityCount = 0,
 }) {
   const [bioExpanded, setBioExpanded] = useState(false)
   const [animateSocialBorders, setAnimateSocialBorders] = useState(false)
@@ -130,7 +132,7 @@ export default function CreatorHeader({
             {creator.profileDisplayType === 'design' ? (
               <AbstractProfileDesign key={`${creator.profileDesignType}-${creator.profileDesignPalette}-${creator.companionBubble}-${creator.companionBubbleText}`} type={creator.profileDesignType} palette={creator.profileDesignPalette} density={creator.profileDesignDensity} lineStyle={creator.profileDesignLineStyle} motion={creator.profileDesignMotion} interaction={creator.profileDesignInteraction} doodleTheme={creator.profileDesignDoodleTheme} status={creator.companionBubble} statusText={creator.companionBubbleText} statusBehavior={creator.companionBubbleBehavior}/>
             ) : (
-              <ProfileCompanion key={`${creator.companionType}-${creator.companionBubble}-${creator.companionBubbleText}-${creator.companionBubbleBehavior}`} type={creator.companionType} motion={creator.companionMotion} emotion={creator.companionEmotion} bubble={creator.companionBubble} bubbleText={creator.companionBubbleText} bubbleBehavior={creator.companionBubbleBehavior}/>
+              <ProfileCompanion key={`${creator.companionType}-${creator.companionBubble}-${creator.companionBubbleText}-${creator.companionBubbleBehavior}`} type={creator.companionType} motion={creator.companionMotion} emotion={creator.companionEmotion} bubble={creator.companionBubble} bubbleText={creator.companionBubbleText} bubbleBehavior={creator.companionBubbleBehavior} onActivate={onCompanionOpen} activityCount={companionActivityCount} footprintLabel={capability === 'self' ? 'View footprints' : 'Leave footprint'}/>
             )}
           </div> : null}
           {creator.username ? (

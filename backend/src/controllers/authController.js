@@ -45,6 +45,7 @@ function sanitizeUser(user) {
     companionBubble: user.companionBubble || 'work',
     companionBubbleText: user.companionBubbleText || '',
     companionBubbleBehavior: user.companionBubbleBehavior || 'once',
+    companionFootprintsEnabled: user.companionFootprintsEnabled !== false,
     profileDisplayType: user.profileDisplayType || 'companion',
     profileDesignType: user.profileDesignType || 'bauhaus',
     profileDesignPalette: user.profileDesignPalette || 'midnight',
@@ -226,7 +227,7 @@ export const getCurrentUser = asyncHandler(async (request, response) => {
 export const updateCurrentUserProfile = asyncHandler(async (request, response) => {
   const {
     email, username, name, headline, skills, avatar, banner, bio, description, location, website,
-    creatorType, github, itchio, behance, artstation, instagram, linkedin, companionType, companionMotion, companionEmotion, companionBubble, companionBubbleText, companionBubbleBehavior, profileDisplayType, profileDesignType, profileDesignPalette, profileDesignDensity, profileDesignLineStyle, profileDesignMotion, profileDesignInteraction, profileDesignDoodleTheme
+    creatorType, github, itchio, behance, artstation, instagram, linkedin, companionType, companionMotion, companionEmotion, companionBubble, companionBubbleText, companionBubbleBehavior, companionFootprintsEnabled, profileDisplayType, profileDesignType, profileDesignPalette, profileDesignDensity, profileDesignLineStyle, profileDesignMotion, profileDesignInteraction, profileDesignDoodleTheme
   } = request.body ?? {}
 
   if (name !== undefined && !String(name).trim()) {
@@ -307,6 +308,7 @@ export const updateCurrentUserProfile = asyncHandler(async (request, response) =
   if (companionBubble !== undefined) user.companionBubble = String(companionBubble).trim()
   if (companionBubbleText !== undefined) user.companionBubbleText = String(companionBubbleText).trim().slice(0, 35)
   if (companionBubbleBehavior !== undefined) user.companionBubbleBehavior = String(companionBubbleBehavior).trim()
+  if (companionFootprintsEnabled !== undefined) user.companionFootprintsEnabled = Boolean(companionFootprintsEnabled)
   if (profileDisplayType !== undefined) user.profileDisplayType = String(profileDisplayType).trim()
   if (profileDesignType !== undefined) user.profileDesignType = String(profileDesignType).trim()
   if (profileDesignPalette !== undefined) user.profileDesignPalette = String(profileDesignPalette).trim()

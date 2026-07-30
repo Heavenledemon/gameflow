@@ -161,6 +161,8 @@ const userSchema = new mongoose.Schema(
       enum: ['once', 'tap', 'always'],
       default: 'once',
     },
+    companionFootprintsEnabled: { type: Boolean, default: true },
+    companionFootprintsReviewedAt: { type: Date, default: null },
     profileDisplayType: {
       type: String,
       enum: ['none', 'companion', 'design'],

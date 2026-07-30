@@ -10,9 +10,14 @@ import {
 import { listMyCollaborations, listProjectMembers, removeProjectMember, updateProjectMember } from '../controllers/projectMemberController.js'
 import { protect } from '../middlewares/authMiddleware.js'
 import { redisRateLimit } from '../middlewares/rateLimitMiddleware.js'
+import { listMyProfileFootprints, markFootprintsReviewed } from '../controllers/footprintController.js'
 
 const router = Router()
 const requestRateLimit = redisRateLimit({ bucket: 'collaboration-request', limit: 20, windowSeconds: 60 })
+const footprintRateLimit = redisRateLimit({ bucket: 'profile-footprint', limit: 20, windowSeconds: 60 })
+
+router.get('/profile/footprints', protect, listMyProfileFootprints)
+router.post('/profile/footprints/reviewed', protect, footprintRateLimit, markFootprintsReviewed)
 
 router.get('/collaboration/requests', protect, listCollaborationRequests)
 router.get('/collaboration/projects', protect, listMyCollaborations)

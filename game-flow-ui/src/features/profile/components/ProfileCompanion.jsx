@@ -71,39 +71,77 @@ const BUBBLE_MESSAGES = {
   work: 'Open to work 💼',
 }
 
-export default function ProfileCompanion({ type = 'none', motion = 'subtle', emotion = 'natural', bubble = 'off', bubbleText = '', bubbleBehavior = 'once', preview = false }) {
+export default function ProfileCompanion({ type = 'none', motion = 'subtle', emotion = 'natural', bubble = 'off', bubbleText = '', bubbleBehavior = 'once', preview = false, onActivate, activityCount = 0, footprintLabel = 'Leave footprint' }) {
   const [expression, setExpression] = useState('idle')
   const [bubbleVisible, setBubbleVisible] = useState(() => bubble !== 'off' && bubbleBehavior !== 'tap')
   const emotionTimer = useRef()
   const bubbleTimer = useRef()
+  const idleTimer = useRef()
+  const hoverTimer = useRef()
+  const tapTimer = useRef()
+  const tapCount = useRef(0)
+  const reactionActive = useRef(false)
   const Art = ART[type]
+  const sleepDelay = emotion === 'expressive' ? 6500 : 9000
+
+  const scheduleSleep = () => {
+    window.clearTimeout(idleTimer.current)
+    if (!preview && emotion !== 'off') idleTimer.current = window.setTimeout(() => setExpression('sleepy'), sleepDelay)
+  }
 
   useEffect(() => {
     window.clearTimeout(bubbleTimer.current)
     if (bubbleVisible && bubbleBehavior === 'once') bubbleTimer.current = window.setTimeout(() => setBubbleVisible(false), 4200)
     return () => window.clearTimeout(bubbleTimer.current)
   }, [bubbleBehavior, bubbleVisible])
-  useEffect(() => () => window.clearTimeout(emotionTimer.current), [])
+  useEffect(() => {
+    window.clearTimeout(idleTimer.current)
+    if (!preview && emotion !== 'off') idleTimer.current = window.setTimeout(() => setExpression('sleepy'), sleepDelay)
+    return () => window.clearTimeout(idleTimer.current)
+  }, [emotion, preview, sleepDelay])
+  useEffect(() => () => {
+    window.clearTimeout(emotionTimer.current)
+    window.clearTimeout(hoverTimer.current)
+    window.clearTimeout(tapTimer.current)
+  }, [])
   if (!Art) return null
 
   const message = bubble === 'custom' ? String(bubbleText || '').trim().slice(0, 35) : BUBBLE_MESSAGES[bubble]
-  const content = <>{message ? <span className={`profile-companion__bubble${bubbleVisible || preview ? ' is-visible' : ''}`}>{message}</span> : null}<Art/><span className="profile-companion__spark" aria-hidden="true">✦</span><span className="profile-companion__heart" aria-hidden="true">♥</span></>
+  const content = <>{message ? <span className={`profile-companion__bubble${bubbleVisible || preview ? ' is-visible' : ''}`}>{message}</span> : null}<Art/><span className="profile-companion__spark" aria-hidden="true">✦</span><span className="profile-companion__heart" aria-hidden="true">♥</span><span className="profile-companion__emotion-mark" aria-hidden="true">{expression === 'sleepy' ? 'zZ' : expression === 'curious' ? '?' : ''}</span></>
   const classes = `profile-companion profile-companion--${type} profile-companion--${motion} profile-companion--emotion-${emotion} is-${expression}`
   if (preview) return <span className={`${classes} profile-companion--preview`}>{content}</span>
 
-  const react = () => {
+  const playReaction = (taps) => {
     if (message) {
       window.clearTimeout(bubbleTimer.current)
       setBubbleVisible(true)
       if (bubbleBehavior !== 'always') bubbleTimer.current = window.setTimeout(() => setBubbleVisible(false), 3600)
     }
     if (emotion === 'off') return
+    window.clearTimeout(idleTimer.current)
     window.clearTimeout(emotionTimer.current)
+    reactionActive.current = true
     setExpression('surprised')
     emotionTimer.current = window.setTimeout(() => {
-      setExpression(emotion === 'expressive' ? 'delighted' : 'happy')
-      emotionTimer.current = window.setTimeout(() => setExpression('idle'), emotion === 'expressive' ? 1500 : 850)
-    }, 360)
+      const nextExpression = taps >= 3 ? 'excited' : taps === 2 ? 'playful' : emotion === 'expressive' ? 'affectionate' : 'happy'
+      setExpression(nextExpression)
+      emotionTimer.current = window.setTimeout(() => {
+        reactionActive.current = false
+        setExpression('idle')
+        scheduleSleep()
+      }, taps >= 3 ? 1550 : taps === 2 ? 1350 : emotion === 'expressive' ? 1550 : 900)
+    }, 240)
+  }
+  const queueReaction = () => {
+    window.clearTimeout(hoverTimer.current)
+    window.clearTimeout(idleTimer.current)
+    tapCount.current = Math.min(tapCount.current + 1, 3)
+    window.clearTimeout(tapTimer.current)
+    tapTimer.current = window.setTimeout(() => {
+      const taps = tapCount.current
+      tapCount.current = 0
+      playReaction(taps)
+    }, 300)
   }
   const trackFace = (event) => {
     if (emotion === 'off') return
@@ -111,7 +149,23 @@ export default function ProfileCompanion({ type = 'none', motion = 'subtle', emo
     event.currentTarget.style.setProperty('--look-x', ((event.clientX - bounds.left) / bounds.width - .5).toFixed(2))
     event.currentTarget.style.setProperty('--look-y', ((event.clientY - bounds.top) / bounds.height - .5).toFixed(2))
   }
-  const resetFace = (event) => { event.currentTarget.style.setProperty('--look-x', 0); event.currentTarget.style.setProperty('--look-y', 0) }
+  const meetFace = () => {
+    if (emotion === 'off' || reactionActive.current || tapCount.current) return
+    window.clearTimeout(idleTimer.current)
+    window.clearTimeout(emotionTimer.current)
+    window.clearTimeout(hoverTimer.current)
+    setExpression('shy')
+    hoverTimer.current = window.setTimeout(() => setExpression('curious'), 520)
+  }
+  const resetFace = (event) => {
+    event.currentTarget.style.setProperty('--look-x', 0)
+    event.currentTarget.style.setProperty('--look-y', 0)
+    if (emotion === 'off' || reactionActive.current || tapCount.current) return
+    window.clearTimeout(hoverTimer.current)
+    window.clearTimeout(emotionTimer.current)
+    setExpression('idle')
+    scheduleSleep()
+  }
 
-  return <button type="button" className={classes} aria-label={`Play with ${COMPANION_OPTIONS.find((item) => item.id === type)?.label || 'profile companion'}`} onClick={react} onPointerMove={trackFace} onPointerLeave={resetFace}>{content}</button>
+  return <span className="profile-companion-shell"><button type="button" className={classes} aria-label={`Play with ${COMPANION_OPTIONS.find((item) => item.id === type)?.label || 'profile companion'}`} onClick={queueReaction} onPointerEnter={meetFace} onPointerMove={trackFace} onPointerLeave={resetFace}>{content}</button>{onActivate ? <button type="button" className={`profile-companion__footprint${activityCount > 0 ? ' has-activity' : ''}`} aria-label={activityCount > 0 ? `${footprintLabel}, ${activityCount} new` : footprintLabel} title={footprintLabel} onClick={onActivate}><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="15.5" rx="5.2" ry="4.5"/><circle cx="6.2" cy="10.2" r="2.1"/><circle cx="10" cy="6.8" r="2.15"/><circle cx="14.5" cy="6.7" r="2.15"/><circle cx="18.1" cy="10.3" r="2.05"/></svg><span className="profile-companion__footprint-label">{footprintLabel}</span>{activityCount > 0 ? <span className="profile-companion__footprint-count" aria-hidden="true">{activityCount > 9 ? '9+' : activityCount}</span> : null}</button> : null}</span>
 }

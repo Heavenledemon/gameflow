@@ -9,6 +9,14 @@ function SearchIcon() {
   )
 }
 
+function XIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M18 6 6 18M6 6l12 12" />
+    </svg>
+  )
+}
+
 export default function DiscoverySearch({ value, onChange, onClear }) {
   const inputId = useId()
   const helpId = `${inputId}-help`
@@ -29,7 +37,7 @@ export default function DiscoverySearch({ value, onChange, onClear }) {
           onChange={(event) => onChange(event.target.value)}
           style={{ background: 'transparent', backgroundColor: 'transparent', border: 'none', boxShadow: 'none', outline: 'none' }}
         />
-        {value ? <button type="button" onClick={onClear}>Clear</button> : null}
+        {value ? <button type="button" aria-label="Clear search" onClick={onClear}><XIcon /></button> : null}
       </div>
       <p id={helpId}>Search projects, tags, tools, and every creator on GameFlow.</p>
     </form>

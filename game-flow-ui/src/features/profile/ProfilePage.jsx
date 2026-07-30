@@ -21,6 +21,8 @@ import PortfolioTabs from './components/PortfolioTabs'
 import { ProfileActions } from './components/ProfileActions'
 import EditProfileForm from './components/EditProfileForm'
 import ProjectManagementSheet from './components/ProjectManagementSheet'
+import CompanionFootprintPanel from './components/CompanionFootprintPanel'
+import { fetchProfileFootprints, markProfileFootprintsReviewed } from '../../lib/footprints'
 import { contentCollections, mapPortfolioItems } from './profileAdapters'
 import './ProfilePage.css'
 
@@ -55,6 +57,10 @@ export default function ProfilePage() {
   const [storyOpen, setStoryOpen] = useState(false)
   const [viewedStoryIds, setViewedStoryIds] = useState(getViewedStoryIds)
   const [followList, setFollowList] = useState('')
+  const [companionOpen, setCompanionOpen] = useState(false)
+  const [footprints, setFootprints] = useState([])
+  const [footprintsLoading, setFootprintsLoading] = useState(() => !isGuest)
+  const [unreadFootprints, setUnreadFootprints] = useState(0)
   const [socialCounts, setSocialCounts] = useState({ followers: user?.followersCount ?? 0, following: user?.followingCount ?? 0 })
   const activeStory = activeStories[0] || null
 
@@ -123,6 +129,22 @@ export default function ProfilePage() {
   }, [])
   const handleRealtime = useCallback((eventName) => { if (eventName.startsWith('project.member.')) loadCollaborations() }, [loadCollaborations])
   useMessagingRealtime(token, { onEvent: handleRealtime, onReady: loadCollaborations })
+  useEffect(() => {
+    if (isGuest || !token) return undefined
+    const controller = new AbortController()
+    fetchProfileFootprints(token, { signal: controller.signal }).then((data) => {
+      if (controller.signal.aborted) return
+      setFootprints(data.items || [])
+      setUnreadFootprints(Number(data.unreadCount || 0))
+    }).catch(() => {
+      if (controller.signal.aborted) return
+      setFootprints([])
+      setUnreadFootprints(0)
+    }).finally(() => {
+      if (!controller.signal.aborted) setFootprintsLoading(false)
+    })
+    return () => controller.abort()
+  }, [isGuest, token])
 
   const ownedRaw = useMemo(() => collection.projects.filter((project) => String(project.ownerId) === String(userId)), [collection.projects, userId])
   const projects = useMemo(() => mapPortfolioItems(ownedRaw), [ownedRaw])
@@ -162,6 +184,7 @@ export default function ProfilePage() {
     location: user?.location, bio: user?.bio, description: user?.description, website: user?.website, skills: user?.skills || [],
     companionType: user?.companionType || 'cosmic', companionMotion: user?.companionMotion || 'subtle', companionEmotion: user?.companionEmotion || 'natural',
     companionBubble: user?.companionBubble || 'work', companionBubbleText: user?.companionBubbleText || '', companionBubbleBehavior: user?.companionBubbleBehavior || 'once',
+    companionFootprintsEnabled: user?.companionFootprintsEnabled !== false,
     profileDisplayType: user?.profileDisplayType || 'companion', profileDesignType: user?.profileDesignType || 'bauhaus', profileDesignPalette: user?.profileDesignPalette || 'midnight', profileDesignDensity: user?.profileDesignDensity || 'balanced', profileDesignLineStyle: user?.profileDesignLineStyle || 'clean', profileDesignMotion: user?.profileDesignMotion || 'subtle', profileDesignInteraction: user?.profileDesignInteraction || 'rearrange', profileDesignDoodleTheme: user?.profileDesignDoodleTheme || 'Developer',
     tools: [...new Set([...(user?.tools || []), ...projects.flatMap((project) => project.tools)])], platforms: user?.platforms || [], collaborationOpen: typeof user?.collaborationOpen === 'boolean' ? user.collaborationOpen : null,
     socialLinks: [
@@ -240,7 +263,10 @@ export default function ProfilePage() {
       moreLabel="Log out"
       actions={<ProfileActions capability="self" onEdit={openEdit} />}
       onStatSelect={setFollowList}
+      onCompanionOpen={() => { setCompanionOpen(true); setUnreadFootprints(0); setFootprints((items) => items.map((item) => ({ ...item, unread: false }))); markProfileFootprintsReviewed(token).catch(() => {}) }}
+      companionActivityCount={unreadFootprints}
     />
+    <CompanionFootprintPanel open={companionOpen} mode="owner" creator={creator} token={token} footprints={footprints} loading={footprintsLoading} onClose={() => setCompanionOpen(false)} onOpenVisitor={(visitor) => { setCompanionOpen(false); navigate(`/app/creator/${visitor.id}`) }} />
     <FollowListSheet open={Boolean(followList)} kind={followList || 'followers'} userId={userId} currentUserId={userId} token={token} onClose={() => setFollowList('')} onChanged={(result) => setSocialCounts((counts) => ({ ...counts, following: result.followingCount ?? counts.following }))} />
     {storyOpen && activeStories.length ? <StoryViewer stories={activeStories} onClose={() => setStoryOpen(false)} /> : null}
     <section className="portfolio" aria-labelledby="portfolio-heading">
