@@ -68,16 +68,60 @@
 }
 
 .inbox-page__intro {
-  margin: 4px 0 16px;
+  margin: 8px 0 20px;
+  padding: 18px 14px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
   text-align: center;
+  position: relative;
+  border-radius: 16px;
+  background: radial-gradient(circle at 50% 0%, rgba(255, 107, 74, 0.08) 0%, rgba(13, 27, 42, 0) 70%);
 }
-.inbox-page__intro h2 { margin: 0; font-size: 1.35rem; font-weight: 800; line-height: 1.25; letter-spacing: -0.02em; color: var(--gf-text); max-width: 360px; }
-.inbox-page__intro p { margin: 0; color: var(--gf-text-muted); font-size: 0.84rem; line-height: 1.4; max-width: 340px; }
-.inbox-page__intro .inbox-page__eyebrow { color: var(--gf-brand-coral); font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; margin: 0; }
+
+.inbox-page__intro .inbox-page__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px;
+  border-radius: 9999px;
+  background: rgba(255, 107, 74, 0.12);
+  border: 1px solid rgba(255, 107, 74, 0.25);
+  color: #ff7b54;
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  margin: 0;
+  box-shadow: 0 0 12px rgba(255, 107, 74, 0.15);
+}
+
+.inbox-page__eyebrow-icon {
+  color: #ff7b54;
+  flex-shrink: 0;
+}
+
+.inbox-page__intro h2 {
+  margin: 2px 0 0;
+  font-size: 1.55rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  max-width: 400px;
+}
+
+.inbox-page__intro p {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  font-weight: 450;
+  line-height: 1.45;
+  max-width: 360px;
+}
 
 .inbox-connection { margin: 0 0 var(--gf-space-3); padding: 10px 12px; border: 1px solid rgb(255 179 71 / 20%); border-radius: var(--gf-radius-sm); background: rgb(255 179 71 / 6%); color: #ffd895; font-size: var(--gf-text-caption); line-height: var(--gf-leading-normal); }
 
