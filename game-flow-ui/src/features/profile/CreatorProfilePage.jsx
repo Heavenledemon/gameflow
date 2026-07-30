@@ -17,6 +17,7 @@ import CreatorHeader from './components/CreatorHeader'
 import FollowListSheet from './components/FollowListSheet'
 import PortfolioTabs from './components/PortfolioTabs'
 import { ProfileActions } from './components/ProfileActions'
+import CompanionFootprintPanel from './components/CompanionFootprintPanel'
 import { contentCollections, creatorFromPortfolio, mapPortfolioItems, matchesCreator } from './profileAdapters'
 import './ProfilePage.css'
 
@@ -41,6 +42,7 @@ export default function CreatorProfilePage() {
   const [storyOpen, setStoryOpen] = useState(false)
   const [viewedStoryIds, setViewedStoryIds] = useState(getViewedStoryIds)
   const [followList, setFollowList] = useState('')
+  const [companionOpen, setCompanionOpen] = useState(false)
   const activeStory = activeStories[0] || null
 
   const loadPortfolio = useCallback(async () => {
@@ -111,6 +113,7 @@ export default function CreatorProfilePage() {
       companionBubble: publicProfile.companionBubble || 'work',
       companionBubbleText: publicProfile.companionBubbleText || '',
       companionBubbleBehavior: publicProfile.companionBubbleBehavior || 'once',
+      companionFootprintsEnabled: publicProfile.companionFootprintsEnabled !== false,
       profileDisplayType: publicProfile.profileDisplayType || 'companion',
       profileDesignType: publicProfile.profileDesignType || 'bauhaus',
       profileDesignPalette: publicProfile.profileDesignPalette || 'midnight',
@@ -221,7 +224,9 @@ export default function CreatorProfilePage() {
       moreLabel="Creator safety options"
       actions={<ProfileActions capability="public" following={following} blocked={blocked} busy={actionBusy} onFollow={targetId ? followCreator : undefined} onMessage={messageCreator} />}
       onStatSelect={setFollowList}
+      onCompanionOpen={() => setCompanionOpen(true)}
     />
+    <CompanionFootprintPanel open={companionOpen} mode="visitor" creator={creator} token={token} isGuest={isGuest} onClose={() => setCompanionOpen(false)} onSignIn={() => navigate('/signin')} />
     <FollowListSheet open={Boolean(followList)} kind={followList || 'followers'} userId={targetId} currentUserId={user?.id || user?._id} token={token} onClose={() => setFollowList('')} />
     {storyOpen && activeStories.length ? <StoryViewer stories={activeStories} onClose={() => setStoryOpen(false)} /> : null}
     <section className="portfolio" aria-labelledby="portfolio-heading">

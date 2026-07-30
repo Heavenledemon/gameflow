@@ -29,8 +29,10 @@ import { optionalProtect, protect } from '../middlewares/authMiddleware.js'
 import { redisRateLimit } from '../middlewares/rateLimitMiddleware.js'
 import { getFeed, getPost, getPostComments } from '../controllers/feedController.js'
 import { deleteWorkspaceAsset, getAssetDownloadUrl, getWorkspace, listWorkspaceAssets, restoreWorkspaceAsset } from '../controllers/workspaceController.js'
+import { getMyFootprintForCreator, removeMyFootprint, upsertMyFootprint } from '../controllers/footprintController.js'
 
 const router = Router()
+const footprintRateLimit = redisRateLimit({ bucket: 'profile-footprint', limit: 20, windowSeconds: 60 })
 
 router.get('/health', getHealth)
 router.get('/ready', getReadiness)
@@ -41,6 +43,9 @@ router.get('/games', optionalProtect, getPublishedGames)
 router.get('/assets', optionalProtect, getPublishedAssets)
 router.get('/users/search', optionalProtect, searchUsers)
 router.get('/users/:identity', optionalProtect, getPublicUser)
+router.get('/users/:userId/footprint', protect, getMyFootprintForCreator)
+router.put('/users/:userId/footprint', protect, footprintRateLimit, upsertMyFootprint)
+router.delete('/users/:userId/footprint', protect, footprintRateLimit, removeMyFootprint)
 router.get('/users/:userId/:kind', optionalProtect, listUserFollows)
 router.get('/projects', optionalProtect, getPublishedProjects)
 router.get('/projects/:projectId', optionalProtect, getProjectById)
