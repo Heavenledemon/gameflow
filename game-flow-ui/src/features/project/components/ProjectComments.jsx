@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
+import { Send } from 'lucide-react'
 import { Button } from '../../../components/ui/Button'
 import Avatar from '../../../components/ui/Avatar'
 import { EmptyState, ErrorState, LoadingState } from '../../../components/ui/Feedback'
 import { Sheet } from '../../../components/ui/Overlay'
-import { CommentThread } from '../../feed/components/CommentsSheet'
+import { CommentThread, ComposerInput } from '../../feed/components/CommentsSheet'
 
 function useDesktopComments() {
   const [desktop, setDesktop] = useState(() => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches)
@@ -28,9 +29,32 @@ function CommentsContent({ comments, status, error, viewer, isGuest, draft, repl
     {error && status !== 'error' ? <p className="comments-sheet__composer-error" role="alert">{error}</p> : null}
     <form className="project-comments__composer" onSubmit={onSubmit}>
       <Avatar src={viewer?.avatar} alt="" name={viewer?.name || viewer?.username || 'Me'} size="small" />
-      <label className="comments-sheet__input-wrap"><span className="gf-sr-only">Add a response</span><input value={draft} maxLength={500} disabled={isGuest || submitting || status !== 'ready'} placeholder={isGuest ? 'Sign in to add a response' : replyTarget ? `Reply to @${replyTarget.username || replyTarget.name || 'creator'}…` : 'Add a response…'} onChange={(event) => onDraftChange(event.target.value)} /><button type="submit" disabled={isGuest || submitting || status !== 'ready' || !draft.trim()}>{submitting ? 'Posting…' : 'Post'}</button></label>
+      <div className={`comments-sheet__input-wrap ${draft.trim() ? 'has-content' : ''}`}>
+        <label className="comments-sheet__input-label">
+          <span className="gf-sr-only">Add a response</span>
+          <ComposerInput
+            draft={draft}
+            disabled={isGuest || submitting || status !== 'ready'}
+            placeholder={isGuest ? 'Sign in to add a response' : replyTarget ? `Reply to @${replyTarget.username || replyTarget.name || 'creator'}…` : 'Add a response…'}
+            onDraftChange={onDraftChange}
+          />
+        </label>
+        <div className="comments-sheet__input-actions">
+          <span className={`comments-sheet__limit-badge ${draft.length >= 450 ? 'near-limit' : ''}`}>
+            {draft.length}/500
+          </span>
+          <button
+            type="submit"
+            className="comments-sheet__send-btn"
+            disabled={isGuest || submitting || status !== 'ready' || !draft.trim()}
+            aria-label={submitting ? 'Posting response' : 'Post response'}
+            title={submitting ? 'Posting…' : 'Post response'}
+          >
+            <Send className="comments-sheet__send-icon" size={15} />
+          </button>
+        </div>
+      </div>
     </form>
-    <span className="comments-sheet__limit">{draft.length}/500</span>
   </div>
 }
 

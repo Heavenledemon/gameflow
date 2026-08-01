@@ -576,12 +576,7 @@
 .project-comments .comments-sheet__replies-toggle span { width: 28px; border-top: 1px solid currentColor; }
 .project-comments .comments-sheet__replying { display: flex; align-items: center; justify-content: space-between; gap: var(--gf-space-2); color: var(--gf-text-muted); font-size: var(--gf-text-caption); }
 .project-comments .comments-sheet__composer-error { margin: 0; color: var(--gf-danger); font-size: var(--gf-text-caption); }
-.project-comments__composer { display: flex; align-items: center; gap: var(--gf-space-2); padding-top: var(--gf-space-3); border-top: 1px solid var(--gf-border); }
-.project-comments .comments-sheet__input-wrap { min-width: 0; min-height: 44px; display: flex; flex: 1 1 auto; align-items: center; overflow: hidden; border: 1px solid var(--gf-border); border-radius: var(--gf-radius-pill); background: var(--gf-control); }
-.project-comments .comments-sheet__input-wrap:focus-within { outline: 3px solid var(--gf-focus); outline-offset: 2px; }
-.project-comments .comments-sheet__input-wrap input { min-width: 0; min-height: 42px; flex: 1 1 auto; padding: 0 var(--gf-space-4); border: 0 !important; border-radius: 0; outline: 0; color: var(--gf-text); background: transparent !important; }
-.project-comments .comments-sheet__input-wrap button { min-height: 44px; padding: 0 var(--gf-space-3); border: 0; color: var(--gf-brand); background: transparent; font-weight: 800; }
-.project-comments .comments-sheet__limit { align-self: flex-end; color: var(--gf-text-muted); font-size: var(--gf-text-caption); }
+.project-comments__composer { display: flex; align-items: center; gap: var(--gf-space-3); padding-top: var(--gf-space-3); border-top: 1px solid var(--gf-border); }
 
 .collaboration-picker { display: grid; gap: var(--gf-space-3); }
 
