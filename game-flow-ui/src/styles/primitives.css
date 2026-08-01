@@ -220,10 +220,10 @@
 }
 .gf-dialog { width: min(92vw, 520px); min-height: 0; max-height: min(92dvh, 760px); display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.22); border-radius: 24px; background: rgba(255, 255, 255, 0.82); color: var(--gf-text); box-shadow: 0 12px 40px rgba(15, 23, 42, 0.18), 0 2px 8px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.7); backdrop-filter: blur(24px) saturate(1.8); -webkit-backdrop-filter: blur(24px) saturate(1.8); outline: none; animation: gf-dialog-pop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
 .gf-sheet { width: min(100%, 260px); min-height: 180px; max-height: min(90dvh, 720px); display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.22); border-radius: 24px; background: rgba(255, 255, 255, 0.72); color: var(--gf-text); box-shadow: 0 8px 32px rgba(15, 23, 42, 0.18), 0 1.5px 6px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6); backdrop-filter: blur(20px) saturate(1.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); outline: none; animation: gf-dialog-pop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1); }
-.gf-dialog__header { display: flex; align-items: center; justify-content: space-between; gap: var(--gf-space-3); min-height: 60px; padding: var(--gf-space-3) var(--gf-space-2) var(--gf-space-3) var(--gf-space-5); border-bottom: 1px solid rgba(0, 0, 0, 0.07); }
+.gf-dialog__header { display: flex; align-items: center; justify-content: space-between; gap: var(--gf-space-4); min-height: 84px; padding: 20px var(--gf-space-5) 18px; border-bottom: 1px solid rgba(0, 0, 0, 0.07); }
 .gf-dialog__heading { min-width: 0; }
 .gf-dialog__title { margin: 0; font-size: 1.1rem; font-weight: 800; line-height: var(--gf-leading-tight); letter-spacing: -0.015em; }
-.gf-dialog__description { margin: 3px 0 0; color: var(--gf-text-muted); font-size: 0.78rem; }
+.gf-dialog__description { margin: 6px 0 0; color: var(--gf-text-muted); font-size: 0.78rem; line-height: 1.45; }
 .gf-dialog__content { overflow-y: auto; overscroll-behavior: contain; padding: var(--gf-space-4) var(--gf-space-5) var(--gf-space-5); }
 .gf-sheet__handle { display: none; }
 .gf-sheet { animation: gf-sheet-enter var(--gf-motion-sheet); }
