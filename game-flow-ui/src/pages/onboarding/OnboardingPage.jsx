@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import wavingVideo from '../../assets/wave.mp4';
-import logoImg from '../../assets/logo.jpg';
+import gameFlowLogo from '../../assets/game-flow-wordmark.svg';
 import slide1 from '../../assets/7697d2c01b465803c1b41ab51d5557b7.jpg';
 import slide2 from '../../assets/fly.jpg';
 import slide3 from '../../assets/an.jpg';
@@ -176,49 +176,27 @@ const OnboardingPage = () => {
         {/* Logo mark — glass circle container */}
         <div
           style={{
-            width: 80,
-            height: 80,
-            borderRadius: '50%',
-            background: 'rgba(11,13,18,0.45)',
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
-            border: '1px solid rgba(255,255,255,0.14)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            marginBottom: 14,
-            boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
+            marginBottom: 10,
           }}
         >
           <img
-            src={logoImg}
-            alt="CreativeVerse"
+            src={gameFlowLogo}
+            alt="Game-flow"
             style={{
-              width: 68,
-              height: 68,
-              borderRadius: '50%',
-              objectFit: 'cover',
+              width: 218,
+              height: 46,
+              objectFit: 'contain',
             }}
           />
         </div>
 
-        {/* Wordmark */}
-        <span
-          style={{
-            fontSize: 22,
-            fontWeight: 700,
-            color: '#FFFFFF',
-            letterSpacing: -0.5,
-            lineHeight: 1,
-          }}
-        >
-          CreativeVerse
-        </span>
-
         {/* Tagline — one sentence only */}
         <span
           style={{
-            marginTop: 8,
+            marginTop: 0,
             fontSize: 14,
             fontWeight: 400,
             color: 'rgba(255,255,255,0.72)',

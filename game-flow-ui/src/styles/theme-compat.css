@@ -47,17 +47,18 @@
 
 /* The global dark-control compatibility rule above also matches controls in
    neutral dialogs. Reassert the dialog palette after it in the cascade. */
-:root[data-color-scheme='dark'] :is(.gf-dialog, .gf-sheet, .gf-sheet-panel) :is(input, textarea, select):not([type='range']):not([type='checkbox']):not([type='radio']) {
+:root[data-color-scheme='dark'] :is(.gf-dialog, .gf-sheet, .gf-sheet-panel) :is(input, textarea, select):not([type='range']):not([type='checkbox']):not([type='radio']):not(.comments-sheet__text-input) {
   color: #1a1a2e !important;
   border-color: #d9dbe5 !important;
   background-color: #ffffff !important;
   -webkit-text-fill-color: #1a1a2e;
 }
-:root[data-color-scheme='dark'] :is(.gf-dialog, .gf-sheet, .gf-sheet-panel) :is(input, textarea)::placeholder {
+:root[data-color-scheme='dark'] :is(.gf-dialog, .gf-sheet, .gf-sheet-panel) :is(input, textarea):not(.comments-sheet__text-input)::placeholder {
   color: #5f6072 !important;
   -webkit-text-fill-color: #5f6072;
   opacity: 1;
 }
+
 
 :root[data-color-scheme='dark'] :is(
   .publish-page, .publish-stepper, .publish-card, .publish-success, .publish-files,
