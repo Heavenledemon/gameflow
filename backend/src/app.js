@@ -10,6 +10,7 @@ import contentRoutes from './routes/contentRoutes.js'
 import socialRoutes from './routes/socialRoutes.js'
 import messagingRoutes from './routes/messagingRoutes.js'
 import storyRoutes from './routes/storyRoutes.js'
+import analyticsRoutes from './routes/analyticsRoutes.js'
 import { errorHandler, notFound } from './middlewares/errorMiddleware.js'
 import { getMetrics, observabilityMiddleware } from './middlewares/observabilityMiddleware.js'
 import { protect } from './middlewares/authMiddleware.js'
@@ -121,6 +122,7 @@ app.use('/api', contentRoutes)
 app.use('/api', socialRoutes)
 app.use('/api', messagingRoutes)
 app.use('/api', storyRoutes)
+app.use('/api', analyticsRoutes)
 
 function setFrontendAssetHeaders(response, filePath) {
   setUploadHeaders(response, filePath)

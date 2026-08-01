@@ -4,6 +4,7 @@ import ProfileFootprint, { FOOTPRINT_LIFETIME_MS, FOOTPRINT_REACTIONS } from '..
 import User from '../models/User.js'
 import UserBlock from '../models/UserBlock.js'
 import { isBlockedBetween } from '../services/moderationService.js'
+import { recordAnalyticsEvent } from './analyticsController.js'
 
 function error(statusCode, message) { const value = new Error(message); value.statusCode = statusCode; return value }
 
@@ -33,18 +34,21 @@ export const upsertMyFootprint = asyncHandler(async (request, response) => {
   if (await isBlockedBetween(owner._id, request.user._id)) throw error(403, 'This interaction is unavailable.')
   const reaction = String(request.body?.reaction || '')
   if (!FOOTPRINT_REACTIONS.includes(reaction)) throw error(400, 'Choose a valid footprint reaction.')
+  const existing = await ProfileFootprint.findOne({ ownerId: owner._id, visitorId: request.user._id }).select('isActive').lean()
   const footprint = await ProfileFootprint.findOneAndUpdate(
     { ownerId: owner._id, visitorId: request.user._id },
     { $set: { reaction, isActive: true, hiddenByOwner: false, expiresAt: new Date(Date.now() + FOOTPRINT_LIFETIME_MS) } },
     { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true },
   )
+  await recordAnalyticsEvent({ creatorId: owner._id, contentType: 'profile', eventType: existing?.isActive ? 'footprint_updated' : 'footprint_created', viewerId: request.user._id, metadata: { reaction } })
   response.json({ message: 'Your footprint was left privately for this creator.', footprint: { id: String(footprint._id), reaction: footprint.reaction, updatedAt: footprint.updatedAt } })
 })
 
 export const removeMyFootprint = asyncHandler(async (request, response) => {
   const owner = await loadOwner(request.params.userId)
   if (String(owner._id) === String(request.user._id)) throw error(400, 'Your own profile does not use visitor footprints.')
-  await ProfileFootprint.updateOne({ ownerId: owner._id, visitorId: request.user._id }, { $set: { isActive: false } })
+  const result = await ProfileFootprint.updateOne({ ownerId: owner._id, visitorId: request.user._id, isActive: true }, { $set: { isActive: false } })
+  if (result.modifiedCount) await recordAnalyticsEvent({ creatorId: owner._id, contentType: 'profile', eventType: 'footprint_removed', viewerId: request.user._id })
   response.json({ message: 'Your footprint was removed.', footprint: null })
 })
 
