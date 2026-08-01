@@ -314,7 +314,7 @@
   align-items: center;
   justify-content: center;
   gap: 3px;
-  color: var(--gf-text-muted);
+  color: #fff;
   font-size: var(--gf-text-caption);
   font-weight: 700;
   transition: color 0.2s ease;
@@ -324,7 +324,7 @@
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  color: var(--gf-text-muted);
+  color: #fff;
   filter: none;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
@@ -332,54 +332,17 @@
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
-/* Like Button Highlights */
-.project-actions__social-item:nth-child(1) .gf-icon-button:hover {
-  color: #ff4757 !important;
+/* Match the Home feed: every interaction uses white, including hover and active states. */
+.project-actions__social-item .gf-icon-button:hover {
+  color: #fff !important;
   background: transparent !important;
   transform: scale(1.14);
 }
 
-.project-actions__social-item:nth-child(1) .gf-icon-button[aria-pressed='true'],
-.project-actions__social-item:nth-child(1) .gf-icon-button.feed-action--active {
-  color: #ff4757 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-.project-actions__social-item:nth-child(1):has([aria-pressed='true']) span {
-  color: #ff4757;
-}
-
-/* Comment Button Highlights */
-.project-actions__social-item:nth-child(2) .gf-icon-button:hover {
-  color: #3b82f6 !important;
-  background: transparent !important;
-  transform: scale(1.14);
-}
-
-/* Save / Bookmark Button Highlights */
-.project-actions__social-item:nth-child(3) .gf-icon-button:hover {
-  color: #f59e0b !important;
-  background: transparent !important;
-  transform: scale(1.14);
-}
-
-.project-actions__social-item:nth-child(3) .gf-icon-button[aria-pressed='true'],
-.project-actions__social-item:nth-child(3) .gf-icon-button.feed-action--active {
-  color: #f59e0b !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-.project-actions__social-item:nth-child(3):has([aria-pressed='true']) span {
-  color: #f59e0b;
-}
-
-/* Share Button Highlights */
-.project-actions__social-item:nth-child(4) .gf-icon-button:hover {
-  color: #10b981 !important;
-  background: transparent !important;
-  transform: scale(1.14);
+.project-actions__social-item .gf-icon-button[aria-pressed='true'],
+.project-actions__social-item .gf-icon-button.feed-action--active,
+.project-actions__social-item:has([aria-pressed='true']) span {
+  color: #fff !important;
 }
 
 /* Use crisp icon colors for interaction feedback without circular halos. */

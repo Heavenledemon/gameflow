@@ -12,7 +12,7 @@ function formatProjectType(project, mediaKind) {
   return labels[value] || value.replace(/[-_]+/g, ' ').toUpperCase()
 }
 
-export default function ProjectTile({ project, onOpen, onPreview, onLongPress, showLongPressHint = false, onLongPressHintDismiss, actions, actionsPlacement = 'overlay', selected = false, variant = 'card', fallbackAspectRatio = '1 / 1' }) {
+export default function ProjectTile({ project, onOpen, onLongPress, showLongPressHint = false, onLongPressHintDismiss, actions, actionsPlacement = 'overlay', selected = false, variant = 'card', fallbackAspectRatio = '1 / 1' }) {
   const holdTimerRef = useRef(null)
   const holdOriginRef = useRef(null)
   const holdTriggeredRef = useRef(false)
@@ -55,12 +55,6 @@ export default function ProjectTile({ project, onOpen, onPreview, onLongPress, s
     }, 500)
   }
 
-  const openPreview = (event) => {
-    event.stopPropagation()
-    const origin = event.currentTarget.closest('.project-tile')?.getBoundingClientRect() || null
-    onPreview?.(project, origin)
-  }
-
   return (
     <article
       className={`project-tile project-tile--${variant} ${selected ? 'project-tile--selected' : ''} ${isHolding ? 'project-tile--holding' : ''}`}
@@ -72,17 +66,7 @@ export default function ProjectTile({ project, onOpen, onPreview, onLongPress, s
           poster={mediaKind === 'video' ? undefined : (project.posterUrl || project.media?.posterUrl)}
           alt={project.title}
           mediaKind={mediaKind}
-          badge={onPreview ? (
-            <button
-              type="button"
-              className="project-tile__badge project-tile__preview"
-              aria-label={`Preview ${project.title}`}
-              onClick={openPreview}
-            >
-              <span aria-hidden="true">&#9654;</span>
-              <span>{projectTypeLabel} · Preview</span>
-            </button>
-          ) : <span className="project-tile__badge">{projectTypeLabel}</span>}
+          badge={<span className="project-tile__badge">{projectTypeLabel}</span>}
         >
           {mediaKind === 'video' && videoUrl ? <video className="project-tile__video" src={videoUrl} muted loop autoPlay playsInline preload="metadata" aria-label={`${project.title} video`} /> : null}
         </MediaFrame>

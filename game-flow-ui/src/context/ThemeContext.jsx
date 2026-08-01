@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
 const STORAGE_KEY = 'gameflow-theme-preferences'
+const DEFAULT_BACKGROUND = '#003566'
+const DEFAULT_NAVBAR = '#001d3d'
 
 export const backgroundOptions = [
   { color: '#fefae0', text: '#171827' },
@@ -32,11 +34,11 @@ function readPreferences() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}')
     return {
-      background: backgroundOptions.some(({ color }) => color === saved.background) ? saved.background : backgroundOptions[0].color,
-      navbar: navbarOptions.some(({ color }) => color === saved.navbar) ? saved.navbar : navbarOptions[0].color,
+      background: backgroundOptions.some(({ color }) => color === saved.background) ? saved.background : DEFAULT_BACKGROUND,
+      navbar: navbarOptions.some(({ color }) => color === saved.navbar) ? saved.navbar : DEFAULT_NAVBAR,
     }
   } catch {
-    return { background: backgroundOptions[0].color, navbar: navbarOptions[0].color }
+    return { background: DEFAULT_BACKGROUND, navbar: DEFAULT_NAVBAR }
   }
 }
 
@@ -45,8 +47,8 @@ export function ThemeProvider({ children }) {
 
   useEffect(() => {
     const root = document.documentElement
-    const background = backgroundOptions.find(({ color }) => color === preferences.background) || backgroundOptions[0]
-    const navbar = navbarOptions.find(({ color }) => color === preferences.navbar) || navbarOptions[0]
+    const background = backgroundOptions.find(({ color }) => color === preferences.background) || backgroundOptions.find(({ color }) => color === DEFAULT_BACKGROUND)
+    const navbar = navbarOptions.find(({ color }) => color === preferences.navbar) || navbarOptions.find(({ color }) => color === DEFAULT_NAVBAR)
 
     root.dataset.backgroundTheme = background.color
     const darkBackground = background.text === '#ffffff'

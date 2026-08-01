@@ -5,15 +5,15 @@
   ═══════════════════════════════════════════════════════════ */
 
   /* Semantic GameFlow palette (legacy names) */
-  --gf-bg: #fefae0;
-  --gf-surface: #ffffff;
-  --gf-surface-raised: #ffffff;
+  --gf-bg: #003566;
+  --gf-surface: color-mix(in srgb, #003566 82%, black);
+  --gf-surface-raised: color-mix(in srgb, #003566 70%, black);
   --gf-surface-dark: #151525;
   --gf-surface-immersive: #0d0b18;
-  --gf-text: #1a1a2e;
-  --gf-text-muted: #6b6b80;
-  --gf-text-subtle: #9a9ab0;
-  --gf-border: #e8e8f0;
+  --gf-text: #ffffff;
+  --gf-text-muted: color-mix(in srgb, #ffffff 72%, #003566);
+  --gf-text-subtle: color-mix(in srgb, #ffffff 55%, #003566);
+  --gf-border: rgb(255 255 255 / 26%);
   --gf-brand: #ff7e7e;
   --gf-brand-end: #ff9a6e;
   --gf-success: #16a879;
@@ -22,19 +22,19 @@
   --gf-focus: #176fc1;
   --gf-accent: #00d4ff;
   --gf-text-on-brand: #2b1218;
-  --gf-control: #f0f1f6;
-  --gf-control-hover: #e7e8f0;
-  --gf-control-active: #dedfe9;
+  --gf-control: color-mix(in srgb, #003566 72%, white);
+  --gf-control-hover: color-mix(in srgb, #003566 62%, white);
+  --gf-control-active: color-mix(in srgb, #003566 54%, white);
   --gf-control-disabled: #ececf2;
   --gf-backdrop: rgb(13 11 24 / 64%);
   --gf-media-surface: #09090f;
   --gf-media-fallback: #1a1826;
   --gf-skeleton-base: #e5e6ed;
   --gf-skeleton-highlight: #f7f7fa;
-  --gf-glass-surface: rgb(255 255 255 / 58%);
-  --gf-glass-surface-strong: rgb(255 255 255 / 78%);
-  --gf-glass-border: rgb(255 255 255 / 72%);
-  --gf-glass-highlight: rgb(255 255 255 / 62%);
+  --gf-glass-surface: rgb(0 0 0 / 24%);
+  --gf-glass-surface-strong: rgb(0 0 0 / 38%);
+  --gf-glass-border: rgb(255 255 255 / 22%);
+  --gf-glass-highlight: rgb(255 255 255 / 12%);
 
   /* Spacing — legacy scale (consumed by primitives.css; do not change values) */
   --gf-space-1: 4px;
@@ -78,15 +78,15 @@
   --gf-safe-area-top: env(safe-area-inset-top, 0px);
   --gf-safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --gf-shell-bottom-clearance: calc(var(--gf-shell-bottom-nav-height) + var(--gf-shell-nav-bottom-gap) + var(--gf-safe-area-bottom));
-  --gf-shell-surface: #fefae0;
-  --gf-shell-outer-surface: #fefae0;
-  --gf-shell-top-bar-surface: rgb(254 250 224 / 96%);
-  --gf-shell-navigation-surface: rgb(254 250 224 / 96%);
+  --gf-shell-surface: #003566;
+  --gf-shell-outer-surface: #003566;
+  --gf-shell-top-bar-surface: color-mix(in srgb, #003566 96%, transparent);
+  --gf-shell-navigation-surface: #001d3d;
   --gf-shell-navigation-border: #d9dce5;
-  --gf-shell-navigation-text: #555b6e;
-  --gf-background-text: #171827;
-  --gf-navbar-text: #171827;
-  --gf-shell-text: #171827;
+  --gf-shell-navigation-text: #ffffff;
+  --gf-background-text: #ffffff;
+  --gf-navbar-text: #ffffff;
+  --gf-shell-text: #ffffff;
   --gf-shell-shadow: 0 0 60px rgb(15 23 42 / 12%);
   --gf-shell-navigation-layer: 100;
   --gf-shell-top-bar-layer: 90;

@@ -70,10 +70,10 @@
   border-top-color: rgb(255 255 255 / 24%);
   padding-top: 6px;
 }
-.project-tile__engagement button { display: inline-flex; min-width: 27px; min-height: 30px; align-items: center; justify-content: center; gap: 2px; padding: 3px; border: 0; color: var(--gf-text); background: transparent; filter: none; backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none; }
+.project-tile__engagement button { display: inline-flex; min-width: 27px; min-height: 30px; align-items: center; justify-content: center; gap: 2px; padding: 3px; border: 0; color: #fff; background: transparent; filter: none; backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none; }
 .project-tile__engagement button span { font-size: 10px; font-weight: 700; }
-.project-tile__engagement button.is-active { color: #ff4d61; }
-.project-tile__engagement button.is-saved { color: #f2ad33; }
+.project-tile__engagement button.is-active,
+.project-tile__engagement button.is-saved { color: #fff; }
 .project-tile__engagement button:hover,
 .project-tile__engagement button:active,
 .project-tile__engagement button.is-active,
