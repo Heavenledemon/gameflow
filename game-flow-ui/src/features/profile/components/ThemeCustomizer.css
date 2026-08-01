@@ -21,13 +21,14 @@
 .theme-customizer p { margin: 4px 0 0; color: currentColor; font-size: .82rem; opacity: .72; }
 .theme-customizer__group { min-width: 0; margin: 0; padding: 0; border: 0; }
 .theme-customizer__group legend { margin-bottom: 8px; font-size: .78rem; font-weight: 700; }
-.theme-customizer__choices { display: grid; grid-template-columns: repeat(10, minmax(24px, 1fr)); gap: 8px; }
+.theme-customizer__choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(48px, 1fr)); gap: 10px 8px; padding: 4px; }
 .theme-customizer__swatch {
   display: grid;
   width: 100%;
   aspect-ratio: 1;
-  min-width: 24px;
-  max-width: 38px;
+  min-width: 22px;
+  max-width: 30px;
+  justify-self: center;
   padding: 0;
   place-items: center;
   border: 2px solid color-mix(in srgb, var(--swatch-text) 22%, transparent);
@@ -40,7 +41,3 @@
 }
 .theme-customizer__swatch--selected { outline: 3px solid var(--gf-focus); outline-offset: 2px; }
 .theme-customizer__swatch:focus-visible { outline: 3px solid var(--gf-focus); outline-offset: 2px; }
-
-@media (max-width: 360px) {
-  .theme-customizer__choices { grid-template-columns: repeat(5, 1fr); }
-}
