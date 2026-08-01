@@ -115,7 +115,7 @@
 @keyframes design-orbit-float { 0%, 100% { transform: translateY(2px) rotate(-2deg); } 50% { transform: translateY(-5px) rotate(3deg); } }
 @keyframes design-aurora { from { transform: scale(.96) rotate(-2deg); opacity: .8; } to { transform: scale(1.04) rotate(3deg); opacity: 1; } }
 @keyframes design-burst { 0% { opacity: 0; transform: scale(.4); } 35% { opacity: 1; } 100% { opacity: 0; transform: scale(1.25); } }
-.profile-companion__eyes, .profile-companion__pupils, .profile-companion__mouth, .profile-companion__ears, .profile-companion__tail { transform-box: fill-box; transform-origin: center; transition: transform .3s cubic-bezier(.22, 1, .36, 1); }
+.profile-companion__eyes, .profile-companion__pupils, .profile-companion__mouth, .profile-companion__ears, .profile-companion__tail, .profile-companion__wings { transform-box: fill-box; transform-origin: center; transition: transform .3s cubic-bezier(.22, 1, .36, 1); }
 .profile-companion__blush { opacity: .22; transition: opacity .22s ease; }
 .profile-companion--emotion-natural .profile-companion__eyes { animation: companion-blink 5.4s ease-in-out infinite; }
 .profile-companion--emotion-expressive .profile-companion__eyes { animation: companion-blink 4.1s ease-in-out infinite; }
@@ -154,11 +154,13 @@
 .profile-companion--subtle .profile-companion__squish { animation: companion-breathe 3.6s ease-in-out infinite; transform-origin: 75px 139px; }
 .profile-companion--subtle .profile-companion__cat { animation: companion-cat 4.5s steps(1) infinite; transform-origin: center; }
 .profile-companion--subtle .profile-companion__white-cat { animation: companion-white-cat 4.4s ease-in-out infinite; transform-box: fill-box; transform-origin: bottom center; }
+.profile-companion--subtle .profile-companion__moonlight-owl { animation: companion-moonlight-owl 4.6s ease-in-out infinite; }
 .profile-companion--subtle .profile-companion__aurora { animation: companion-aurora 7s ease-in-out infinite alternate; transform-origin: center; }
 .profile-companion--playful .profile-companion__float { animation: companion-float 2.7s ease-in-out infinite; transform-origin: center; }
 .profile-companion--playful .profile-companion__squish { animation: companion-breathe 1.9s ease-in-out infinite; transform-origin: 75px 139px; }
 .profile-companion--playful .profile-companion__cat { animation: companion-cat 2.8s steps(1) infinite; transform-origin: center; }
 .profile-companion--playful .profile-companion__white-cat { animation: companion-white-cat 2.5s ease-in-out infinite; transform-box: fill-box; transform-origin: bottom center; }
+.profile-companion--playful .profile-companion__moonlight-owl { animation: companion-moonlight-owl 2.6s ease-in-out infinite; }
 .profile-companion--playful .profile-companion__aurora { animation: companion-aurora 3.6s ease-in-out infinite alternate; transform-origin: center; }
 .profile-companion.is-reacting svg { animation: companion-react .62s cubic-bezier(.2, .8, .2, 1); }
 .profile-companion.is-reacting .profile-companion__spark { animation: companion-spark .72s ease-out; }
@@ -166,6 +168,7 @@
 @keyframes companion-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.025, .975); } }
 @keyframes companion-cat { 0%, 44%, 52%, 100% { transform: translateY(0); } 45%, 51% { transform: translateY(2px) scaleY(.97); } }
 @keyframes companion-white-cat { 0%, 100% { transform: translateY(1px) rotate(-.5deg); } 50% { transform: translateY(-3px) rotate(.7deg); } }
+@keyframes companion-moonlight-owl { 0%, 100% { transform: translateY(1px) rotate(-.5deg); } 50% { transform: translateY(-6px) rotate(.8deg); } }
 @keyframes companion-aurora { from { transform: rotate(-3deg) scale(.96); opacity: .82; } to { transform: rotate(4deg) scale(1.04); opacity: 1; } }
 @keyframes companion-react { 0% { transform: scale(1) rotate(0); } 35% { transform: scale(.9, 1.1) rotate(-7deg); } 65% { transform: scale(1.08, .94) rotate(6deg); } 100% { transform: scale(1) rotate(0); } }
 @keyframes companion-spark { 0% { opacity: 0; transform: scale(.3) rotate(-30deg); } 38% { opacity: 1; transform: scale(1.3) rotate(12deg); } 100% { opacity: 0; transform: translateY(-16px) scale(.7) rotate(35deg); } }

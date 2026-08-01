@@ -23,6 +23,7 @@ import {
   toggleUserFollow,
 } from '../../lib/content'
 import { removeProjectMember, updateProjectMember } from '../../lib/collaboration'
+import { trackAnalyticsEvents } from '../../lib/analytics'
 import { EditIcon, LockIcon, EyeIcon, TrashIcon } from '../../components/icons/Icons'
 import { fromProject } from './model/projectCardModel'
 import ProjectMedia from './components/ProjectMedia'
@@ -86,6 +87,16 @@ export default function ProjectDetailPage() {
   const mediaRegionRef = useRef(null)
   const localIdRef = useRef(0)
   const clearMediaActivation = useCallback(() => setMediaActivationRequested(false), [])
+
+  useEffect(() => {
+    const contentId = project?._id || project?.id
+    if (!contentId || loadState.status !== 'ready') return undefined
+    trackAnalyticsEvents([{ eventType: 'content_impression', contentId, source: 'direct' }], token)
+    const timer = window.setTimeout(() => {
+      if (document.visibilityState === 'visible') trackAnalyticsEvents([{ eventType: 'content_view', contentId, source: 'direct', durationMs: 1500 }], token)
+    }, 1500)
+    return () => window.clearTimeout(timer)
+  }, [loadState.status, project?._id, project?.id, token])
 
   const syncProject = useCallback((updatedContent) => {
     if (!updatedContent) return

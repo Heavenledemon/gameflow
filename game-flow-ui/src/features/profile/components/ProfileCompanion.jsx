@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 
 export const COMPANION_OPTIONS = [
   { id: 'none', label: 'None', description: 'Keep your profile clean and minimal.' },
   { id: 'cosmic', label: 'Cosmic spirit', description: 'A curious star-born companion.' },
   { id: 'mood', label: 'Mood blob', description: 'A cheerful emoji that reacts to taps.' },
   { id: 'white-cat', label: 'Moonlight cat', description: 'A soft white cat made for dark themes.' },
+  { id: 'moonlight-owl', label: 'Moonlight owl', description: 'A luminous little guardian of the night.' },
   { id: 'pixel-cat', label: 'Pixel cat', description: 'A tiny cat that watches over your links.' },
   { id: 'aurora', label: 'Aurora flow', description: 'A calm, abstract ribbon of color.' },
 ]
@@ -60,11 +61,42 @@ function PixelCat() {
   return <svg className="profile-companion__pixel" viewBox="0 0 140 170" aria-hidden="true" shapeRendering="crispEdges"><g className="profile-companion__cat"><rect x="29" y="139" width="86" height="7" fill="rgba(25,18,45,.12)"/><path d="M45 64V39h14v11h35V39h14v27h8v54h-8v15H43v-15H34V66Z" fill="#4b4265"/><path className="profile-companion__ears" d="M49 49h8v13h-8ZM96 49h8v13h-8Z" fill="#f9a8d4"/><g className="profile-companion__eyes"><rect x="51" y="75" width="11" height="11" fill="#fef08a"/><rect x="92" y="75" width="11" height="11" fill="#fef08a"/><g className="profile-companion__pupils"><rect x="55" y="78" width="4" height="8" fill="#171326"/><rect x="96" y="78" width="4" height="8" fill="#171326"/></g></g><rect x="73" y="92" width="10" height="7" fill="#f9a8d4"/><g className="profile-companion__mouth"><rect x="65" y="105" width="9" height="4" fill="#e9d5ff"/><rect x="82" y="105" width="9" height="4" fill="#e9d5ff"/></g><path className="profile-companion__tail" d="M107 110h20v-11h7v26h-20v-7h-7Z" fill="#4b4265"/></g></svg>
 }
 
+function MoonlightOwl() {
+  const owlId = useId().replaceAll(':', '')
+
+  return <svg viewBox="0 0 140 170" aria-hidden="true">
+    <defs>
+      <linearGradient id={`${owlId}-body`} x1=".2" y1="0" x2=".8" y2="1"><stop stopColor="#dfe7ff"/><stop offset=".45" stopColor="#aebcf5"/><stop offset="1" stopColor="#7487d2"/></linearGradient>
+      <linearGradient id={`${owlId}-wing`} x1="0" y1="0" x2="1" y2="1"><stop stopColor="#bac8ff"/><stop offset=".52" stopColor="#8799e4"/><stop offset="1" stopColor="#586bb6"/></linearGradient>
+      <radialGradient id={`${owlId}-face`}><stop stopColor="#fffef8"/><stop offset=".72" stopColor="#f2efff"/><stop offset="1" stopColor="#d7dcfa"/></radialGradient>
+      <linearGradient id={`${owlId}-eye`} x1="0" y1="0" x2="0" y2="1"><stop stopColor="#171b48"/><stop offset=".5" stopColor="#455bd0"/><stop offset="1" stopColor="#62d9ef"/></linearGradient>
+      <linearGradient id={`${owlId}-gold`} x1="0" y1="0" x2="1" y2="1"><stop stopColor="#fff1a6"/><stop offset=".5" stopColor="#ffc95c"/><stop offset="1" stopColor="#df8d35"/></linearGradient>
+      <filter id={`${owlId}-glow`} x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="#6aa9ff" floodOpacity=".32"/></filter>
+    </defs>
+    <g className="profile-companion__moonlight-owl" filter={`url(#${owlId}-glow)`}>
+      <g className="profile-companion__ears"><path d="M39 55 25 22l29 17c5-3 10-4 16-4s12 1 16 4l29-17-14 33Z" fill={`url(#${owlId}-body)`} stroke="#485a9c" strokeWidth="2" strokeLinejoin="round"/><path d="m31 30 19 12-13 8ZM109 30 90 42l13 8Z" fill="#f3efff"/><path d="m34 31 10 7" stroke="#83e6ff" strokeWidth="2" strokeLinecap="round" opacity=".9"/><path d="m106 31-10 7" stroke="#83e6ff" strokeWidth="2" strokeLinecap="round" opacity=".9"/></g>
+      <path d="M29 79c0-30 17-50 41-50s41 20 41 50v43c0 25-17 40-41 40s-41-15-41-40Z" fill={`url(#${owlId}-body)`} stroke="#485a9c" strokeWidth="2.2"/>
+      <path d="M42 111c0-24 11-38 28-38s28 14 28 38v30c-7 13-16 19-28 19s-22-6-28-19Z" fill="#f5f1ff"/>
+      <g className="profile-companion__wings"><path d="M37 82C19 88 14 117 29 145c10-4 17-14 20-29 2-13-1-27-12-34Z" fill={`url(#${owlId}-wing)`} stroke="#485a9c" strokeWidth="2"/><path d="M30 98c8 4 13 10 17 18M26 116c8 3 13 8 17 15M28 133c5 1 9 4 12 7" fill="none" stroke="#d7e1ff" strokeWidth="3" strokeLinecap="round"/><path d="M103 82c18 6 23 35 8 63-10-4-17-14-20-29-2-13 1-27 12-34Z" fill={`url(#${owlId}-wing)`} stroke="#485a9c" strokeWidth="2"/><path d="M110 98c-8 4-13 10-17 18M114 116c-8 3-13 8-17 15M112 133c-5 1-9 4-12 7" fill="none" stroke="#d7e1ff" strokeWidth="3" strokeLinecap="round"/></g>
+      <path d="M35 61c8-20 25-23 35-6 10-17 27-14 35 6 8 20-4 43-24 48-5 2-8 1-11-2-3 3-7 4-11 2-20-5-32-28-24-48Z" fill={`url(#${owlId}-face)`} stroke="#6878b8" strokeWidth="1.8"/>
+      <path d="M50 104c5 5 11 7 20 3 8 4 15 2 20-3-3 9-10 13-20 13s-17-4-20-13Z" fill="#fff" opacity=".8"/>
+      <g className="profile-companion__eyes"><circle cx="53" cy="75" r="16" fill="#242651" stroke="#7c88df" strokeWidth="2"/><circle cx="87" cy="75" r="16" fill="#242651" stroke="#7c88df" strokeWidth="2"/><g className="profile-companion__pupils"><circle cx="53" cy="76" r="11" fill={`url(#${owlId}-eye)`}/><circle cx="87" cy="76" r="11" fill={`url(#${owlId}-eye)`}/><circle cx="49" cy="69" r="3.7" fill="#fff"/><circle cx="83" cy="69" r="3.7" fill="#fff"/><circle cx="57" cy="83" r="1.5" fill="#c8fbff"/><circle cx="91" cy="83" r="1.5" fill="#c8fbff"/><path d="m56 75 2 3 3 2-3 2-2 3-2-3-3-2 3-2ZM90 75l2 3 3 2-3 2-2 3-2-3-3-2 3-2Z" fill="#fff8c6"/></g></g>
+      <g className="profile-companion__mouth"><path d="m70 83 7 9-7 11-7-11Z" fill={`url(#${owlId}-gold)`} stroke="#8e5d2f" strokeWidth="1.5" strokeLinejoin="round"/><path d="m70 86 2 6-2 7" fill="none" stroke="#fff2ad" strokeWidth="1.2" strokeLinecap="round"/></g>
+      <g className="profile-companion__blush"><ellipse cx="39" cy="95" rx="7" ry="3" fill="#efa7d0"/><ellipse cx="101" cy="95" rx="7" ry="3" fill="#efa7d0"/></g>
+      <path d="M70 36c-9 3-12 14-7 22 4 6 11 7 17 3-8 0-12-8-9-14 2-4 5-7 10-8-4-3-8-4-11-3Z" fill={`url(#${owlId}-gold)`} stroke="#a66c2c" strokeWidth="1.1"/>
+      <path d="m49 119 4 6 7 2-7 3-4 7-3-7-7-3 7-2ZM91 119l4 6 7 2-7 3-4 7-3-7-7-3 7-2Z" fill="#d9fbff" stroke="#78cde6" strokeWidth=".7"/>
+      <path d="M59 120c4 4 7 5 11 2 4 3 8 2 11-2M56 133c5 5 9 6 14 2 5 4 10 3 14-2M57 146c4 4 8 5 13 1 5 4 9 3 13-1" fill="none" stroke="#c2c9ef" strokeWidth="2.2" strokeLinecap="round"/>
+      <path d="M58 156c-2 7-8 8-13 4M82 156c2 7 8 8 13 4" fill="none" stroke="#e1a644" strokeWidth="4" strokeLinecap="round"/>
+      <circle cx="31" cy="69" r="1.6" fill="#b8f5ff"/><circle cx="109" cy="69" r="1.6" fill="#b8f5ff"/><path d="m23 87 2 3 3 2-3 2-2 3-2-3-3-2 3-2ZM117 87l2 3 3 2-3 2-2 3-2-3-3-2 3-2Z" fill="#fff1a8"/>
+    </g>
+  </svg>
+}
+
 function AuroraFlow() {
   return <svg viewBox="0 0 140 170" aria-hidden="true"><defs><linearGradient id="aurora" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#22d3ee"/><stop offset=".5" stopColor="#a78bfa"/><stop offset="1" stopColor="#fb7185"/></linearGradient><filter id="aurora-blur"><feGaussianBlur stdDeviation="7"/></filter></defs><g className="profile-companion__aurora"><path d="M20 132C6 84 52 24 119 41 70 54 54 82 45 133Z" fill="url(#aurora)" opacity=".3" filter="url(#aurora-blur)"/><path d="M23 129C38 89 32 56 119 41 79 64 77 100 45 135" fill="none" stroke="url(#aurora)" strokeWidth="10" strokeLinecap="round"/><path d="M39 138C51 99 51 69 113 52" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" opacity=".72"/><circle cx="105" cy="42" r="3" fill="#fef08a"/><circle cx="32" cy="102" r="2" fill="#fff"/></g></svg>
 }
 
-const ART = { cosmic: CosmicSpirit, mood: MoodBlob, 'white-cat': WhiteCat, 'pixel-cat': PixelCat, aurora: AuroraFlow }
+const ART = { cosmic: CosmicSpirit, mood: MoodBlob, 'white-cat': WhiteCat, 'moonlight-owl': MoonlightOwl, 'pixel-cat': PixelCat, aurora: AuroraFlow }
 const BUBBLE_MESSAGES = {
   greeting: 'Hey there! 👋',
   building: 'Building something ✨',

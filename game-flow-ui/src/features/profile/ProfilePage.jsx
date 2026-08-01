@@ -21,7 +21,7 @@ import PortfolioTabs from './components/PortfolioTabs'
 import { ProfileActions } from './components/ProfileActions'
 import EditProfileForm from './components/EditProfileForm'
 import ProjectManagementSheet from './components/ProjectManagementSheet'
-import CompanionFootprintPanel from './components/CompanionFootprintPanel'
+import CreatorInsightsSheet from '../insights/CreatorInsightsSheet'
 import { fetchProfileFootprints, markProfileFootprintsReviewed } from '../../lib/footprints'
 import { contentCollections, mapPortfolioItems } from './profileAdapters'
 import './ProfilePage.css'
@@ -58,6 +58,7 @@ export default function ProfilePage() {
   const [viewedStoryIds, setViewedStoryIds] = useState(getViewedStoryIds)
   const [followList, setFollowList] = useState('')
   const [companionOpen, setCompanionOpen] = useState(false)
+  const [insightsTab, setInsightsTab] = useState('overview')
   const [footprints, setFootprints] = useState([])
   const [footprintsLoading, setFootprintsLoading] = useState(() => !isGuest)
   const [unreadFootprints, setUnreadFootprints] = useState(0)
@@ -261,12 +262,12 @@ export default function ProfilePage() {
       onShare={shareProfile}
       onMore={() => setLogoutOpen(true)}
       moreLabel="Log out"
-      actions={<ProfileActions capability="self" onEdit={openEdit} />}
+      actions={<ProfileActions capability="self" onEdit={openEdit} onInsights={() => { setInsightsTab('overview'); setCompanionOpen(true) }} />}
       onStatSelect={setFollowList}
-      onCompanionOpen={() => { setCompanionOpen(true); setUnreadFootprints(0); setFootprints((items) => items.map((item) => ({ ...item, unread: false }))); markProfileFootprintsReviewed(token).catch(() => {}) }}
+      onCompanionOpen={() => { setInsightsTab('footprints'); setCompanionOpen(true) }}
       companionActivityCount={unreadFootprints}
     />
-    <CompanionFootprintPanel open={companionOpen} mode="owner" creator={creator} token={token} footprints={footprints} loading={footprintsLoading} onClose={() => setCompanionOpen(false)} onOpenVisitor={(visitor) => { setCompanionOpen(false); navigate(`/app/creator/${visitor.id}`) }} />
+    <CreatorInsightsSheet key={`${insightsTab}-${companionOpen}`} open={companionOpen} initialTab={insightsTab} token={token} footprints={footprints} footprintsLoading={footprintsLoading} onClose={() => setCompanionOpen(false)} onFootprintsViewed={() => { if (!unreadFootprints) return; setUnreadFootprints(0); setFootprints((items) => items.map((item) => ({ ...item, unread: false }))); markProfileFootprintsReviewed(token).catch(() => {}) }} onOpenVisitor={(visitor) => { setCompanionOpen(false); navigate(`/app/creator/${visitor.id}`) }} />
     <FollowListSheet open={Boolean(followList)} kind={followList || 'followers'} userId={userId} currentUserId={userId} token={token} onClose={() => setFollowList('')} onChanged={(result) => setSocialCounts((counts) => ({ ...counts, following: result.followingCount ?? counts.following }))} />
     {storyOpen && activeStories.length ? <StoryViewer stories={activeStories} onClose={() => setStoryOpen(false)} /> : null}
     <section className="portfolio" aria-labelledby="portfolio-heading">

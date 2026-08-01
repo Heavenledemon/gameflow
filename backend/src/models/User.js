@@ -132,7 +132,7 @@ const userSchema = new mongoose.Schema(
     },
     companionType: {
       type: String,
-      enum: ['none', 'cosmic', 'mood', 'white-cat', 'pixel-cat', 'aurora'],
+      enum: ['none', 'cosmic', 'mood', 'white-cat', 'moonlight-owl', 'pixel-cat', 'aurora'],
       default: 'cosmic',
     },
     companionMotion: {

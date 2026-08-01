@@ -8,6 +8,7 @@ export function ProfileActions({
   blocked = false,
   busy = false,
   onEdit,
+  onInsights,
   onFollow,
   onMessage,
   onCollaborate,
@@ -15,6 +16,7 @@ export function ProfileActions({
   if (capability === 'self') {
     return (
       <div className="profile-actions profile-actions--self">
+        <Button className="profile-actions__insights-btn" variant="secondary" onClick={onInsights}>Insights</Button>
         <Button className="profile-actions__edit-btn" variant="secondary" onClick={onEdit}>Edit Profile</Button>
       </div>
     )
