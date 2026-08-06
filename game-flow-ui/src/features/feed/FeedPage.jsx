@@ -23,9 +23,10 @@ import CommentsSheet from './components/CommentsSheet'
 import ProjectQuickActionsSheet from './components/ProjectQuickActionsSheet'
 import ProjectReelCard from './components/ProjectReelCard'
 import LikesSheet from './components/LikesSheet'
+import scopeCanvasLogo from '../../assets/scope-canvas-logo.png'
 import './FeedPage.css'
 
-function GameFlowLogo() {
+function ScopeCanvasLogo() {
   const [shouldAnimate] = useState(() => (
     typeof window === 'undefined' || !window.__gameFlowLogoAnimationPlayed
   ))
@@ -37,28 +38,13 @@ function GameFlowLogo() {
   return (
     <svg
       className={`feed-page__brand-logo${shouldAnimate ? ' feed-page__brand-logo--animated' : ''}`}
-      viewBox="10 44 865 175"
+      viewBox="10 34 900 195"
       xmlns="http://www.w3.org/2000/svg"
       role="img"
-      aria-label="Game-flow"
+      aria-label="ScopeCanvas"
     >
-      <defs>
-        <linearGradient id="feed-game-flow-gradient" x1="0%" y1="100%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#4338CA" />
-          <stop offset="50%" stopColor="#0EA5E9" />
-          <stop offset="100%" stopColor="#22D3EE" />
-        </linearGradient>
-      </defs>
-
-      <text className="feed-page__logo-game" x="20" y="165" fontFamily="Poppins, 'Century Gothic', Futura, Arial, sans-serif" fontWeight="700" fontSize="140" letterSpacing="-2" fill="url(#feed-game-flow-gradient)">game</text>
-
-      <g className="feed-page__logo-strokes" transform="translate(460,55)">
-        <path className="feed-page__logo-stroke feed-page__logo-stroke--1" pathLength="1" d="M0,90 L46,90" stroke="#F97316" strokeWidth="17" strokeLinecap="round" />
-        <path className="feed-page__logo-stroke feed-page__logo-stroke--2" pathLength="1" d="M12,58 L58,58" stroke="#F97316" strokeWidth="17" strokeLinecap="round" opacity="0.72" />
-        <path className="feed-page__logo-stroke feed-page__logo-stroke--3" pathLength="1" d="M24,26 L70,26" stroke="#F97316" strokeWidth="17" strokeLinecap="round" opacity="0.45" />
-      </g>
-
-      <text className="feed-page__logo-flow" x="565" y="165" fontFamily="Poppins, 'Century Gothic', Futura, Arial, sans-serif" fontWeight="700" fontSize="140" letterSpacing="-2" fill="url(#feed-game-flow-gradient)">flow</text>
+      <image href={scopeCanvasLogo} x="18" y="34" width="195" height="195" preserveAspectRatio="xMidYMid meet" />
+      <text x="230" y="158" fontFamily="Poppins, 'Century Gothic', Futura, Arial, sans-serif" fontWeight="700" fontSize="96" fill="#fff">ScopeCanvas</text>
     </svg>
   )
 }
@@ -344,7 +330,7 @@ export default function FeedPage() {
 
   const handleShare = async (project, platform = '') => {
     const shareUrl = project.routeTarget ? `${window.location.origin}${project.routeTarget}` : window.location.href
-    const shareText = `${project.title || 'GameFlow project'} on GameFlow`
+    const shareText = `${project.title || 'ScopeCanvas project'} on ScopeCanvas`
 
     try {
       if (platform === 'copy' && navigator.clipboard?.writeText) await navigator.clipboard.writeText(shareUrl)
@@ -573,7 +559,7 @@ export default function FeedPage() {
     <main className={`feed-page ${interactiveProjectId ? 'feed-page--interactive' : ''}`}>
       <header className="feed-page__header">
         <div className="feed-page__brand">
-          <GameFlowLogo />
+          <ScopeCanvasLogo />
         </div>
       </header>
 

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import wavingVideo from '../../assets/wave.mp4';
-import logoImg from '../../assets/logo.jpg';
+import logoImg from '../../assets/scope-canvas-logo.png';
 
 const T = {
   bg:           '#0B0D12',
@@ -71,8 +71,8 @@ const ForgotPasswordPage = () => {
         {/* Top Header */}
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: 40 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <img src={logoImg} alt="CreativeVerse" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '1.5px solid rgba(255,255,255,0.2)' }} />
-            <span style={{ fontSize: 18, fontWeight: 700, color: '#fff', letterSpacing: -0.4 }}>CreativeVerse</span>
+            <img src={logoImg} alt="ScopeCanvas" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'contain', border: '1.5px solid rgba(255,255,255,0.2)' }} />
+            <span style={{ fontSize: 18, fontWeight: 700, color: '#fff', letterSpacing: -0.4 }}>ScopeCanvas</span>
           </div>
         </div>
 

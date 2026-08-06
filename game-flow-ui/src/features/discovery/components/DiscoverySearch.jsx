@@ -39,7 +39,7 @@ export default function DiscoverySearch({ value, onChange, onClear }) {
         />
         {value ? <button type="button" aria-label="Clear search" onClick={onClear}><XIcon /></button> : null}
       </div>
-      <p id={helpId}>Search projects, tags, tools, and every creator on GameFlow.</p>
+      <p id={helpId}>Search projects, tags, tools, and every creator on ScopeCanvas.</p>
     </form>
   )
 }

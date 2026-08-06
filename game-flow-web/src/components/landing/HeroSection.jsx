@@ -151,7 +151,7 @@ export function HeroSection() {
               className="mb-7 text-[#A3A3A3] leading-relaxed"
               style={{ maxWidth: 420, fontSize: "clamp(0.82rem, 1.2vw, 0.95rem)" }}
             >
-              CreativeVerse is the ultimate destination for creators. Showcase games,
+              ScopeCanvas is the ultimate destination for creators. Showcase games,
               3D art, animation, VFX, comics, music, and interactive experiences
               while building your creative community.
             </motion.p>
@@ -180,7 +180,7 @@ export function HeroSection() {
                     e.currentTarget.style.boxShadow = "0 4px 24px rgba(255,106,0,0.35)"
                   }}
                 >
-                  Join CreativeVerse
+                  Join ScopeCanvas
                   <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
                 </button>
               </Link>

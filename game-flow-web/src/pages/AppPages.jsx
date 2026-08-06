@@ -7,7 +7,7 @@ import { fetchConversations, fetchMessages, sendMessage } from '../lib/messaging
 import { useMessagingRealtime } from '../hooks/useMessagingRealtime.js'
 
 const titleFor = (item) => item.title || item.projectTitle || 'Untitled project'
-const creatorFor = (item) => item.creator?.name || item.creator?.username || item.owner?.name || 'GameFlow creator'
+const creatorFor = (item) => item.creator?.name || item.creator?.username || item.owner?.name || 'ScopeCanvas creator'
 const idFor = (item) => item.id || item._id || item.projectId || (item.feedId?.includes(':') ? item.feedId.split(':').at(-1) : item.feedId)
 const resolveClientAssetUrl = (url) => (!url || !url.startsWith('/') || !/^\/(games|3dAssets)\//.test(url) ? url : `${import.meta.env.BASE_URL.replace(/\/$/, '')}${url}`)
 
@@ -34,7 +34,7 @@ export function ProjectDetailPage() {
   if (!project) return <main className="page"><Loading /></main>
   const media = project.media || {}; const gameUrl = media.manifestUrl || project.gameUrl; const viewer = gameUrl ? <iframe title={titleFor(project)} src={resolveClientAssetUrl(gameUrl)} allowFullScreen /> : media.imageUrl || media.posterUrl || project.imageUrl ? <img src={media.imageUrl || media.posterUrl || project.imageUrl} alt={titleFor(project)} /> : <div className="project-visual large">{titleFor(project).slice(0, 1)}</div>
   const react = async () => { setBusy(true); try { await updateEngagement(token, 'project', idFor(project), { action: 'react' }); toast.success('Reaction saved.') } catch (error) { toast.error(error.message) } finally { setBusy(false) } }
-  return <main className="page"><Link className="back-link" to="/app/explore">← Back to explore</Link><div className="detail-layout"><section><div className="media-viewer">{viewer}</div><small>{project.type || media.kind || 'Project'}</small><h1>{titleFor(project)}</h1><p className="description">{project.description || 'No description added yet.'}</p><button onClick={react} disabled={busy}>{busy ? 'Saving…' : 'Appreciate this work'}</button></section><aside className="detail-sidebar"><h3>Created by</h3><b>{creatorFor(project)}</b><p>{project.creator?.headline || 'GameFlow creator'}</p><h3>Tools</h3><div className="tag-list">{(project.software || project.tags || []).map((tag) => <span key={tag}>{tag}</span>) || <span>Independent work</span>}</div></aside></div></main>
+  return <main className="page"><Link className="back-link" to="/app/explore">← Back to explore</Link><div className="detail-layout"><section><div className="media-viewer">{viewer}</div><small>{project.type || media.kind || 'Project'}</small><h1>{titleFor(project)}</h1><p className="description">{project.description || 'No description added yet.'}</p><button onClick={react} disabled={busy}>{busy ? 'Saving…' : 'Appreciate this work'}</button></section><aside className="detail-sidebar"><h3>Created by</h3><b>{creatorFor(project)}</b><p>{project.creator?.headline || 'ScopeCanvas creator'}</p><h3>Tools</h3><div className="tag-list">{(project.software || project.tags || []).map((tag) => <span key={tag}>{tag}</span>) || <span>Independent work</span>}</div></aside></div></main>
 }
 
 export function UploadPage() {
@@ -52,5 +52,5 @@ export function InboxPage() {
 }
 
 export function ProfilePage() {
-  const { user } = useAuth(); return <main className="page"><PageHeading eyebrow="PROFILE" title="Your creative profile" /><section className="profile-card"><div className="avatar">{(user?.name || user?.username || 'G').slice(0, 1)}</div><div><h2>{user?.name || user?.username}</h2><p>@{user?.username}</p><p>{user?.headline || 'Tell the GameFlow community what you create.'}</p></div><Link className="primary-button" to="/app/upload">Publish work</Link></section><div className="profile-stats"><div><b>—</b><span>Projects</span></div><div><b>—</b><span>Followers</span></div><div><b>—</b><span>Following</span></div></div></main>
+  const { user } = useAuth(); return <main className="page"><PageHeading eyebrow="PROFILE" title="Your creative profile" /><section className="profile-card"><div className="avatar">{(user?.name || user?.username || 'G').slice(0, 1)}</div><div><h2>{user?.name || user?.username}</h2><p>@{user?.username}</p><p>{user?.headline || 'Tell the ScopeCanvas community what you create.'}</p></div><Link className="primary-button" to="/app/upload">Publish work</Link></section><div className="profile-stats"><div><b>—</b><span>Projects</span></div><div><b>—</b><span>Followers</span></div><div><b>—</b><span>Following</span></div></div></main>
 }

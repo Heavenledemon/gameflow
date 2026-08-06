@@ -2,6 +2,7 @@ import * as React from "react"
 import { useState } from "react"
 import { footerLinks } from "../../data/landingData"
 import { Send } from "lucide-react"
+import scopeCanvasLogo from "../../../../game-flow-ui/src/assets/scope-canvas-logo.png"
 
 // Social icons as SVG
 const DiscordIcon = () => (
@@ -53,13 +54,8 @@ export function Footer() {
           {/* Brand Info */}
           <div className="col-span-2 flex flex-col gap-4">
             <a href="#" className="flex items-center gap-2 font-space text-xl font-bold tracking-tight text-white">
-              <span
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-white text-sm font-black"
-                style={{ background: "linear-gradient(135deg, #FF6A00, #FF9E00)" }}
-              >
-                ◆
-              </span>
-              Creative<span style={{ color: "#FF6A00" }}>Verse</span>
+              <img src={scopeCanvasLogo} alt="" className="h-8 w-8 rounded-full object-contain" />
+              ScopeCanvas
             </a>
             <p className="text-xs text-[#A3A3A3] max-w-xs leading-relaxed">
               The ultimate hub for creators across games, art, 3D & more.
@@ -150,7 +146,7 @@ export function Footer() {
         {/* Footer Bottom */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-xs text-[#666]">
-            © {new Date().getFullYear()} CreativeVerse. All rights reserved.
+            © {new Date().getFullYear()} ScopeCanvas. All rights reserved.
           </p>
 
           {/* Legal links */}

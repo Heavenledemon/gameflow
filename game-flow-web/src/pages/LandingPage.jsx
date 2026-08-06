@@ -1,13 +1,14 @@
 import { ArrowRight, Box, CheckCircle2, Compass, Gamepad2, Menu, Play, Sparkles, Star, Users, X } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import scopeCanvasLogo from '../../../game-flow-ui/src/assets/scope-canvas-logo.png'
 import heroCharacter from '../assets/hero-character-transparent.png'
 import { categories, creators, features, journeySteps, statistics, testimonials } from '../data/landingData'
 
 const iconMap = { Gamepad2, Box, Play, Sparkles, Users, Compass }
 
 function Brand() {
-  return <Link to="/" className="landing-brand" aria-label="CreativeVerse home"><span className="landing-brand-mark"><span /><span /><span /><span /></span><span>Creative<span>Verse</span></span></Link>
+  return <Link to="/" className="landing-brand" aria-label="ScopeCanvas home"><img src={scopeCanvasLogo} alt="" className="landing-brand-mark" style={{ objectFit: 'contain' }} /><span>ScopeCanvas</span></Link>
 }
 
 function LandingHeader() {
@@ -17,7 +18,7 @@ function LandingHeader() {
 }
 
 function StatStrip() {
-  return <section className="landing-stats" aria-label="CreativeVerse community statistics">{statistics.slice(0, 4).map((item) => { const Icon = iconMap[item.iconName] || Sparkles; return <div key={item.id}><Icon /><strong>{item.value}</strong><span>{item.label}</span></div> })}</section>
+  return <section className="landing-stats" aria-label="ScopeCanvas community statistics">{statistics.slice(0, 4).map((item) => { const Icon = iconMap[item.iconName] || Sparkles; return <div key={item.id}><Icon /><strong>{item.value}</strong><span>{item.label}</span></div> })}</section>
 }
 
 function CategoryCard({ category, index }) {
@@ -26,7 +27,7 @@ function CategoryCard({ category, index }) {
 }
 
 function LandingFooter() {
-  return <footer className="landing-footer"><div><Brand /><p>A home for the people making what’s next.</p></div><div><strong>Platform</strong><a href="#discover">Discover</a><a href="#creators">Creators</a><Link to="/signup">Start creating</Link></div><div><strong>Company</strong><a href="#community">Community</a><a href="#how-it-works">How it works</a><a href="mailto:hello@creativeverse.example">Contact</a></div><p className="landing-copyright">© {new Date().getFullYear()} CreativeVerse</p></footer>
+  return <footer className="landing-footer"><div><Brand /><p>A home for the people making what’s next.</p></div><div><strong>Platform</strong><a href="#discover">Discover</a><a href="#creators">Creators</a><Link to="/signup">Start creating</Link></div><div><strong>Company</strong><a href="#community">Community</a><a href="#how-it-works">How it works</a><a href="mailto:hello@scopecanvas.example">Contact</a></div><p className="landing-copyright">© {new Date().getFullYear()} ScopeCanvas</p></footer>
 }
 
 export default function LandingPage() {
@@ -41,7 +42,7 @@ export default function LandingPage() {
 
       <section id="discover" className="landing-section landing-discover"><div className="landing-section-heading"><p className="landing-eyebrow"><span /> Explore the platform</p><h2>Built for the way creative people <em>actually work.</em></h2><p>Bring every practice together in one considered place, whether you’re showing a first draft or a finished world.</p></div><div className="category-grid">{categories.slice(0, 8).map((category, index) => <CategoryCard key={category.id} category={category} index={index} />)}</div></section>
 
-      <section className="landing-section landing-features"><div className="landing-feature-intro"><p className="landing-eyebrow"><span /> More than a portfolio</p><h2>Make your next connection count.</h2><p>CreativeVerse makes it easier to publish meaningful work, find your people, and keep the momentum going.</p><Link className="landing-text-link" to="/signup">Join the community <ArrowRight /></Link></div><div className="feature-list">{features.map((feature, index) => { const Icon = iconMap[feature.iconName] || Sparkles; return <article key={feature.title} className="feature-card"><span className="feature-number">0{index + 1}</span><Icon /><h3>{feature.title}</h3><p>{feature.description}</p></article> })}</div></section>
+      <section className="landing-section landing-features"><div className="landing-feature-intro"><p className="landing-eyebrow"><span /> More than a portfolio</p><h2>Make your next connection count.</h2><p>ScopeCanvas makes it easier to publish meaningful work, find your people, and keep the momentum going.</p><Link className="landing-text-link" to="/signup">Join the community <ArrowRight /></Link></div><div className="feature-list">{features.map((feature, index) => { const Icon = iconMap[feature.iconName] || Sparkles; return <article key={feature.title} className="feature-card"><span className="feature-number">0{index + 1}</span><Icon /><h3>{feature.title}</h3><p>{feature.description}</p></article> })}</div></section>
 
       <section id="creators" className="landing-section landing-creators"><div className="landing-section-heading landing-heading-row"><div><p className="landing-eyebrow"><span /> Meet the community</p><h2>Made by people with something to say.</h2></div><a className="landing-text-link" href="#community">Hear their stories <ArrowRight /></a></div><div className="creator-grid">{creators.map((creator) => <article key={creator.id} className="creator-card"><img src={creator.avatarUrl} alt={creator.name} /><div><span>{creator.role}</span><h3>{creator.name}</h3><p>{creator.followers}</p></div><CheckCircle2 aria-label="Verified creator" /></article>)}</div></section>
 
