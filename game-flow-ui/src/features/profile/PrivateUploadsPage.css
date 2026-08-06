@@ -43,3 +43,41 @@
 .private-uploads-upload-btn:active {
   transform: translateY(0.5px) scale(0.98) !important;
 }
+
+/* Card Action Buttons */
+.private-uploads-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 4px 2px;
+}
+
+.private-uploads-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--gf-border);
+  background: var(--gf-surface);
+  color: var(--gf-text);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.private-uploads-action-btn:hover {
+  background: color-mix(in srgb, var(--gf-text) 8%, var(--gf-surface));
+  border-color: var(--gf-text-muted);
+}
+
+.private-uploads-action-btn--danger {
+  color: var(--gf-danger);
+  border-color: color-mix(in srgb, var(--gf-danger) 30%, transparent);
+}
+
+.private-uploads-action-btn--danger:hover {
+  background: color-mix(in srgb, var(--gf-danger) 12%, transparent);
+  border-color: var(--gf-danger);
+}

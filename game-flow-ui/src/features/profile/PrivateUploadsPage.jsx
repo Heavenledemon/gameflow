@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { fetchMyPrivateProjects } from '../../lib/content'
-import { ChevronLeftIcon, PlusIcon } from '../../components/icons/Icons'
+import { useToast } from '../../context/ToastContext'
+import { fetchMyPrivateProjects, updateProject, deleteProject, uploadProjectFile } from '../../lib/content'
+import { ChevronLeftIcon, EditIcon, PlusIcon, TrashIcon } from '../../components/icons/Icons'
 import IconButton from '../../components/ui/IconButton'
 import { Button } from '../../components/ui/Button'
+import { ConfirmDialog } from '../../components/ui/Overlay'
 import { EmptyState, ErrorState } from '../../components/ui/Feedback'
 import ProjectGrid from '../discovery/components/ProjectGrid'
+import ProjectManagementSheet from './components/ProjectManagementSheet'
 import { mapPortfolioItems } from './profileAdapters'
 import './ProfilePage.css'
 import './PrivateUploadsPage.css'
@@ -14,9 +17,14 @@ import './PrivateUploadsPage.css'
 export default function PrivateUploadsPage() {
   const navigate = useNavigate()
   const { token } = useAuth()
+  const { success, error: showError } = useToast()
   const [projects, setProjects] = useState([])
   const [status, setStatus] = useState('loading')
   const [loadError, setLoadError] = useState('')
+  const [editingProject, setEditingProject] = useState(null)
+  const [savingProject, setSavingProject] = useState(false)
+  const [deletingProject, setDeletingProject] = useState(null)
+  const [deleting, setDeleting] = useState(false)
 
   const load = useCallback(async (signal) => {
     setStatus('loading')
@@ -40,6 +48,41 @@ export default function PrivateUploadsPage() {
   }, [load])
 
   const items = useMemo(() => mapPortfolioItems(projects), [projects])
+
+  const saveProject = async (payload, previewFile) => {
+    if (!editingProject) return
+    const projectId = editingProject.id || editingProject._id || editingProject.contentId
+    setSavingProject(true)
+    try {
+      if (previewFile) {
+        await uploadProjectFile(token, projectId, { name: previewFile.name, relativePath: `cover/${previewFile.name}`, mimeType: previewFile.type || '' }, previewFile)
+      }
+      await updateProject(token, projectId, payload)
+      setEditingProject(null)
+      await load()
+      success('Project updated successfully.')
+    } catch (error) {
+      showError(error.message || 'Failed to update project.')
+    } finally {
+      setSavingProject(false)
+    }
+  }
+
+  const deleteOwnedProject = async () => {
+    if (!deletingProject || deleting) return
+    const projectId = deletingProject.id || deletingProject._id || deletingProject.contentId
+    setDeleting(true)
+    try {
+      await deleteProject(token, projectId)
+      setDeletingProject(null)
+      await load()
+      success('Project deleted successfully.')
+    } catch (error) {
+      showError(error.message || 'Failed to delete project.')
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   return (
     <main className="profile-page private-uploads-page">
@@ -87,10 +130,61 @@ export default function PrivateUploadsPage() {
             <ProjectGrid
               projects={items}
               onOpenProject={(project) => navigate(project.routeTarget)}
+              actionsPlacement="below"
+              renderActions={(project) => (
+                <div className="private-uploads-card-actions">
+                  <button
+                    type="button"
+                    className="private-uploads-action-btn"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setEditingProject(project.raw || project)
+                    }}
+                    title="Edit project details & privacy settings"
+                  >
+                    <EditIcon size={14} />
+                    <span>Edit</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="private-uploads-action-btn private-uploads-action-btn--danger"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setDeletingProject(project.raw || project)
+                    }}
+                    title="Delete private project"
+                  >
+                    <TrashIcon size={14} />
+                    <span>Delete</span>
+                  </button>
+                </div>
+              )}
             />
           ) : null}
         </div>
       </section>
+
+      {/* Project Edit & Management Sheet */}
+      {editingProject ? (
+        <ProjectManagementSheet
+          project={editingProject}
+          saving={savingProject}
+          onClose={() => setEditingProject(null)}
+          onSave={saveProject}
+        />
+      ) : null}
+
+      {/* Project Deletion Confirmation Modal */}
+      <ConfirmDialog
+        open={Boolean(deletingProject)}
+        title="Delete private project?"
+        description={deletingProject?.title}
+        message="This permanently deletes the project and cannot be undone."
+        confirmLabel="Delete project"
+        confirmLoading={deleting}
+        onConfirm={deleteOwnedProject}
+        onClose={() => !deleting && setDeletingProject(null)}
+      />
     </main>
   )
 }
