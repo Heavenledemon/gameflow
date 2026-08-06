@@ -875,6 +875,14 @@ export const getPublishedProjects = asyncHandler(async (request, response) => {
   response.json(await enrichProjects(projects, viewerId, { includeComments: false }))
 })
 
+export const getMyPrivateProjects = asyncHandler(async (request, response) => {
+  const viewerId = getViewerId(request)
+  const projects = await Project.find({ ownerId: viewerId, visibility: 'private' })
+    .sort({ updatedAt: -1, createdAt: -1 })
+    .lean()
+  response.json({ projects: await enrichProjects(projects, viewerId, { includeComments: false }) })
+})
+
 export const getProjectById = asyncHandler(async (request, response) => {
   const { projectId } = request.params
   const viewerId = getViewerId(request)

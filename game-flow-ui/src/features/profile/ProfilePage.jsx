@@ -8,9 +8,9 @@ import { fetchStories, getViewedStoryIds, markStoryViewed } from '../../lib/stor
 import { useMessagingRealtime } from '../../hooks/useMessagingRealtime'
 import GuestBanner from '../../components/layout/GuestBanner'
 import GuestToast from '../../components/layout/GuestToast'
-import { TrashIcon } from '../../components/icons/Icons'
+import { ArrowRightIcon, LockIcon, TrashIcon } from '../../components/icons/Icons'
 import { Button } from '../../components/ui/Button'
-import { ConfirmDialog } from '../../components/ui/Overlay'
+import { ConfirmDialog, Sheet } from '../../components/ui/Overlay'
 import { EmptyState, ErrorState } from '../../components/ui/Feedback'
 import ProjectGrid from '../discovery/components/ProjectGrid'
 import DiscoveryProjectActions from '../discovery/components/DiscoveryProjectActions'
@@ -53,6 +53,7 @@ export default function ProfilePage() {
   const [deletingProject, setDeletingProject] = useState(null)
   const [deleting, setDeleting] = useState(false)
   const [logoutOpen, setLogoutOpen] = useState(false)
+  const [moreOpen, setMoreOpen] = useState(false)
   const [activeStories, setActiveStories] = useState([])
   const [storyOpen, setStoryOpen] = useState(false)
   const [viewedStoryIds, setViewedStoryIds] = useState(getViewedStoryIds)
@@ -260,8 +261,8 @@ export default function ProfilePage() {
       onStoryOpen={activeStory ? openActiveStory : undefined}
       onBack={() => navigate('/app/home')}
       onShare={shareProfile}
-      onMore={() => setLogoutOpen(true)}
-      moreLabel="Log out"
+      onMore={() => setMoreOpen(true)}
+      moreLabel="Profile options"
       actions={<ProfileActions capability="self" onEdit={openEdit} onInsights={() => { setInsightsTab('overview'); setCompanionOpen(true) }} />}
       onStatSelect={setFollowList}
       onCompanionOpen={() => { setInsightsTab('footprints'); setCompanionOpen(true) }}
@@ -288,6 +289,20 @@ export default function ProfilePage() {
     {guestAction ? <GuestToast message={`Sign in to ${guestAction}.`} onSignIn={() => navigate('/signin')} onDismiss={() => setGuestAction('')} /> : null}
     {editingProfile ? <EditProfileForm open user={user} saving={savingProfile} onClose={() => setEditingProfile(false)} onSave={saveProfile} /> : null}
     {editingProject ? <ProjectManagementSheet project={editingProject} saving={savingProject} onClose={() => setEditingProject(null)} onSave={saveProject} /> : null}
+    <Sheet open={moreOpen} title="Profile options" description="Keep your portfolio and account organized." onClose={() => setMoreOpen(false)}>
+      <div className="profile-options">
+        <button type="button" className="profile-options__item" onClick={() => { setMoreOpen(false); navigate('/app/profile/private-uploads') }}>
+          <span className="profile-options__icon" aria-hidden="true"><LockIcon size={18} /></span>
+          <span className="profile-options__copy"><strong>Private uploads</strong><small>View and manage private projects</small></span>
+          <span className="profile-options__chevron" aria-hidden="true">›</span>
+        </button>
+        <div className="profile-options__divider" />
+        <button type="button" className="profile-options__item profile-options__item--danger" onClick={() => { setMoreOpen(false); setLogoutOpen(true) }}>
+          <span className="profile-options__icon" aria-hidden="true"><ArrowRightIcon size={18} /></span>
+          <span className="profile-options__copy"><strong>Log out</strong><small>End this session on this device</small></span>
+        </button>
+      </div>
+    </Sheet>
     <ConfirmDialog open={Boolean(deletingProject)} title="Delete project?" description={deletingProject?.title} message="This permanently deletes the project and cannot be undone." confirmLabel="Delete project" confirmLoading={deleting} onConfirm={deleteOwnedProject} onClose={() => !deleting && setDeletingProject(null)} />
     <ConfirmDialog open={logoutOpen} title="Log out?" message="You will need to sign in again to manage your portfolio." confirmLabel="Log out" confirmVariant="danger" onConfirm={() => { logout(); navigate('/signin') }} onClose={() => setLogoutOpen(false)} />
   </main>

@@ -1,0 +1,45 @@
+/* Private Uploads Page - Matches Profile Layout */
+.private-uploads-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.private-uploads-page .portfolio-tabs {
+  justify-content: flex-start;
+  padding-left: var(--gf-space-4, 16px);
+}
+
+.private-uploads-page .portfolio-tabs__tab {
+  flex: 0 0 auto;
+  min-width: auto;
+  padding: 0 8px;
+}
+
+/* Radiant Coral Gradient Upload Pill Button */
+.private-uploads-upload-btn {
+  min-height: 36px !important;
+  height: 36px !important;
+  padding: 0 16px !important;
+  border-radius: 999px !important;
+  font-size: 0.85rem !important;
+  font-weight: 750 !important;
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #ff5a79 0%, #ff8359 100%) !important;
+  background-image: linear-gradient(135deg, #ff5a79 0%, #ff8359 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.32) !important;
+  box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.45), 0 4px 14px rgba(255, 90, 121, 0.38) !important;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  gap: 6px !important;
+}
+
+.private-uploads-upload-btn:hover {
+  transform: translateY(-1.5px) scale(1.02) !important;
+  background: linear-gradient(135deg, #ff4769 0%, #ff7345 100%) !important;
+  background-image: linear-gradient(135deg, #ff4769 0%, #ff7345 100%) !important;
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.55), 0 6px 20px rgba(255, 90, 121, 0.52) !important;
+}
+
+.private-uploads-upload-btn:active {
+  transform: translateY(0.5px) scale(0.98) !important;
+}
