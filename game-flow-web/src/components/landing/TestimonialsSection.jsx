@@ -9,7 +9,7 @@ export function TestimonialsSection() {
       {/* Section Header */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-space text-sm font-bold text-white tracking-tight leading-tight">
-          Why Creators Love CreativeVerse
+          Why Creators Love ScopeCanvas
         </h2>
         <a
           href="#"

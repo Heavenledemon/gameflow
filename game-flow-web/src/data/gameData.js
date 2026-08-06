@@ -11,7 +11,7 @@ export const gameData = [
     rating: 4.8,
     reviewsCount: 1420,
     developer: 'NeonByte Studios',
-    publisher: 'GameFlow Originals',
+    publisher: 'ScopeCanvas Originals',
     releaseDate: '2026-03-15',
     price: '$49.99',
     discountPrice: '$34.99',

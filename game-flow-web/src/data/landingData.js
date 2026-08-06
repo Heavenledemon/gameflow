@@ -150,7 +150,7 @@ export const creators = [
 export const testimonials = [
   {
     id: 'test-1',
-    quote: 'CreativeVerse helped me connect with the right audience and grow my creative career.',
+    quote: 'ScopeCanvas helped me connect with the right audience and grow my creative career.',
     name: 'Shin Soo Hyun',
     role: '3D Artist',
     stars: 5,

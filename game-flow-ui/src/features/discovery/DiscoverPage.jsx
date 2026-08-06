@@ -186,7 +186,7 @@ export default function DiscoverPage() {
                 {normalizedQuery
                   ? `Matches for “${query.trim()}”`
                   : defaultSections.isFixture
-                    ? `${DISCOVER_FIXTURE_LABEL} (GameFlow Curated)`
+                    ? `${DISCOVER_FIXTURE_LABEL} (ScopeCanvas Curated)`
                     : ''}
               </p>
             </div>

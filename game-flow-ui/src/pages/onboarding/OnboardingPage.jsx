@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import wavingVideo from '../../assets/wave.mp4';
-import gameFlowLogo from '../../assets/game-flow-wordmark.svg';
+import scopeCanvasLogo from '../../assets/scope-canvas-logo.png';
 import slide1 from '../../assets/7697d2c01b465803c1b41ab51d5557b7.jpg';
 import slide2 from '../../assets/fly.jpg';
 import slide3 from '../../assets/an.jpg';
@@ -183,15 +183,16 @@ const OnboardingPage = () => {
           }}
         >
           <img
-            src={gameFlowLogo}
-            alt="Game-flow"
+            src={scopeCanvasLogo}
+            alt="ScopeCanvas"
             style={{
-              width: 218,
-              height: 46,
+              width: 84,
+              height: 84,
               objectFit: 'contain',
             }}
           />
         </div>
+        <strong style={{ color: '#fff', fontSize: 24, letterSpacing: '-0.5px' }}>ScopeCanvas</strong>
 
         {/* Tagline — one sentence only */}
         <span

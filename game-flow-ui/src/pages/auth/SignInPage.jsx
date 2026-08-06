@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import wavingVideo from '../../assets/wave.mp4';
-import logoImg    from '../../assets/logo.jpg';
+import logoImg    from '../../assets/scope-canvas-logo.png';
 import slide1 from '../../assets/7697d2c01b465803c1b41ab51d5557b7.jpg';
 import slide2 from '../../assets/fly.jpg';
 import slide3 from '../../assets/an.jpg';
@@ -353,12 +353,12 @@ const SignInPage = () => {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               boxShadow: '0 4px 20px rgba(0,0,0,0.35)',
             }}>
-              <img src={logoImg} alt="CreativeVerse"
+              <img src={logoImg} alt="ScopeCanvas"
                 style={{ width: 38, height: 38, borderRadius: '50%', objectFit: 'cover' }}
               />
             </div>
             <span style={{ fontSize: 18, fontWeight: 700, color: T.white, letterSpacing: -0.4 }}>
-              CreativeVerse
+              ScopeCanvas
             </span>
           </div>
 

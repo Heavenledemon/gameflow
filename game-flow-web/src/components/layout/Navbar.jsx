@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Menu, Bell, Search } from 'lucide-react';
+import scopeCanvasLogo from '../../../../game-flow-ui/src/assets/scope-canvas-logo.png';
 
 const Navbar = ({ onMenuClick, onSearch }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -31,7 +32,8 @@ const Navbar = ({ onMenuClick, onSearch }) => {
         >
           <Menu size={24} />
         </button>
-        <h1 className="text-xl font-bold text-gray-800 tracking-tight">GameFlow</h1>
+        <img src={scopeCanvasLogo} alt="ScopeCanvas" className="h-9 w-9 rounded-full object-contain" />
+        <h1 className="text-xl font-bold text-gray-800 tracking-tight">ScopeCanvas</h1>
       </div>
 
       {/* Right Side: Search, Actions & Profile */}
@@ -67,4 +69,3 @@ const Navbar = ({ onMenuClick, onSearch }) => {
 };
 
 export default Navbar;
-

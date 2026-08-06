@@ -22,7 +22,7 @@ function StoryUploadModal({ busy, error, canUpload, onClose, onSubmit }) {
     <div className="story-upload" role="dialog" aria-modal="true" aria-labelledby="story-upload-title">
       <button className="story-upload__backdrop" type="button" aria-label="Close story upload" onClick={busy ? undefined : onClose} />
       <form className="story-upload__card" onSubmit={(event) => { event.preventDefault(); if (file) onSubmit(file, caption) }}>
-        <header><div><h2 id="story-upload-title">Add to your story</h2><p>Visible to GameFlow creators for 24 hours.</p></div><button type="button" onClick={onClose} disabled={busy} aria-label="Close">×</button></header>
+        <header><div><h2 id="story-upload-title">Add to your story</h2><p>Visible to ScopeCanvas creators for 24 hours.</p></div><button type="button" onClick={onClose} disabled={busy} aria-label="Close">×</button></header>
         <label className={`story-upload__picker${previewUrl ? ' story-upload__picker--selected' : ''}`}>
           {previewUrl ? (file.type.startsWith('video/') ? <video src={previewUrl} muted playsInline /> : <img src={previewUrl} alt="Story preview" />) : <><span aria-hidden="true">＋</span><strong>Choose photo or video</strong><small>JPG, PNG, WebP, GIF, AVIF, MP4, WebM or MOV · max 20 MB</small></>}
           <input type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif,video/mp4,video/webm,video/quicktime" onChange={(event) => setFile(event.target.files?.[0] || null)} />
