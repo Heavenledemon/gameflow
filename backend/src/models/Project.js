@@ -100,6 +100,10 @@ const projectSchema = new mongoose.Schema(
       enum: ['public', 'private'],
       default: 'public',
     },
+    showOnProfile: {
+      type: Boolean,
+      default: false,
+    },
     isPublished: {
       type: Boolean,
       default: true,

@@ -6,7 +6,7 @@ import { Dialog } from '../../../components/ui/Overlay'
 function valuesFromProject(project) {
   return {
     title: project?.title || '', category: project?.category || '', description: project?.description || '',
-    type: project?.type || 'game', mode: project?.mode || 'landscape', visibility: project?.visibility || 'public',
+    type: project?.type || 'game', mode: project?.mode || 'landscape', visibility: project?.visibility || 'public', showOnProfile: Boolean(project?.showOnProfile),
     tags: (project?.tags || []).join(', '), software: (project?.software || []).join(', '),
   }
 }
@@ -17,6 +17,7 @@ export default function ProjectManagementSheet({ project, saving, onClose, onSav
   const [previewUrl, setPreviewUrl] = useState(project?.previewUrl || '')
   useEffect(() => () => { if (previewUrl?.startsWith('blob:')) URL.revokeObjectURL(previewUrl) }, [previewUrl])
   const update = (field) => (event) => setValues((current) => ({ ...current, [field]: event.target.value }))
+  const updateChecked = (field) => (event) => setValues((current) => ({ ...current, [field]: event.target.checked }))
   const selectPreview = (event) => {
     const file = event.target.files?.[0]
     if (!file) return
@@ -34,6 +35,7 @@ export default function ProjectManagementSheet({ project, saving, onClose, onSav
       <Field label="Description"><Textarea value={values.description} onChange={update('description')} /></Field>
       <div className="profile-form__grid"><Field label="Type"><Select value={values.type} onChange={update('type')}><option value="game">Game (HTML/WebGL)</option><option value="3d">3D model</option><option value="2d">2D image/artwork</option></Select></Field><Field label="Aspect ratio"><Select value={values.mode} onChange={update('mode')}><option value="landscape">Landscape</option><option value="portrait">Portrait</option></Select></Field></div>
       <Field label="Visibility"><Select value={values.visibility} onChange={update('visibility')}><option value="public">Public</option><option value="private">Private</option></Select></Field>
+      {values.visibility === 'private' ? <Field help="Only you can see private projects. Choose whether it appears in your own profile portfolio."><label className="gf-checkbox"><input type="checkbox" checked={values.showOnProfile} onChange={updateChecked('showOnProfile')} /> Show on my profile</label></Field> : null}
       <Field label="Tags" help="Separate tags with commas."><Input value={values.tags} onChange={update('tags')} /></Field>
       <Field label="Software used" help="Separate tools with commas."><Input value={values.software} onChange={update('software')} /></Field>
       <Field label="Preview image">{previewUrl ? <img className="profile-form__preview" src={previewUrl} alt="Project preview" /> : null}<label className="profile-form__file">Choose preview image<input type="file" accept="image/*" onChange={selectPreview} /></label></Field>

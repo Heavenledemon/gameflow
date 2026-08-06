@@ -97,6 +97,20 @@ function listQuery(onlyPublished = true) {
   return onlyPublished ? { isPublished: true } : {}
 }
 
+function profileProjectQuery(viewerId, includeDraftsFlag) {
+  // The general content endpoint also powers a signed-in creator's profile.
+  // Public visitors must only receive published projects, while a creator needs
+  // to see their own private uploads and drafts for portfolio management.
+  if (includeDraftsFlag) return {}
+  if (!viewerId) return { isPublished: true }
+  return {
+    $or: [
+      { isPublished: true },
+      { ownerId: viewerId, showOnProfile: true },
+    ],
+  }
+}
+
 function createError(statusCode, message) {
   const error = new Error(message)
   error.statusCode = statusCode
@@ -413,6 +427,7 @@ function buildProjectPayload(project, engagement = {}, projectFiles = [], collab
     software: project.software,
     mode: project.mode,
     visibility: project.visibility,
+    showOnProfile: Boolean(project.showOnProfile),
     isPublished: project.isPublished,
     previewUrl: project.previewUrl,
     gameUrl: project.gameUrl,
@@ -823,7 +838,7 @@ export const getContent = asyncHandler(async (request, response) => {
   const [games, assets, projects] = await Promise.all([
     Game.find(listQuery(!includeDraftsFlag)).sort({ displayOrder: 1, createdAt: 1 }).lean(),
     Asset.find(listQuery(!includeDraftsFlag)).sort({ displayOrder: 1, createdAt: 1 }).lean(),
-    Project.find(listQuery(!includeDraftsFlag)).sort({ createdAt: -1 }).lean(),
+    Project.find(profileProjectQuery(viewerId, includeDraftsFlag)).sort({ createdAt: -1 }).lean(),
   ])
 
   const enrichedProjects = await enrichProjects(projects, viewerId, { includeComments: false })
@@ -945,6 +960,9 @@ export const createProject = asyncHandler(async (request, response) => {
     software: normalizedSoftware,
     mode: normalizedMode,
     visibility: normalizedVisibility,
+    // New private uploads remain visible to their owner by default. Legacy
+    // private projects have no value for this field and are therefore hidden.
+    showOnProfile: true,
     isPublished: false,
     previewUrl: '',
     gameUrl: '',
@@ -1227,7 +1245,7 @@ export const publishProject = asyncHandler(async (request, response) => {
 
 export const updateProject = asyncHandler(async (request, response) => {
   const { projectId } = request.params
-  const { title, category, description, tags, software, visibility, mode, type, collaborationOpen, collaborationRoles, collaborationSummary } = request.body
+  const { title, category, description, tags, software, visibility, showOnProfile, mode, type, collaborationOpen, collaborationRoles, collaborationSummary } = request.body
 
   const project = await Project.findById(projectId)
 
@@ -1249,7 +1267,13 @@ export const updateProject = asyncHandler(async (request, response) => {
       throw createError(400, 'Invalid visibility value.')
     }
     project.visibility = visibility
+    // Older projects predate this field. Preserve their expected profile
+    // placement when their owner first changes them to private.
+    if (visibility === 'private' && showOnProfile === undefined && project.showOnProfile === undefined) {
+      project.showOnProfile = true
+    }
   }
+  if (showOnProfile !== undefined) project.showOnProfile = Boolean(showOnProfile)
   if (mode !== undefined) {
     if (!['portrait', 'landscape'].includes(mode)) {
       throw createError(400, 'Invalid mode value.')

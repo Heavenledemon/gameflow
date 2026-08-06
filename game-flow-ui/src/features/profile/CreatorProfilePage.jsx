@@ -104,7 +104,6 @@ export default function CreatorProfilePage() {
       headline: publicProfile.headline,
       location: publicProfile.location,
       bio: publicProfile.bio,
-      description: publicProfile.description,
       website: publicProfile.website,
       skills: publicProfile.skills,
       companionType: publicProfile.companionType || 'cosmic',

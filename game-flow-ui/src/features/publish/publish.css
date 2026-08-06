@@ -61,7 +61,9 @@
 .publish-picker-card > div { min-width: 0; }
 .publish-picker-card strong { color: #0f172a; font-size: var(--gf-text-label); }
 .publish-picker-card p { margin: 3px 0 0; color: #64748b; font-size: var(--gf-text-caption); line-height: 1.4; overflow-wrap: anywhere; }
-.publish-file-button { display: inline-flex; min-width: 116px; min-height: 44px; flex: 0 0 auto; align-items: center; justify-content: center; gap: 6px; box-sizing: border-box; padding: 0 var(--gf-space-3); border: 1px solid rgba(255, 92, 92, 0.4); border-radius: var(--gf-radius-sm); background: #fff5f5; color: #ff5c5c; cursor: pointer; font-size: var(--gf-text-caption); font-weight: 800; }
+.publish-file-button { display: inline-flex; min-width: 116px; min-height: 44px; flex: 0 0 auto; align-items: center; justify-content: center; gap: 6px; box-sizing: border-box; padding: 0 var(--gf-space-3); border: 1px solid #be123c; border-radius: var(--gf-radius-sm); background: #be123c; color: #ffffff; cursor: pointer; font-size: var(--gf-text-caption); font-weight: 800; }
+.publish-file-button:hover { border-color: #9f1239; background: #9f1239; }
+.publish-file-button:active { border-color: #881337; background: #881337; }
 .publish-file-button--secondary { border-color: #cbd5e1; background: #ffffff; color: #0f172a; }
 .publish-file-button input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
 .publish-file-button:has(input:focus-visible) { outline: 2px solid #ff5c5c; outline-offset: 2px; }
@@ -228,6 +230,15 @@
   background: #075380 !important;
   border-color: #48cae4 !important;
   color: #ffffff !important;
+}
+:root[data-color-scheme='dark'] .publish-file-button:not(.publish-file-button--secondary) {
+  border-color: #48cae4 !important;
+  background: #48cae4 !important;
+  color: #003566 !important;
+}
+:root[data-color-scheme='dark'] .publish-file-button:not(.publish-file-button--secondary):hover {
+  border-color: #7fdbf0 !important;
+  background: #7fdbf0 !important;
 }
 :root[data-color-scheme='dark'] .publish-file-button--secondary,
 :root[data-color-scheme='dark'] .publish-token-input .gf-button--secondary,
