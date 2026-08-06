@@ -182,7 +182,7 @@ export default function ProfilePage() {
   const creator = {
     id: userId, name: user?.name || (isGuest ? 'Guest' : null), username: user?.username, avatar: user?.avatar,
     banner: user?.banner, verified: Boolean(user?.isVerified), role: user?.creatorType, headline: user?.headline,
-    location: user?.location, bio: user?.bio, description: user?.description, website: user?.website, skills: user?.skills || [],
+    location: user?.location, bio: user?.bio, website: user?.website, skills: user?.skills || [],
     companionType: user?.companionType || 'cosmic', companionMotion: user?.companionMotion || 'subtle', companionEmotion: user?.companionEmotion || 'natural',
     companionBubble: user?.companionBubble || 'work', companionBubbleText: user?.companionBubbleText || '', companionBubbleBehavior: user?.companionBubbleBehavior || 'once',
     companionFootprintsEnabled: user?.companionFootprintsEnabled !== false,

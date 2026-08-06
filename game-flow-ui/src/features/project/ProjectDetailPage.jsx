@@ -406,6 +406,14 @@ export default function ProjectDetailPage() {
     } catch (error) { showError(error.message || 'Failed to update visibility.') }
   }
 
+  const toggleProfileVisibility = async () => {
+    try {
+      const updated = await updateProject(token, projectId, { showOnProfile: !project.showOnProfile })
+      syncProject(updated.project)
+      showSuccess(updated.project.showOnProfile ? 'Project added to your profile.' : 'Project removed from your profile.')
+    } catch (error) { showError(error.message || 'Failed to update profile visibility.') }
+  }
+
   if (resolvedProjectId !== projectId || loadState.status === 'loading') return <main className="project-detail project-detail--state"><Skeleton className="project-detail__media-skeleton" /><Skeleton height="28px" width="70%" /><Skeleton height="92px" /></main>
   if (loadState.status !== 'ready' || !project) return <main className="project-detail project-detail--state"><ErrorState title={loadState.status === 'not-found' ? 'Project not found' : 'Project unavailable'} description={loadState.error || 'This project could not be found.'} onRetry={loadState.status === 'error' ? loadProject : undefined} actionLabel="Go back" /><Button variant="secondary" onClick={() => navigate(-1)}>Go back</Button></main>
 
@@ -503,6 +511,10 @@ export default function ProjectDetailPage() {
             {project.visibility === 'public' ? <LockIcon size={16} /> : <EyeIcon size={16} />}
             <span>Make {project.visibility === 'public' ? 'private' : 'public'}</span>
           </Button>
+          {project.visibility === 'private' ? <Button variant="secondary" onClick={() => { setShowOwnerSheet(false); toggleProfileVisibility() }}>
+            {project.showOnProfile ? <EyeIcon size={16} /> : <LockIcon size={16} />}
+            <span>{project.showOnProfile ? 'Remove from my profile' : 'Show on my profile'}</span>
+          </Button> : null}
           <Button variant="danger" onClick={() => { setShowOwnerSheet(false); setShowDeleteDialog(true) }}>
             <TrashIcon size={16} />
             <span>Delete project</span>

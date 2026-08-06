@@ -171,12 +171,6 @@ export default function CreatorHeader({
             </div>
           ) : null}
 
-          {creator.description ? (
-            <div className="creator-header__description-wrap">
-              <p className="creator-header__description">{creator.description}</p>
-            </div>
-          ) : null}
-
           {/* Website Link (First Line) */}
           {website ? (
             <div className="creator-header__website-row">
