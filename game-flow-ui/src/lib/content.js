@@ -73,6 +73,13 @@ export async function fetchProject(projectId, token = '', options = {}) {
   })
 }
 
+export async function fetchMyPrivateProjects(token, options = {}) {
+  return request('/projects/private', {
+    ...options,
+    headers: { ...(options.headers ?? {}), ...authHeaders(token) },
+  })
+}
+
 export async function createProject(token, payload) {
   return request('/projects', {
     method: 'POST',

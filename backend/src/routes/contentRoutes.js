@@ -14,6 +14,7 @@ import {
   getPublishedAssets,
   getPublishedGames,
   getPublishedProjects,
+  getMyPrivateProjects,
   publishProject,
   togglePostLike,
   togglePostSave,
@@ -48,6 +49,7 @@ router.put('/users/:userId/footprint', protect, footprintRateLimit, upsertMyFoot
 router.delete('/users/:userId/footprint', protect, footprintRateLimit, removeMyFootprint)
 router.get('/users/:userId/:kind', optionalProtect, listUserFollows)
 router.get('/projects', optionalProtect, getPublishedProjects)
+router.get('/projects/private', protect, getMyPrivateProjects)
 router.get('/projects/:projectId', optionalProtect, getProjectById)
 router.get('/projects/:projectId/workspace', protect, getWorkspace)
 router.get('/projects/:projectId/assets', protect, listWorkspaceAssets)
